@@ -116,8 +116,8 @@ const MainLayoutHeader = memo(({
     const showFilterControls = showTabControls && activeTab !== "Analytic" && (filterDescription || filterInputs || hasActiveFilters);
 
     return (
-        <div className="sticky top-0 left-0 w-full z-10">
-            <div className="flex items-center justify-between bg-white p-16 bordb">
+        <div className="sticky top-0 left-0 w-full z-50">
+            <div className="flex items-center justify-between bg-white px-14 py-9 bordb">
                 <div className="flex items-center gap-12">
                     {headerIcon && (
                         <div className="bg-light-primary text-primary rounded-5 icon-lg">

@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { memo, useState, useCallback, useMemo } from "react";
 import FormBuilder from "../forms/FormBuilder";
 import Button from "./Button";
 import Icon from "./Icon";
 
-const MODAL_WIDTHS = {
+export const MODAL_WIDTHS = {
   sm: "30%",
   md: "40%",
   lg: "50%",
@@ -11,12 +11,12 @@ const MODAL_WIDTHS = {
   full: "80%",
 };
 
-const Modal = React.memo(
+export const Modal = memo(
   ({
     isOpen: controlledIsOpen,
     onClose: controlledOnClose,
     trigger,
-    title,
+    title = "Modal Title",
     children,
     footer,
     size = "sm",
@@ -54,41 +54,29 @@ const Modal = React.memo(
       () =>
         isSidebar
           ? {
-            justifyContent: placement === "right" ? "flex-end" : "flex-start",
-            alignItems: "stretch",
-          }
-          : {},
+              justifyContent: placement === "right" ? "flex-end" : "flex-start",
+              alignItems: "stretch",
+            }
+          : undefined,
       [isSidebar, placement]
     );
 
     const cardClass = isSidebar
-      ? `bg-white relative z-999 b-shadow border-ec p-0 overflow-auto h-100 sm-w-full ${placement === "right"
-        ? "animate-sidebar-right"
-        : "animate-sidebar-left"
-      }`
+      ? `bg-white relative z-999 b-shadow border-ec p-0 overflow-auto h-100 sm-w-full ${
+          placement === "right" ? "animate-sidebar-right" : "animate-sidebar-left"
+        }`
       : "bg-white relative z-999 rounded-10 b-shadow border-ec p-0 overflow-auto animate-modal-scale sm-w-full";
 
     const sizeStyle = useMemo(
       () => ({
-        width: MODAL_WIDTHS[size] || "30%",
+        width: MODAL_WIDTHS[size] || MODAL_WIDTHS.sm,
         maxWidth: "100%",
       }),
-      [size, isSidebar]
+      [size]
     );
 
     return (
       <>
-        <style>{`
-          @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
-          @keyframes modalSlideInLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-          @keyframes modalSlideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
-          @keyframes modalScaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-          .animate-backdrop { animation: modalFadeIn 0.25s ease-out forwards; }
-          .animate-modal-scale { animation: modalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-          .animate-sidebar-left { animation: modalSlideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-          .animate-sidebar-right { animation: modalSlideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        `}</style>
-
         {trigger &&
           React.cloneElement(trigger, {
             onClick: (e) => {
@@ -113,7 +101,7 @@ const Modal = React.memo(
               {/* Modal Header */}
               <div className="flex items-center justify-between bordb px-14 py-10 sticky top-0 left-0 bg-white z-99">
                 <h3 className="mid-text font-500 text-dark">
-                  {title || "Modal Title"}
+                  {title}
                 </h3>
                 <Button
                   onClick={handleClose}
@@ -134,9 +122,9 @@ const Modal = React.memo(
                   isSidebar
                     ? { height: "calc(100vh - 60px)" }
                     : {
-                      height: bodyHeight || "auto",
-                      maxHeight: bodyHeight ? undefined : "400px",
-                    }
+                        height: bodyHeight || "auto",
+                        maxHeight: bodyHeight ? undefined : "70vh",
+                      }
                 }
               >
                 <div className="px-20 py-10">{children}</div>
@@ -169,8 +157,16 @@ const Modal = React.memo(
 
 Modal.displayName = "Modal";
 
-export const CrudModal = React.memo(
-  ({ title, fields, onSubmit, children, size, col, ...props }) => (
+export const CrudModal = memo(
+  ({
+    title = "Form Details",
+    fields = [],
+    onSubmit,
+    children,
+    size = "md",
+    col,
+    ...props
+  }) => (
     <Modal title={title} footer={null} size={size} {...props}>
       {children || (
         <FormBuilder fields={fields} onSubmit={onSubmit} col={col} />
@@ -181,7 +177,7 @@ export const CrudModal = React.memo(
 
 CrudModal.displayName = "CrudModal";
 
-export const DeleteModal = React.memo(
+export const DeleteModal = memo(
   ({
     isOpen,
     onClose,
@@ -214,22 +210,21 @@ export const DeleteModal = React.memo(
         footer={null}
         {...props}
       >
-        <div className="text-center gap-12 py-16">
+        <div className="text-center py-16">
           <div
             className="flex items-center justify-center rounded-full bg-light-danger text-danger mb-12 mx-auto"
-            style={{ width: "65px", height: "65px" }}
+            style={{ width: "56px", height: "56px" }}
           >
-            <Icon name="Delete" width="30" height="30" strokeWidth="2" />
+            <Icon name="Delete" width="26" height="26" strokeWidth="2" />
           </div>
           <h4 className="title-text font-bold text-dark">{title}</h4>
-          <p className="mini-text text-gray mt-12">{message}</p>
+          <p className="mini-text text-gray mt-10">{message}</p>
           <div className="flex items-center gap-12 w-full mt-20 justify-center">
             <Button
               onClick={onClose}
-              disabled={loading}
-              bg="secondary"
-              color="white"
-              version="v1"
+              bg="tertiary"
+              color="dark"
+              version="v2"
             >
               Cancel
             </Button>
@@ -238,38 +233,12 @@ export const DeleteModal = React.memo(
               disabled={loading}
               bg="danger"
               color="white"
-              version="v1"
-              className="flex items-center justify-center gap-6"
+              version="v2"
             >
-              {loading ? (
-                <span className="flex items-center gap-4">
-                  <svg
-                    className="animate-spin"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    style={{ animation: "spin 1s linear infinite" }}
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="rgba(255,255,255,0.3)"
-                    />
-                    <path d="M12 2a10 10 0 0 1 10 10" stroke="white" />
-                  </svg>
-                  Deleting...
-                </span>
-              ) : (
-                "Delete"
-              )}
+              {loading ? "Deleting..." : "Delete"}
             </Button>
           </div>
         </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </Modal>
     );
   }

@@ -214,7 +214,7 @@ const Transaction = () => {
             hasActiveFilters={hasActiveFilters}
             onClearAllFilters={handleClearFilters}
         >
-            <div className="bg-white rounded-8 bord p-20 shadow-sm">
+            <div>
                 <Table
                     title="Payment Ledger & Invoices"
                     subtitle="Chronological transaction records with gateway status and payment method"

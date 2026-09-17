@@ -1,73 +1,131 @@
+import React, { memo, useCallback, useMemo } from "react";
 import Button from "./Button";
 
 const BTN_STYLE = {
-  width: "28px", height: "28px",
-  border: "1px solid #ececec", display: "flex", alignItems: "center",
-  justifyContent: "center", transition: "all 0.2s ease", borderRadius: "4px"
+  width: 28,
+  height: 28,
+  minWidth: 28,
+  border: "1px solid var(--tertiary, #ececec)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: 4,
+  transition: "all 0.2s ease",
 };
 
-const Pagination = ({ page, totalItems, itemsPerPage, onPageChange, itemName = "items" }) => {
-  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-  const startItem = totalItems === 0 ? 0 : (page - 1) * itemsPerPage + 1;
-  const endItem = Math.min(page * itemsPerPage, totalItems);
+const Pagination = memo(
+  ({
+    page = 1,
+    totalItems = 0,
+    itemsPerPage = 10,
+    onPageChange,
+    itemName = "items",
+    className = "",
+    style = {},
+  }) => {
+    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    const currentPage = Math.min(Math.max(1, Number(page) || 1), totalPages);
 
-  if (totalItems === 0) return null;
+    if (totalItems === 0) return null;
 
-  const go = (pNum) => pNum >= 1 && pNum <= totalPages && pNum !== page && onPageChange(pNum);
+    const startItem = (currentPage - 1) * itemsPerPage + 1;
+    const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
-  const NavBtn = ({ target, label, title, disabled }) => (
-    <Button
-      version="icon"
-      bg="forth"
-      color="gray"
-      text={label}
-      title={title}
-      disabled={disabled}
-      onClick={() => go(target)}
-      style={{ ...BTN_STYLE, opacity: disabled ? 0.4 : 1, cursor: disabled ? "not-allowed" : "pointer" }}
-    />
-  );
+    const handlePageChange = useCallback(
+      (pNum) => {
+        if (pNum >= 1 && pNum <= totalPages && pNum !== currentPage) {
+          onPageChange?.(pNum);
+        }
+      },
+      [currentPage, totalPages, onPageChange]
+    );
 
-  return (
-    <div className="bg-white border-tertiary mt-4 w-full rounded-5">
-      <div className="flex items-center justify-between p-10">
-        <p className="text-gray mini-text">
-          Showing {startItem} to {endItem} of {totalItems} {itemName}
-        </p>
-        <div className="flex items-center gap-4">
-          <NavBtn target={1} label="«" title="First Page" disabled={page === 1} />
-          <NavBtn target={page - 1} label="<" title="Previous Page" disabled={page === 1} />
+    const pages = useMemo(() => {
+      if (totalPages <= 5) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+      }
+      if (currentPage <= 3) {
+        return [1, 2, 3, 4, "...", totalPages];
+      }
+      if (currentPage >= totalPages - 2) {
+        return [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+      }
+      return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+    }, [currentPage, totalPages]);
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((pNum) => {
-            if (totalPages > 5 && Math.abs(pNum - page) > 2) {
-              return (pNum === 1 || pNum === totalPages)
-                ? <span key={pNum} className="text-gray px-4" style={{ fontSize: "0.775rem" }}>...</span>
-                : null;
-            }
-            const active = page === pNum;
-            return (
-              <Button
-                key={pNum}
-                version="icon"
-                bg={active ? "primary" : "white"}
-                color={active ? "white" : "gray"}
-                text={String(pNum)}
-                onClick={() => go(pNum)}
-                style={{
-                  ...BTN_STYLE,
-                  color: active ? "#ffffff" : "var(--gray)",
-                }}
-              />
-            );
-          })}
+    return (
+      <div className={`bg-white border-tertiary mt-4 w-full rounded-5 ${className}`} style={style}>
+        <div className="flex items-center justify-between p-10">
+          <p className="text-gray mini-text">
+            Showing {startItem} to {endItem} of {totalItems} {itemName}
+          </p>
+          <div className="flex items-center gap-4">
+            <Button
+              version="icon"
+              bg="forth"
+              color="gray"
+              text="«"
+              title="First Page"
+              disabled={currentPage <= 1}
+              onClick={() => handlePageChange(1)}
+              style={BTN_STYLE}
+            />
+            <Button
+              version="icon"
+              bg="forth"
+              color="gray"
+              text="‹"
+              title="Previous Page"
+              disabled={currentPage <= 1}
+              onClick={() => handlePageChange(currentPage - 1)}
+              style={BTN_STYLE}
+            />
 
-          <NavBtn target={page + 1} label=">" title="Next Page" disabled={page === totalPages} />
-          <NavBtn target={totalPages} label="»" title="Last Page" disabled={page === totalPages} />
+            {pages.map((pNum, index) =>
+              pNum === "..." ? (
+                <span key={`ellipsis-${index}`} className="text-gray px-4 mini-text font-500">
+                  ...
+                </span>
+              ) : (
+                <Button
+                  key={pNum}
+                  version="icon"
+                  bg={currentPage === pNum ? "primary" : "white"}
+                  color={currentPage === pNum ? "white" : "gray"}
+                  text={String(pNum)}
+                  onClick={() => handlePageChange(pNum)}
+                  style={BTN_STYLE}
+                />
+              )
+            )}
+
+            <Button
+              version="icon"
+              bg="forth"
+              color="gray"
+              text="›"
+              title="Next Page"
+              disabled={currentPage >= totalPages}
+              onClick={() => handlePageChange(currentPage + 1)}
+              style={BTN_STYLE}
+            />
+            <Button
+              version="icon"
+              bg="forth"
+              color="gray"
+              text="»"
+              title="Last Page"
+              disabled={currentPage >= totalPages}
+              onClick={() => handlePageChange(totalPages)}
+              style={BTN_STYLE}
+            />
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  }
+);
+
+Pagination.displayName = "Pagination";
 
 export default Pagination;
-

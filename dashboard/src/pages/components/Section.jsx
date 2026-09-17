@@ -3,10 +3,31 @@ import MainLayout from "../../components/layout/sections/MainLayout";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
+import Image from "../../components/common/Image";
+import Modal from "../../components/common/Modal";
+import { showToast } from "../../components/common/Toast";
+
+// Assets imports
+import CROSY from "../../assets/CROSY.png";
+import DSBKO from "../../assets/DSBKO.png";
+import SPLEDO from "../../assets/SPLEDO.png";
+import ENGIN from "../../assets/ENGIN.png";
+import NEXTG from "../../assets/NEXTG.png";
+import GOLDN from "../../assets/GOLDN.png";
+import MEDOX from "../../assets/MEDOX.png";
+import SPRIT from "../../assets/SPRIT.png";
+import LUMIN from "../../assets/LUMIN.png";
+import MANIS from "../../assets/MANIS.png";
+import GAPMS from "../../assets/GAPMS.png";
+import IMSALE from "../../assets/IMSALE.png";
+import KAIOM from "../../assets/KAIOM.png";
+import MASKY from "../../assets/MASKY.png";
+import VINYLS from "../../assets/VINYLS.png";
+import TOFFE from "../../assets/TOFFE.png";
 
 // Sidebar categories for Section groups
 const SIDEBAR_ITEMS = [
-    { name: "All Sections", icon: "Grid", count: 6, color: "#1e74db" },
+    { name: "All Sections", icon: "Grid", count: 10, color: "#1e74db" },
     { name: "Hero Banners", icon: "Layers", count: 2, color: "#10b981" },
     { name: "Feature Grids", icon: "Grid", count: 2, color: "#3b82f6" },
     { name: "Metrics & Stats", icon: "Management", count: 2, color: "#f59e0b" },
@@ -17,13 +38,7 @@ const SIDEBAR_ITEMS = [
 
 // Tabs
 const TABS = [
-    { name: "All Sections", value: "all" },
-    { name: "Hero Banners", value: "hero" },
-    { name: "Feature Grids", value: "features" },
-    { name: "Metrics & Stats", value: "metrics" },
-    { name: "Testimonials", value: "testimonials" },
-    { name: "FAQ & Support", value: "faq" },
-    { name: "Call To Action", value: "cta" },
+    { name: "All Sections", value: "all" }
 ];
 
 const SIDEBAR_TO_TAB = {
@@ -36,326 +51,218 @@ const SIDEBAR_TO_TAB = {
     "Call To Action": "cta",
 };
 
-// Memoized Section Card Container
-const SectionCardWrapper = memo(({ title, subtitle, badge, children }) => (
-    <div className="bg-white rounded-8 bord p-20 mb-16 shadow-sm">
-        <div className="flex items-center justify-between pb-12 mb-16 bordb">
+// Master Section Data with `type` flag
+const SECTIONS_DATA = [
+    {
+        type: "hero",
+        title: "Hero Banner Section",
+        subtitle: "High-impact header banner layouts with live headlines, CTA triggers, and live metrics",
+        items: [
+            {
+                image: CROSY,
+                badge: "Variant A",
+            },
+            {
+                image: DSBKO,
+                badge: "Variant B",
+            },
+            {
+                image: SPLEDO,
+                badge: "Variant C",
+            },
+            {
+                image: ENGIN,
+                badge: "Variant D",
+            },
+            {
+                image: NEXTG,
+                badge: "Variant E",
+            },
+            {
+                image: GOLDN,
+                badge: "Variant F",
+            },
+            {
+                image: MEDOX,
+                badge: "Variant G",
+            },
+            {
+                image: SPRIT,
+                badge: "Variant H",
+            },
+            {
+                image: LUMIN,
+                badge: "Variant I",
+            },
+            {
+                image: MANIS,
+                badge: "Variant J",
+            },
+            {
+                image: GAPMS,
+                badge: "Variant K",
+            },
+            {
+                image: IMSALE,
+                badge: "Variant L",
+            },
+            {
+                image: KAIOM,
+                badge: "Variant M",
+            },
+            {
+                image: MASKY,
+                badge: "Variant N",
+            },
+            {
+                image: VINYLS,
+                badge: "Variant O",
+            },
+            {
+                image: TOFFE,
+                badge: "Variant P",
+            }
+        ],
+    },
+    {
+        type: "features",
+        title: "Feature Grid Section",
+        subtitle: "Multi-column value proposition blocks with icons, typography, and visual showcases",
+        items: [
+            {
+                image: SPLEDO,
+                title: "Hardware & Tech Showcase Grid",
+                desc: "High-tech feature grid with dark aesthetic, retro console styling, and interactive product highlights.",
+                badge: "Variant A",
+                tag: "Tech Showcase",
+                specs: "Multi-Card • Elevation",
+            },
+            {
+                image: ENGIN,
+                title: "Industrial & Services Grid",
+                desc: "Structured corporate feature showcase with bold angled dividers and quick contact actions.",
+                badge: "Variant B",
+                tag: "Corporate Grid",
+                specs: "Asymmetric • Actionable",
+            },
+        ],
+    },
+    {
+        type: "metrics",
+        title: "Metrics & Statistics Section",
+        subtitle: "Telemetry KPI overview counters with comparative growth indicators and telemetry data",
+        items: [
+            {
+                image: NEXTG,
+                title: "Live KPI & Metric Counter Row",
+                desc: "Clean horizontal telemetry bar displaying verified numbers, growth rates, and customer milestone counts.",
+                badge: "Variant A",
+                tag: "Metric Counters",
+                specs: "4-Column KPIs • Live Data",
+            },
+            {
+                image: GOLDN,
+                title: "Industrial Capacity & Stats Showcase",
+                desc: "Comprehensive performance overview with key operational metrics, capability indicators, and highlights.",
+                badge: "Variant B",
+                tag: "Performance KPIs",
+                specs: "Feature KPIs • High Impact",
+            },
+        ],
+    },
+    {
+        type: "testimonials",
+        title: "Customer Testimonials Section",
+        subtitle: "Social proof quotes, client ratings, author avatars, and attribution badges",
+        items: [
+            {
+                image: MEDOX,
+                title: "Agency Social Proof & Reviews",
+                desc: "Client review cards featuring client avatars, verified testimonials, star ratings, and company tags.",
+                badge: "Variant A",
+                tag: "Social Proof",
+                specs: "Customer Quotes • 5 Stars",
+            },
+            {
+                image: SPRIT,
+                title: "Modern Feedback & Case Study Showcase",
+                desc: "Dynamic feedback cards with vibrant gradient backgrounds and verified enterprise client quotes.",
+                badge: "Variant B",
+                tag: "Case Studies",
+                specs: "Rich Gradient • Client Avatars",
+            },
+        ],
+    },
+    {
+        type: "faq",
+        title: "FAQ & Support Section",
+        subtitle: "Collapsible question-and-answer knowledge base for user support",
+        items: [
+            {
+                image: LUMIN,
+                title: "Technical Support & FAQ Hub",
+                desc: "Searchable technical help center section with collapsible answers, service categories, and direct contact.",
+                badge: "Variant A",
+                tag: "Knowledge Base",
+                specs: "Collapsible • Support Hub",
+            },
+        ],
+    },
+    {
+        type: "cta",
+        title: "Call To Action (CTA) Banner",
+        subtitle: "High-conversion lead capture form with headline, search/input, and immediate submission",
+        items: [
+            {
+                image: MANIS,
+                title: "Discovery Platform & Lead Capture CTA",
+                desc: "Full-width high-conversion lead generation banner with integrated search input, filter pills, and action triggers.",
+                badge: "Variant A",
+                tag: "High Conversion",
+                specs: "Lead Capture • Interactive",
+            },
+        ],
+    },
+];
+
+// Memoized Section Card Container (Kept as it is)
+const SectionCard = memo(({ title, subtitle, badge, children }) => (
+    <div className="bg-white rounded-5 p-16 mb-14">
+        <div className="flex items-center justify-between bordb pb-10">
             <div>
-                <div className="flex items-center gap-8">
-                    <h3 className="para-text font-600 text-dark">{title}</h3>
-                    {badge && (
-                        <span className="mini-text font-600 px-8 py-2 rounded-20 bg-forth text-primary">
-                            {badge}
-                        </span>
-                    )}
-                </div>
-                {subtitle && <p className="mini-text text-gray mt-2">{subtitle}</p>}
+                <h3 className="headmini-text font-600 text-dark">{title}</h3>
+                {subtitle && <p className="mini-text text-gray">{subtitle}</p>}
             </div>
+            <p className="mini-text font-500 px-14 py-7 rounded-30 bg-light-primary text-primary">
+                {badge}
+            </p>
         </div>
-        {children}
+        <div className="py-14">
+            {children}
+        </div>
     </div>
 ));
-SectionCardWrapper.displayName = "SectionCardWrapper";
+SectionCard.displayName = "SectionCard";
 
-// 1. Memoized Hero Section Block
-const HeroSectionBlock = memo(() => (
-    <SectionCardWrapper
-        title="Hero Banner Section"
-        subtitle="High-impact header banner with headline, call-to-action triggers, and live trust metrics"
-        badge="Hero Variant A"
+// Enhanced Image Card with Hover Elevation & Modal Action
+const SectionImageCard = memo(({ item, onPreview }) => (
+    <div
+        className="relative overflow-hidden cursor-pointer bg-dark p-12 rounded-5"
+        onClick={() => onPreview?.(item)}
     >
-        <div
-            className="rounded-8 p-32 text-center relative overflow-hidden"
-            style={{
-                background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
-                color: "#ffffff",
-            }}
-        >
-            <div className="flex justify-center mb-12">
-                <span className="mini-text font-600 px-12 py-4 rounded-20 bg-primary text-white uppercase tracking-wider">
-                    Next-Gen Architecture 2026
-                </span>
-            </div>
-            <h1 className="head-text font-600 text-white mb-12" style={{ maxWidth: 720, margin: "0 auto 12px" }}>
-                Build Scalable Enterprise Dashboards with Modular UI Systems
-            </h1>
-            <p className="small-text text-gray mb-24" style={{ maxWidth: 580, margin: "0 auto 24px", color: "#94a3b8" }}>
-                Empower your engineering team with production-ready layout components, memoized state handling, and accessible UI controls.
+        <Image
+            src={item.image}
+            alt={item.title}
+            className="w-full h-200 object-contain flex"
+        />
+        <div className="absolute top-0 right-0 m-10">
+            <p className="mini-text font-600 px-8 py-4 rounded-20 bg-white text-dark">
+                {item.badge}
             </p>
-            <div className="flex items-center justify-center gap-12 mb-28">
-                <Button text="Get Started Free" version="v2" bg="primary" color="white" />
-                <Button text="Live Documentation" version="v2" bg="white" color="dark" border="white" />
-            </div>
-
-            {/* Metrics Trust Row */}
-            <div
-                className="grid-cols-3 gap-16 pt-20 bordt"
-                style={{ borderColor: "rgba(255, 255, 255, 0.1)", maxWidth: 640, margin: "0 auto" }}
-            >
-                <div>
-                    <h4 className="headmini-text text-white font-600">99.99%</h4>
-                    <p className="mini-text text-gray" style={{ color: "#94a3b8" }}>Uptime SLA Guarantee</p>
-                </div>
-                <div>
-                    <h4 className="headmini-text text-white font-600">250,000+</h4>
-                    <p className="mini-text text-gray" style={{ color: "#94a3b8" }}>Active Enterprise Users</p>
-                </div>
-                <div>
-                    <h4 className="headmini-text text-white font-600">4.9 / 5.0</h4>
-                    <p className="mini-text text-gray" style={{ color: "#94a3b8" }}>Developer Satisfaction</p>
-                </div>
-            </div>
         </div>
-    </SectionCardWrapper>
+    </div>
 ));
-HeroSectionBlock.displayName = "HeroSectionBlock";
-
-// 2. Memoized Features Grid Block
-const FeaturesGridBlock = memo(() => {
-    const features = useMemo(
-        () => [
-            {
-                icon: "Layers",
-                color: "#1e74db",
-                title: "Atomic Design System",
-                desc: "Every component is meticulously isolated, typed, and structured according to standard design tokens.",
-            },
-            {
-                icon: "Settings",
-                color: "#10b981",
-                title: "Optimized Memoization",
-                desc: "Harness React.memo and useCallback primitives to prevent cascading renders across deep UI trees.",
-            },
-            {
-                icon: "Management",
-                color: "#f59e0b",
-                title: "Role-Based Security",
-                desc: "Built-in permission boundaries, granular route controls, and role-based data view filters.",
-            },
-        ],
-        []
-    );
-
-    return (
-        <SectionCardWrapper
-            title="Feature Grid Section"
-            subtitle="Multi-column value proposition blocks with icons, typography, and hover elevation"
-            badge="3-Column Grid"
-        >
-            <div className="grid-cols-3 gap-16">
-                {features.map((item, idx) => (
-                    <div
-                        key={idx}
-                        className="p-20 rounded-8 bg-forth bord transition hover-shadow"
-                        style={{ borderLeft: `4px solid ${item.color}` }}
-                    >
-                        <div
-                            className="flex items-center justify-center rounded-5 mb-12"
-                            style={{ backgroundColor: `${item.color}15`, width: 36, height: 36, color: item.color }}
-                        >
-                            <Icon name={item.icon} width="20" height="20" />
-                        </div>
-                        <h4 className="small-text font-600 text-dark mb-6">{item.title}</h4>
-                        <p className="mini-text text-gray" style={{ lineHeight: 1.6 }}>
-                            {item.desc}
-                        </p>
-                    </div>
-                ))}
-            </div>
-        </SectionCardWrapper>
-    );
-});
-FeaturesGridBlock.displayName = "FeaturesGridBlock";
-
-// 3. Memoized Metrics & Stats Block
-const MetricsStatsBlock = memo(() => {
-    const metrics = useMemo(
-        () => [
-            { label: "Total Gross Revenue", value: "₹48.6 Lakhs", change: "+24.8%", isUp: true, color: "#10b981" },
-            { label: "Active Subscriptions", value: "14,290", change: "+12.4%", isUp: true, color: "#1e74db" },
-            { label: "Lead Conversion Rate", value: "38.2%", change: "+5.1%", isUp: true, color: "#8b5cf6" },
-            { label: "Avg. Resolution Time", value: "1.4 hrs", change: "-18.5%", isUp: true, color: "#f59e0b" },
-        ],
-        []
-    );
-
-    return (
-        <SectionCardWrapper
-            title="Metrics & Statistics Section"
-            subtitle="Telemetry KPI overview counters with comparative growth indicators"
-            badge="4-Column KPI"
-        >
-            <div className="grid-cols-4 gap-16">
-                {metrics.map((stat, idx) => (
-                    <div key={idx} className="p-16 rounded-8 bg-forth bord">
-                        <p className="mini-text text-gray mb-4">{stat.label}</p>
-                        <h3 className="mid-text font-600 text-dark mb-8">{stat.value}</h3>
-                        <div className="flex items-center gap-6">
-                            <span
-                                className="mini-text font-600 px-6 py-2 rounded-5"
-                                style={{ backgroundColor: `${stat.color}18`, color: stat.color }}
-                            >
-                                {stat.change}
-                            </span>
-                            <span className="mini-text text-gray">vs previous month</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </SectionCardWrapper>
-    );
-});
-MetricsStatsBlock.displayName = "MetricsStatsBlock";
-
-// 4. Memoized Testimonials Block
-const TestimonialsBlock = memo(() => {
-    const reviews = useMemo(
-        () => [
-            {
-                quote: "The modular layout and memoized state architecture transformed our dashboard render times from seconds to single-digit milliseconds.",
-                author: "Priya Sharma",
-                role: "VP of Engineering, CloudScale",
-                rating: 5,
-                initials: "PS",
-                color: "#1e74db",
-            },
-            {
-                quote: "Everything from form fields to collapsible sidebars is plug-and-play. It saved our engineering team weeks of boilerplate development.",
-                author: "Devon Vance",
-                role: "Product Lead, FinMatrix",
-                rating: 5,
-                initials: "DV",
-                color: "#10b981",
-            },
-        ],
-        []
-    );
-
-    return (
-        <SectionCardWrapper
-            title="Customer Testimonials Section"
-            subtitle="Social proof quotes, ratings, author avatars, and attribution badges"
-            badge="Social Proof"
-        >
-            <div className="grid-cols-2 gap-16">
-                {reviews.map((rev, idx) => (
-                    <div key={idx} className="p-20 rounded-8 bg-forth bord flex flex-column justify-between">
-                        <div>
-                            <div className="flex gap-4 mb-10 text-warning" style={{ color: "#f59e0b" }}>
-                                {Array.from({ length: rev.rating }).map((_, i) => (
-                                    <span key={i}>★</span>
-                                ))}
-                            </div>
-                            <p className="small-text text-dark font-500 mb-16" style={{ lineHeight: 1.6 }}>
-                                "{rev.quote}"
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-12 pt-12 bordt">
-                            <div
-                                className="flex items-center justify-center rounded-full text-white font-600 mini-text"
-                                style={{ width: 38, height: 38, backgroundColor: rev.color }}
-                            >
-                                {rev.initials}
-                            </div>
-                            <div>
-                                <h4 className="small-text font-600 text-dark">{rev.author}</h4>
-                                <p className="mini-text text-gray">{rev.role}</p>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </SectionCardWrapper>
-    );
-});
-TestimonialsBlock.displayName = "TestimonialsBlock";
-
-// 5. Memoized FAQ Block
-const FaqBlock = memo(() => {
-    const [openIdx, setOpenIdx] = useState(0);
-
-    const questions = useMemo(
-        () => [
-            {
-                q: "How does MainLayout optimize rendering speed?",
-                a: "MainLayout wraps all key segments (CategoryItem, MainLayoutSidebar, MainLayoutHeader) in React.memo and handles event callbacks via useCallback, preventing recursive DOM reconciliation during state changes.",
-            },
-            {
-                q: "Can I customize sidebar items and active filter drawers?",
-                a: "Yes! MainLayout accepts customizable sidebarItems, tabs, filterInputs, and custom quick actions, providing complete flexibility for diverse pages.",
-            },
-            {
-                q: "Does MainLayout support responsive mobile devices?",
-                a: "Absolutely. The layout system is fully responsive with fluid width transitions, collapsible navigation drawers, and auto-adapting grids.",
-            },
-        ],
-        []
-    );
-
-    const handleToggle = useCallback((idx) => {
-        setOpenIdx((prev) => (prev === idx ? -1 : idx));
-    }, []);
-
-    return (
-        <SectionCardWrapper
-            title="Frequently Asked Questions (FAQ)"
-            subtitle="Collapsible question-and-answer accordions for user support"
-            badge="Accordion List"
-        >
-            <div className="grid-cols-1 gap-8">
-                {questions.map((item, idx) => {
-                    const isOpen = openIdx === idx;
-                    return (
-                        <div key={idx} className="rounded-8 bg-forth bord p-16 cursor-pointer" onClick={() => handleToggle(idx)}>
-                            <div className="flex items-center justify-between">
-                                <h4 className="small-text font-600 text-dark">{item.q}</h4>
-                                <span className="small-text font-600 text-gray">{isOpen ? "−" : "+"}</span>
-                            </div>
-                            {isOpen && (
-                                <p className="mini-text text-gray mt-8 pt-8 bordt" style={{ lineHeight: 1.6 }}>
-                                    {item.a}
-                                </p>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-        </SectionCardWrapper>
-    );
-});
-FaqBlock.displayName = "FaqBlock";
-
-// 6. Memoized Call to Action Block
-const CallToActionBlock = memo(() => (
-    <SectionCardWrapper
-        title="Call To Action (CTA) Banner"
-        subtitle="High-conversion lead capture form with headline, input, and immediate submission"
-        badge="Lead Capture"
-    >
-        <div
-            className="p-28 rounded-8 text-center"
-            style={{
-                background: "linear-gradient(135deg, #1e40af 0%, #1e74db 100%)",
-                color: "#ffffff",
-            }}
-        >
-            <h3 className="mid-text font-600 text-white mb-8">Ready to Accelerate Your Dashboard Development?</h3>
-            <p className="small-text mb-20" style={{ color: "#dbeafe", maxWidth: 500, margin: "0 auto 20px" }}>
-                Join thousands of engineers building high-performance web applications with our modular components.
-            </p>
-            <div className="flex items-center justify-center gap-8" style={{ maxWidth: 440, margin: "0 auto" }}>
-                <input
-                    type="email"
-                    placeholder="Enter your work email"
-                    className="p-10 rounded-5 border-0 mini-text text-dark flex-1"
-                    style={{ outline: "none" }}
-                />
-                <Button text="Subscribe" version="v2" bg="dark" color="white" />
-            </div>
-        </div>
-    </SectionCardWrapper>
-));
-CallToActionBlock.displayName = "CallToActionBlock";
+SectionImageCard.displayName = "SectionImageCard";
 
 // Memoized Filter Drawer Content
 const FilterDrawerContent = memo(({ density, setDensity, search, setSearch }) => {
@@ -394,9 +301,8 @@ const Section = () => {
     const [selectedCategory, setSelectedCategory] = useState("All Sections");
     const [density, setDensity] = useState("comfortable");
     const [search, setSearch] = useState("");
-    const [copied, setCopied] = useState(false);
+    const [previewItem, setPreviewItem] = useState(null);
 
-    // Handlers wrapped in useCallback
     const handleSidebarItemClick = useCallback((name) => {
         setSelectedCategory(name);
         const mappedTab = SIDEBAR_TO_TAB[name];
@@ -414,11 +320,27 @@ const Section = () => {
         setSearch("");
     }, []);
 
-    const handleCopyBlueprint = useCallback(() => {
-        navigator.clipboard?.writeText(JSON.stringify({ sectionTab: activeTab, category: selectedCategory }, null, 2));
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    }, [activeTab, selectedCategory]);
+    const handlePreview = useCallback((item) => {
+        setPreviewItem(item);
+    }, []);
+
+    // Filter master array by activeTab and search keyword
+    const filteredSections = useMemo(() => {
+        const q = search.toLowerCase().trim();
+        return SECTIONS_DATA
+            .filter((sec) => activeTab === "all" || sec.type === activeTab)
+            .map((sec) => {
+                if (!q) return sec;
+                const matchedItems = sec.items.filter((item) =>
+                    item.title.toLowerCase().includes(q) ||
+                    item.desc.toLowerCase().includes(q) ||
+                    item.tag.toLowerCase().includes(q) ||
+                    item.badge.toLowerCase().includes(q)
+                );
+                return { ...sec, items: matchedItems };
+            })
+            .filter((sec) => sec.items.length > 0);
+    }, [activeTab, search]);
 
     const hasActiveFilters = useMemo(
         () => density !== "comfortable" || search !== "",
@@ -437,23 +359,6 @@ const Section = () => {
         [density, search]
     );
 
-    const quickActionNode = useMemo(
-        () => (
-            <div className="flex items-center gap-8">
-                <Button
-                    text={copied ? "Copied!" : "Copy Blueprint"}
-                    version="v2"
-                    bg="primary"
-                    color="white"
-                    icon="Layers"
-                    onClick={handleCopyBlueprint}
-                    title="Copy section schema to clipboard"
-                />
-            </div>
-        ),
-        [copied, handleCopyBlueprint]
-    );
-
     return (
         <MainLayout
             sidebarTitle="Section Groups"
@@ -463,7 +368,7 @@ const Section = () => {
             headerIcon={<Icon name="Layers" width="18" height="18" />}
             headerTitle="UI Sections Library"
             headerSub="Explore, preview, and configure modular UI layout sections for responsive modern applications"
-            quickAction={quickActionNode}
+            quickAction=''
             showTabControls={true}
             tabs={TABS}
             activeTab={activeTab}
@@ -473,23 +378,43 @@ const Section = () => {
             hasActiveFilters={hasActiveFilters}
             onClearAllFilters={handleClearFilters}
         >
-            {/* 1. Hero Banners */}
-            {(activeTab === "all" || activeTab === "hero") && <HeroSectionBlock />}
+            {filteredSections.length === 0 ? (
+                <div className="bg-white rounded-5 p-32 text-center bord">
+                    <p className="text-gray small-text">No sections found matching "{search}".</p>
+                </div>
+            ) : (
+                filteredSections.map((section) => (
+                    <SectionCard
+                        key={section.type}
+                        title={section.title}
+                        subtitle={section.subtitle}
+                        badge={`${section.items.length} ${section.items.length > 1 ? "Variants" : "Variant"}`}
+                    >
+                        <div className="grid-cols-3 gap-12">
+                            {section.items.map((item, idx) => (
+                                <SectionImageCard key={idx} item={item} onPreview={handlePreview} />
+                            ))}
+                        </div>
+                    </SectionCard>
+                ))
+            )}
 
-            {/* 2. Feature Grids */}
-            {(activeTab === "all" || activeTab === "features") && <FeaturesGridBlock />}
-
-            {/* 3. Metrics & Stats */}
-            {(activeTab === "all" || activeTab === "metrics") && <MetricsStatsBlock />}
-
-            {/* 4. Testimonials */}
-            {(activeTab === "all" || activeTab === "testimonials") && <TestimonialsBlock />}
-
-            {/* 5. FAQ & Support */}
-            {(activeTab === "all" || activeTab === "faq") && <FaqBlock />}
-
-            {/* 6. Call To Action */}
-            {(activeTab === "all" || activeTab === "cta") && <CallToActionBlock />}
+            {previewItem && (
+                <Modal
+                    isOpen={Boolean(previewItem)}
+                    onClose={() => setPreviewItem(null)}
+                    title='Section Preview'
+                    size="md"
+                >
+                    <div className="bg-dark px-12 rounded-10">
+                        <Image
+                            src={previewItem.image}
+                            alt={previewItem.title}
+                            className="w-full h-250 object-contain"
+                        />
+                    </div>
+                </Modal>
+            )}
         </MainLayout>
     );
 };

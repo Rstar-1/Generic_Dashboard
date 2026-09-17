@@ -215,7 +215,7 @@ const Tasks = () => {
             hasActiveFilters={hasActiveFilters}
             onClearAllFilters={handleClearFilters}
         >
-            <div className="bg-white rounded-8 bord p-20 shadow-sm">
+            <div>
                 <Table
                     title="Task Backlog & Assignments"
                     subtitle="Track sprint progress, deliverables, and team member assignments"

@@ -223,7 +223,7 @@ const Customer = () => {
             hasActiveFilters={hasActiveFilters}
             onClearAllFilters={handleClearFilters}
         >
-            <div className="bg-white rounded-8 bord p-20 shadow-sm">
+            <div>
                 <Table
                     title="Customer Directory"
                     subtitle="Comprehensive list of verified enterprise, partner, and retail clients"

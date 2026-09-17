@@ -27087,6 +27087,10 @@ input[type="checkbox"]:checked::after {
   opacity: 0.80 !important;
 }
 
+.opacity-0 {
+  opacity: 0 !important;
+}
+
 /* ======================= End-Common ======================= */
 
 /* ======================= Start-Table ======================= */

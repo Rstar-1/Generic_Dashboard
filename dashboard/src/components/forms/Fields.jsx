@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef, useId } from "react";
 import Icon from "./../common/Icon";
 import {
   MONTH_NAMES,
@@ -306,10 +306,24 @@ const Fields = React.memo(
     const [isOpen, setIsOpen] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
+    const fieldId = useId();
+    const fieldRef = useRef(null);
     const otpRefs = useRef([]);
     const fileInputRef = useRef(null);
 
     const normVer = normalizeVersion(version);
+
+    const toggleOpen = useCallback(() => {
+      setIsOpen((prev) => {
+        const next = !prev;
+        if (next && typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("field-dropdown-open", { detail: fieldId })
+          );
+        }
+        return next;
+      });
+    }, [fieldId]);
 
     const [datepickerM, setDatepickerM] = useState(() => {
       const dateVal =
@@ -352,11 +366,29 @@ const Fields = React.memo(
 
     useEffect(() => {
       if (!isOpen) return;
-      const close = (e) =>
-        !e.target.closest(".dropdown-box") && setIsOpen(false);
-      document.addEventListener("click", close);
-      return () => document.removeEventListener("click", close);
-    }, [isOpen]);
+
+      const handleOutsideClick = (e) => {
+        if (fieldRef.current && !fieldRef.current.contains(e.target)) {
+          setIsOpen(false);
+        }
+      };
+
+      const handleOtherOpen = (e) => {
+        if (e.detail !== fieldId) {
+          setIsOpen(false);
+        }
+      };
+
+      document.addEventListener("mousedown", handleOutsideClick);
+      document.addEventListener("touchstart", handleOutsideClick);
+      window.addEventListener("field-dropdown-open", handleOtherOpen);
+
+      return () => {
+        document.removeEventListener("mousedown", handleOutsideClick);
+        document.removeEventListener("touchstart", handleOutsideClick);
+        window.removeEventListener("field-dropdown-open", handleOtherOpen);
+      };
+    }, [isOpen, fieldId]);
 
     const validate = useCallback(
       (val) => {
@@ -524,7 +556,7 @@ const Fields = React.memo(
               />
               <div
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute top-0 right-0 p-10 cursor-pointer text-gray flex items-center justify-center h-full"
+                className="absolute top-0 right-0 m-12 cursor-pointer text-gray"
                 style={{ background: "transparent" }}
               >
                 <Icon
@@ -557,7 +589,7 @@ const Fields = React.memo(
                       }
                     }
                   }
-                  setIsOpen(!isOpen);
+                  toggleOpen();
                 }}
               >
                 <div className="w-10">
@@ -611,7 +643,7 @@ const Fields = React.memo(
                       setDatepickerY(parsed.getFullYear());
                     }
                   }
-                  setIsOpen(!isOpen);
+                  toggleOpen();
                 }}
               >
                 <p className="mini-text text-gray line-clamp1">{dateStr || "mm/dd/yyyy"}</p>
@@ -673,7 +705,9 @@ const Fields = React.memo(
                 ...style,
                 resize: "vertical",
                 minHeight: "90px",
-                padding: '10px 0'
+                padding: '10px 10px',
+                textIndent: '0px',
+                borderRadius: '6px'
               }}
             />
           );
@@ -681,7 +715,7 @@ const Fields = React.memo(
         case "checkbox": {
           if (!options || options.length === 0) {
             return (
-              <div className="flex items-center gap-8 py-4">
+              <div className="flex items-center gap-3 py-4">
                 <input
                   type="checkbox"
                   checked={!!value}
@@ -703,7 +737,7 @@ const Fields = React.memo(
                 return (
                   <label
                     key={optVal}
-                    className="flex items-center gap-8 cursor-pointer"
+                    className="flex items-center gap-3 cursor-pointer"
                     style={{ userSelect: "none" }}
                   >
                     <input
@@ -727,13 +761,13 @@ const Fields = React.memo(
         case "radio": {
           if (!options || options.length === 0) {
             return (
-              <div className="flex items-center gap-8 py-4">
+              <div className="flex items-center gap-3 py-4">
                 <input
                   type="radio"
                   checked={!!value}
                   onChange={(e) => onChange?.(e.target.checked)}
                   className="cursor-pointer"
-                  style={{ width: "18px", height: "18px", accentColor: "#6366f1" }}
+                  style={{ width: "14px", height: "14px", accentColor: "var(--primary)" }}
                 />
               </div>
             );
@@ -747,7 +781,7 @@ const Fields = React.memo(
                 return (
                   <label
                     key={optVal}
-                    className="flex items-center gap-8 cursor-pointer mini-text text-gray"
+                    className="flex items-center gap-3 cursor-pointer"
                     style={{ userSelect: "none" }}
                   >
                     <input
@@ -755,9 +789,9 @@ const Fields = React.memo(
                       checked={value === optVal}
                       onChange={() => onChange?.(optVal)}
                       className="cursor-pointer"
-                      style={{ width: "18px", height: "18px", accentColor: "#6366f1" }}
+                      style={{ width: "14px", height: "14px", accentColor: "var(--primary)" }}
                     />
-                    <span>{optLabel}</span>
+                    <p className="mini-text text-gray mt-2">{optLabel}</p>
                   </label>
                 );
               })}
@@ -773,8 +807,8 @@ const Fields = React.memo(
               className={`relative cursor-pointer rounded-20 ${isChecked ? "bg-success" : "bg-gray"}`}
               style={{
                 display: "inline-block",
-                width: "48px",
-                height: "26px",
+                width: "45px",
+                height: "23px",
                 transition: "background-color 0.2s ease-in-out",
                 marginTop: "4px",
               }}
@@ -784,8 +818,8 @@ const Fields = React.memo(
                 style={{
                   top: "3px",
                   left: isChecked ? "25px" : "3px",
-                  width: "20px",
-                  height: "20px",
+                  width: "17px",
+                  height: "17px",
                   boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
                   transition: "left 0.2s ease-in-out",
                 }}
@@ -834,40 +868,34 @@ const Fields = React.memo(
           const fileName = hasFile ? value[0].name : "No file chosen";
           return (
             <div
-              className={`flex items-center justify-between px-12 cursor-pointer h-select relative overflow-hidden ${className}`}
+              className={`cursor-pointer relative overflow-hidden ${className}`}
               style={{ ...computedBoxStyle, ...style }}
             >
-              <span className="mini-text text-gray truncate pr-24">{fileName}</span>
-              <div className="flex items-center gap-4 text-gray mini-text font-medium relative z-10">
-                {hasFile ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onChange?.(null);
-                    }}
-                    className="flex items-center justify-center cursor-pointer border-0"
-                    style={{
-                      background: "none",
-                      color: "#9ca3af",
-                      padding: "4px",
-                      borderRadius: "4px",
-                      transition: "color 0.15s, background-color 0.15s",
-                    }}
-                  >
-                    <Icon name="Close" width="16" height="16" stroke="currentColor" />
-                  </button>
-                ) : (
-                  <Icon name="Upload" width="16" height="16" stroke="currentColor" />
-                )}
+              <div className="flex items-center justify-between px-12 h-full">
+                <span className="mini-text text-gray">{fileName}</span>
+                <div className="flex items-center gap-4 relative z-10">
+                  {hasFile ? (
+                    <p
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onChange?.(null);
+                      }}
+                      className="mini-text text-gray"
+                    >
+                      <Icon name="Close" width="16" height="16" stroke="var(--gray)" />
+                    </p>
+                  ) : (
+                    <Icon name="Upload" width="16" height="16" stroke="var(--gray)" />
+                  )}
+                </div>
+                <input
+                  type="file"
+                  onChange={(e) => onChange?.(e.target.files)}
+                  className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-0"
+                  aria-label={label || "File upload"}
+                />
               </div>
-              <input
-                type="file"
-                onChange={(e) => onChange?.(e.target.files)}
-                className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-0"
-                aria-label={label || "File upload"}
-              />
             </div>
           );
         }
@@ -986,7 +1014,7 @@ const Fields = React.memo(
             >
               <div
                 className={`flex items-center justify-between h-full px-14 cursor-pointer`}
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={toggleOpen}
               >
                 <p className="mini-text text-gray line-clamp1">{displayValue}</p>
                 {isMulti && value?.length ? (
@@ -1139,19 +1167,21 @@ const Fields = React.memo(
 
         case "rating":
           return (
-            <div className="flex gap-4">
+            <div className="flex items-center gap-4">
               {[1, 2, 3, 4, 5].map((star) => (
-                <p
+                <div
                   key={star}
-                  className="cursor-pointer headpara-text"
-                  style={{
-                    color: star <= value ? "#fbbf24" : "#d1d5db",
-                    transition: "color 0.15s ease-in-out",
-                  }}
-                  onClick={() => onChange?.(star)}
+                  className='cursor-pointer'
+                  onClick={() => !props.disabled && onChange?.(star)}
                 >
-                  ★
-                </p>
+                  <Icon
+                    name="Star"
+                    width="22"
+                    height="22"
+                    stroke={star <= value ? "var(--warning)" : "var(--tertiary)"}
+                    fill={star <= value ? "var(--warning)" : "var(--tertiary)"}
+                  />
+                </div>
               ))}
             </div>
           );
@@ -1180,14 +1210,14 @@ const Fields = React.memo(
           return (
             <div className="py-4 w-full">
               <style>{SLIDER_STYLES}</style>
-              <div className="flex justify-between items-center mb-6">
-                <span className="mini-text text-gray font-400">₹{min}</span>
-                <span className="mini-text text-primary font-600">
+              <div className="flex justify-between items-center mb-4">
+                <p className="mini-text text-gray font-400">₹{min}</p>
+                <p className="mini-text text-primary font-600">
                   Up to ₹{val.toLocaleString()}
-                </span>
-                <span className="mini-text text-gray font-400">
+                </p>
+                <p className="mini-text text-gray font-400">
                   ₹{max.toLocaleString()}
-                </span>
+                </p>
               </div>
               <input
                 type="range"
@@ -1214,7 +1244,10 @@ const Fields = React.memo(
     }
 
     return (
-      <div className={`w-full grid-cols-1 ${wrapperClassName || fieldClassName || ""}`.trim()}>
+      <div
+        ref={fieldRef}
+        className={`w-full grid-cols-1 ${wrapperClassName || fieldClassName || ""}`.trim()}
+      >
         {label && <label className="mini-text font-500 text-gray mb-4 block">{label}</label>}
         {renderField()}
         {error && <small className="text-danger mt-2 mini-text">{error}</small>}
