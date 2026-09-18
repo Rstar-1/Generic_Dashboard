@@ -17,6 +17,7 @@ import Toast, { showToast, TYPES } from "../../components/common/Toast";
 import Dropdown from "../../components/common/Dropdown";
 import Tooltip from "../../components/common/Tooltip";
 import Magnify from "../../components/common/Magnify";
+import Badge, { BadgeList } from "../../components/common/Badge";
 import Fields from "../../components/forms/Fields";
 
 import { resolveImagePath, dashImg, soboLogo, hero as heroImg } from "../../utils/imageResolver";
@@ -867,6 +868,36 @@ const TemplateSection = () => {
                 />
             </div>
         ),
+        badge: (values) => {
+            if (values.mode === "list") {
+                const sampleTags = values.text
+                    ? values.text.split(",").map((s) => s.trim()).filter(Boolean)
+                    : ["Frontend", "Performance", "React 19", "Design System"];
+                return (
+                    <BadgeList
+                        items={sampleTags}
+                        color={values.color}
+                        shape={values.shape}
+                        size={values.size}
+                    />
+                );
+            }
+            const isRemovable = values.removable === true || values.removable === "true";
+            return (
+                <div className="flex flex-wrap items-center justify-center gap-12 py-10">
+                    <Badge
+                        text={values.text || "Active Member"}
+                        color={values.color}
+                        variant={values.variant}
+                        shape={values.shape}
+                        size={values.size}
+                        icon={values.icon || undefined}
+                        onRemove={isRemovable ? () => showToast(`Removed badge: ${values.text || "Active Member"}`, "info") : undefined}
+                        onClick={() => showToast(`Badge clicked: ${values.text || "Active Member"}`, "info")}
+                    />
+                </div>
+            );
+        },
         magnify: (values) => <MagnifyDemoPreview values={values} />,
         table: (values) => (
             <div className="w-full">

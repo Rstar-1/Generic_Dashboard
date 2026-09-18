@@ -6,6 +6,8 @@ import Image from "./Image";
 import Skeleton from "./Skeleton";
 import Button from "./Button";
 import Fields from "../forms/Fields";
+import { formatDate } from "../../utils/formatDate";
+import Badge, { BadgeList, BADGE_MAP } from "./Badge";
 
 const getNestedValue = (obj, path) => {
     if (!obj || !path) return undefined;
@@ -18,20 +20,7 @@ const getNestedValue = (obj, path) => {
     return undefined;
 };
 
-export const formatDate = (val) => {
-    if (!val) return "-";
-    const raw = typeof val === "object" && val?.$date ? val.$date : val;
-    if (typeof raw === "string" && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw.trim())) return raw.trim();
-    const d = new Date(raw);
-    return isNaN(d.getTime()) ? String(val) : `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-};
-
-const BADGE_MAP = {
-    admin: { bg: "#fee2e2", color: "#991b1b" },
-    user: { bg: "#dcfce3", color: "#166534" },
-    member: { bg: "#dcfce3", color: "#166534" },
-    public: { bg: "#dcfce3", color: "#166534" },
-};
+export { formatDate, Badge, BadgeList, BADGE_MAP };
 
 // Memoized Actions Subcomponent
 const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, actions, editTitle, deleteTitle, viewTitle }) => {
@@ -220,7 +209,7 @@ const TableCell = React.memo(({
         const rawDate = cellValue !== undefined && cellValue !== null && cellValue !== ""
             ? cellValue
             : (col.header === "Created" ? (row.createdAt || row.createdDate || row.date || "2026-08-09") : (row.updatedAt || row.updatedDate || row.lastActive || "2026-08-13"));
-        return <p className="text-gray mini-text font-500" style={{ margin: 0 }}>{formatDate(rawDate)}</p>;
+        return <p className="text-gray mini-text font-500" style={{ margin: 0 }}>{formatDate(rawDate, col.dateFormat || col.format) || "-"}</p>;
     }
 
     // Actions
@@ -265,13 +254,12 @@ const TableCell = React.memo(({
             case "badge-list":
             case "arr-badge":
                 return (
-                    <div className="flex items-center gap-4 flex-wrap">
-                        {(Array.isArray(cellValue) ? cellValue : []).map((val, idx) => (
-                            <p key={idx} className="bg-light-primary text-primary mini-text capitalize px-10 py-4 rounded-5 font-500" style={{ margin: 0 }}>
-                                {val}
-                            </p>
-                        ))}
-                    </div>
+                    <BadgeList
+                        items={cellValue}
+                        color={col.badgeColor || "primary"}
+                        shape={col.badgeShape || "rounded"}
+                        size="sm"
+                    />
                 );
             case "status": {
                 const lower = String(cellValue || "").toLowerCase();
@@ -279,42 +267,40 @@ const TableCell = React.memo(({
                 const statusColor = isActive ? "#10b981" : "#ef4444";
                 const displayLabel = cellValue && typeof cellValue === "string" ? cellValue : (isActive ? "Active" : "Inactive");
                 return (
-                    <div className="flex items-center gap-6">
-                        <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: statusColor, boxShadow: `0 0 6px ${statusColor}` }} />
-                        <p className={`${isActive ? "text-success" : "text-danger"} small-text font-500`} style={{ margin: 0 }}>
-                            {displayLabel}
-                        </p>
-                    </div>
+                    <Badge
+                        variant="status"
+                        dot={statusColor}
+                        text={displayLabel}
+                        textColor={isActive ? "var(--success, #10b981)" : "var(--danger, #ef4444)"}
+                        className="small-text font-500"
+                    />
                 );
             }
-            case "badge": {
-                const valStr = String(cellValue || "").toLowerCase();
-                const { bg = "#eff6ff", color = "#3b82f6" } = BADGE_MAP[valStr] || {};
+            case "badge":
                 return (
-                    <span
-                        style={{ background: valStr ? bg : "#f1f5f9", color: valStr ? color : "#475569", display: "inline-flex" }}
-                        className="mini-text capitalize px-10 py-4 rounded-20 font-500"
-                    >
-                        {cellValue || "-"}
-                    </span>
+                    <Badge
+                        text={cellValue}
+                        bg={col.badgeBg}
+                        textColor={col.badgeColor}
+                        shape={col.badgeShape || "pill"}
+                        size="sm"
+                    />
                 );
-            }
             case "icon-badge": {
                 const valStr = String(cellValue || "").toLowerCase();
                 const isPrivate = ["private", "protected", "closed"].includes(valStr);
                 const isRating = col.accessor === "rating" || col.icon === "Star" || col.iconName === "Star";
+                const iconName = col.icon || col.iconName || (isRating ? "Star" : isPrivate ? "Lock" : "Unlock");
+                const defaultTheme = isRating ? "warning" : isPrivate ? "danger" : "primary";
                 return (
-                    <span
-                        className="flex items-center gap-6 mini-text capitalize px-10 py-4 rounded-20 font-500"
-                        style={{
-                            display: "inline-flex",
-                            backgroundColor: col.badgeBg || (isRating ? "#fef3c7" : isPrivate ? "#fee2e2" : "#eff6ff"),
-                            color: col.badgeColor || (isRating ? "#b45309" : isPrivate ? "#991b1b" : "#3b82f6")
-                        }}
-                    >
-                        <Icon name={col.icon || col.iconName || (isRating ? "Star" : isPrivate ? "Lock" : "Unlock")} width="12" height="12" strokeWidth="2.5" />
-                        {cellValue}
-                    </span>
+                    <Badge
+                        text={cellValue}
+                        icon={iconName}
+                        theme={defaultTheme}
+                        bg={col.badgeBg}
+                        textColor={col.badgeColor}
+                        shape={col.badgeShape || "pill"}
+                    />
                 );
             }
             case "text":
@@ -350,20 +336,11 @@ const TableExpandedDetails = React.memo(({
     actionProps,
 }) => (
     <tr>
-        <td colSpan={displayHeadersCount} className="p-16 bordb bg-light">
-            <div className="bg-white p-16 rounded-5 border-ec shadow-sm" style={{ borderLeft: "4px solid var(--primary-color, #1e74db)" }}>
-                <div className="flex items-center justify-between mb-12">
-                    <h4 className="mini-text text-gray font-600 uppercase tracking-wider flex items-center gap-6" style={{ margin: 0 }}>
-                        <Icon name="Info" width="14" height="14" strokeWidth="2.5" />
-                        Additional Specifications & Details
-                    </h4>
-                    <span className="mini-text text-primary font-500 bg-light-primary px-8 py-2 rounded-4">
-                        {collapsedColumns.length} fields collapsed
-                    </span>
-                </div>
-                <div className="grid-cols-3 gap-16">
+        <td colSpan={displayHeadersCount} className="">
+            <div className="bg-white p-12" style={{ borderLeft: "4px solid var(--primary)" }}>
+                <div className="grid-cols-4 gap-12">
                     {collapsedColumns.map((col, cIdx) => (
-                        <div key={col.accessor || cIdx} className="bg-light p-12 rounded-5 border-ec">
+                        <div key={col.accessor || cIdx} className="p-12 rounded-5 border-ec">
                             <span className="mini-text text-gray font-600 uppercase block mb-6">{col.header}</span>
                             <div className="mini-text text-dark font-500">
                                 <TableCell
@@ -402,7 +379,7 @@ const TableRow = React.memo(({
                 {displayHeaders.map((col, colIdx) => {
                     if (col.accessor === "_expand") {
                         return (
-                            <td key={colIdx} className="p-14 text-center bordb" style={{ verticalAlign: "middle" }}>
+                            <td key={colIdx} className="p-10 text-center bordb" style={{ verticalAlign: "middle" }}>
                                 <button
                                     type="button"
                                     onClick={() => onToggleExpand(rowId)}
@@ -420,7 +397,7 @@ const TableRow = React.memo(({
                         <td
                             key={colIdx}
                             style={{ verticalAlign: "middle", ...col.style }}
-                            className={`p-14 text-dark bordb ${col.className || ""}`}
+                            className={`p-10 text-dark bordb ${col.className || ""}`}
                         >
                             <TableCell
                                 col={col}
@@ -458,7 +435,7 @@ const TableHeader = React.memo(({ displayHeaders, isAllSelected, onToggleSelectA
                     <th
                         key={idx}
                         style={col.style}
-                        className={`bg-primary p-14 capitalize ${col.className || ""}`}
+                        className={`bg-primary p-10 capitalize ${col.className || ""}`}
                     >
                         {isCheckbox ? (
                             <Fields

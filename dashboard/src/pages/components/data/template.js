@@ -19,12 +19,12 @@ import {
 import { ALL_ICONS } from "../../../components/common/Icon";
 
 export const SIDEBAR_ITEMS = [
-  { name: "All Components", icon: "Grid", count: 16, color: "#1e74db" },
+  { name: "All Components", icon: "Grid", count: 17, color: "#1e74db" },
   { name: "Text", icon: "File", count: 1, color: "#6366f1" },
   { name: "Buttons & Actions", icon: "Edit", count: 1, color: "#10b981" },
   { name: "Navigation & Tabs", icon: "Layers", count: 4, color: "#3b82f6" },
   { name: "Feedback & Overlays", icon: "Check", count: 5, color: "#f59e0b" },
-  { name: "Data Display", icon: "Users", count: 3, color: "#8b5cf6" },
+  { name: "Data Display", icon: "Users", count: 4, color: "#8b5cf6" },
   { name: "Data Tables", icon: "Grid", count: 1, color: "#ec4899" },
   {
     name: "Icon Library",
@@ -227,6 +227,54 @@ export const ICON_COLOR_OPTIONS = [
   { label: "Indigo Purple (#6366f1)", value: "#6366f1" },
   { label: "Rose Pink (#ec4899)", value: "#ec4899" },
   { label: "Slate Gray (#64748b)", value: "#64748b" },
+];
+
+export const BADGE_VARIANT_OPTIONS = [
+  { label: "Filled (Pill / Tag)", value: "filled" },
+  { label: "Outline", value: "outline" },
+  { label: "Status Dot", value: "status" },
+];
+
+export const BADGE_COLOR_OPTIONS = [
+  { label: "Primary (Blue)", value: "primary" },
+  { label: "Success (Green / Active)", value: "success" },
+  { label: "Warning (Amber / Pending)", value: "warning" },
+  { label: "Danger (Red / Admin)", value: "danger" },
+  { label: "Info (Cyan / Staff)", value: "info" },
+  { label: "Purple (Vendor / Partner)", value: "purple" },
+  { label: "Secondary (Slate Gray)", value: "secondary" },
+  { label: "Dark", value: "dark" },
+  { label: "Forth", value: "forth" },
+];
+
+export const BADGE_SHAPE_OPTIONS = [
+  { label: "Pill (rounded-20)", value: "pill" },
+  { label: "Rounded Tag (rounded-5)", value: "rounded" },
+  { label: "Square (rounded-0)", value: "square" },
+  { label: "Circle (rounded-full)", value: "circle" },
+];
+
+export const BADGE_SIZE_OPTIONS = [
+  { label: "Small (sm)", value: "sm" },
+  { label: "Medium (md - Default)", value: "md" },
+  { label: "Large (lg)", value: "lg" },
+];
+
+export const BADGE_ICON_OPTIONS = [
+  { label: "None", value: "" },
+  { label: "Check", value: "Check" },
+  { label: "Sparkles", value: "Sparkles" },
+  { label: "Star", value: "Star" },
+  { label: "Lock", value: "Lock" },
+  { label: "Users", value: "Users" },
+  { label: "Clock", value: "Clock" },
+  { label: "Trash", value: "Trash" },
+  { label: "Edit", value: "Edit" },
+];
+
+export const BADGE_MODE_OPTIONS = [
+  { label: "Single Badge", value: "single" },
+  { label: "Badge List / Tags", value: "list" },
 ];
 
 // Sample static data for components
@@ -1464,6 +1512,91 @@ export const getTemplateComponentsData = (previews = {}) => [
     renderPreview: (values, helpers) => previews.accordion?.(values, helpers),
     getCode: (values) =>
       `<Accordion\n  version="${values.version || "v1"}"\n  allowMultiple={${Boolean(values.allowMultiple)}}\n  items={[\n    { title: "First FAQ Question", content: <div>Details content or custom node</div> },\n    { title: "Second FAQ Question", content: <div>Second answer content</div> },\n    { title: "Third FAQ Question", content: <div>Third panel details</div> }\n  ]}\n/>`,
+  },
+
+  // 13. Badge & Tag
+  {
+    id: "badge",
+    category: "display",
+    title: "Badge & Tag Component",
+    subtitle:
+      "Versatile semantic badges, pills, status dots, and tag lists with automatic color mapping",
+    icon: "Layers",
+    defaultValues: {
+      mode: "single",
+      text: "Active Member",
+      color: "success",
+      variant: "filled",
+      shape: "pill",
+      size: "md",
+      icon: "Check",
+      removable: false,
+    },
+    fields: [
+      {
+        name: "mode",
+        label: "Display Mode",
+        type: "select",
+        options: BADGE_MODE_OPTIONS,
+      },
+      {
+        name: "text",
+        label: "Badge Text / Tags (CSV for list)",
+        type: "text",
+        placeholder: "e.g. Active Member or React, Vite, Tailwind",
+      },
+      {
+        name: "color",
+        label: "Color / Theme Preset",
+        type: "select",
+        options: BADGE_COLOR_OPTIONS,
+      },
+      {
+        name: "variant",
+        label: "Variant Style",
+        type: "select",
+        options: BADGE_VARIANT_OPTIONS,
+      },
+      {
+        name: "shape",
+        label: "Badge Shape",
+        type: "select",
+        options: BADGE_SHAPE_OPTIONS,
+      },
+      {
+        name: "size",
+        label: "Badge Size",
+        type: "select",
+        options: BADGE_SIZE_OPTIONS,
+      },
+      {
+        name: "icon",
+        label: "Icon Prefix",
+        type: "select",
+        options: BADGE_ICON_OPTIONS,
+      },
+      {
+        name: "removable",
+        label: "Removable (Show X)",
+        type: "select",
+        options: BOOLEAN_OPTIONS,
+      },
+    ],
+    renderPreview: (values, helpers) => previews.badge?.(values, helpers),
+    getCode: (values) => {
+      if (values.mode === "list") {
+        const tags = values.text
+          ? values.text.split(",").map((s) => s.trim()).filter(Boolean)
+          : ["Frontend", "Performance", "React 19"];
+        return `import { BadgeList } from "src/components/common/Badge";\n\n<BadgeList\n  items={${JSON.stringify(tags)}}\n  color="${values.color || "primary"}"\n  shape="${values.shape || "rounded"}"\n  size="${values.size || "md"}"\n/>`;
+      }
+      const iconProp = values.icon ? `\n  icon="${values.icon}"` : "";
+      const varProp = values.variant && values.variant !== "filled" ? `\n  variant="${values.variant}"` : "";
+      const shapeProp = values.shape && values.shape !== "pill" ? `\n  shape="${values.shape}"` : "";
+      const sizeProp = values.size && values.size !== "md" ? `\n  size="${values.size}"` : "";
+      const remProp = (values.removable === true || values.removable === "true") ? `\n  onRemove={() => handleRemove()}` : "";
+      return `import Badge from "src/components/common/Badge";\n\n<Badge\n  text="${values.text || "Active Member"}"\n  color="${values.color || "primary"}"${varProp}${shapeProp}${sizeProp}${iconProp}${remProp}\n/>`;
+    },
   },
 
   // 13. Magnify

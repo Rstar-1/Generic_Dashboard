@@ -15,20 +15,11 @@ import {
 
 // Navigation tabs for Role management
 const TABS = [
-    { name: "All Roles", value: "all" },
-    { name: "System Admin", value: "admin" },
-    { name: "Vendor Partners", value: "vendor" },
-    { name: "Standard Users", value: "user" },
-    { name: "Management", value: "manager" },
-    { name: "Active Only", value: "Active" },
+    { name: "All Roles", value: "all" }
 ];
 
 const SIDEBAR_TO_TAB = {
-    "All Roles": "all",
-    "Administrator": "admin",
-    "Vendor Partners": "vendor",
-    "Standard Users": "user",
-    "Management": "manager",
+    "All Roles": "all"
 };
 
 // Memoized Filter Drawer Content
@@ -145,16 +136,6 @@ const Role = () => {
         showToast(`Role "${row.name}" revoked & archived!`, "danger");
     }, []);
 
-    const handleAddRole = useCallback(() => {
-        showToast("Create Security Role modal triggered!", "success");
-    }, []);
-
-    const handleExportRoles = useCallback(() => {
-        navigator.clipboard?.writeText(JSON.stringify(roles, null, 2));
-        showToast("RBAC policy matrix copied to clipboard!", "success");
-    }, [roles]);
-
-    // Filter and paginate data
     const filteredRoles = useMemo(() => {
         return roles.filter((item) => {
             // Tab / Category filter
@@ -206,33 +187,6 @@ const Role = () => {
         [statusFilter, permissionFilter]
     );
 
-    const quickActionNode = useMemo(
-        () => (
-            <div className="flex items-center gap-8">
-                <Button
-                    text="Export Matrix"
-                    version="v2"
-                    bg="white"
-                    color="dark"
-                    border="tertiary"
-                    icon="File"
-                    onClick={handleExportRoles}
-                    title="Export RBAC matrix as JSON"
-                />
-                <Button
-                    text="Create Role"
-                    version="v2"
-                    bg="primary"
-                    color="white"
-                    icon="Plus"
-                    onClick={handleAddRole}
-                    title="Define a new security role"
-                />
-            </div>
-        ),
-        [handleExportRoles, handleAddRole]
-    );
-
     return (
         <MainLayout
             sidebarTitle={rolesSidebarData.title}
@@ -242,7 +196,7 @@ const Role = () => {
             headerIcon={<Icon name="Shield" width="18" height="18" />}
             headerTitle="Role Permissions & RBAC"
             headerSub="Define security profiles, granular permissions, privilege hierarchies, and user assignments"
-            quickAction={quickActionNode}
+            quickAction=''
             showTabControls={true}
             tabs={TABS}
             activeTab={activeTab}
@@ -252,7 +206,7 @@ const Role = () => {
             hasActiveFilters={hasActiveFilters}
             onClearAllFilters={handleClearFilters}
         >
-            <div className="bg-white rounded-8 bord p-20 shadow-sm">
+            <div className="bg-white p-14 rounded-10">
                 <Table
                     title="Access Roles & Policies"
                     subtitle="Role-based access control matrix with permission grants and assigned operators"

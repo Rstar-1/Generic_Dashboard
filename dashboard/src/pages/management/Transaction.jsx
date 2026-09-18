@@ -15,10 +15,7 @@ import {
 
 // Tabs for transaction management
 const TABS = [
-    { name: "All Transactions", value: "all" },
-    { name: "Completed", value: "Active" },
-    { name: "Pending", value: "Pending" },
-    { name: "Failed / Refunded", value: "Inactive" },
+    { name: "All Transactions", value: "all" }
 ];
 
 const SIDEBAR_TO_TAB = {
@@ -122,10 +119,6 @@ const Transaction = () => {
         showToast(`Transaction ${row.transactionId} cancelled & archived!`, "danger");
     }, []);
 
-    const handleReconcile = useCallback(() => {
-        showToast("Ledger reconciliation completed: 100% matched!", "success");
-    }, []);
-
     const handleExportStatement = useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(transactions, null, 2));
         showToast("Financial statement exported to clipboard!", "success");
@@ -172,16 +165,6 @@ const Transaction = () => {
         () => (
             <div className="flex items-center gap-8">
                 <Button
-                    text="Reconcile Ledger"
-                    version="v2"
-                    bg="white"
-                    color="dark"
-                    border="tertiary"
-                    icon="Refresh"
-                    onClick={handleReconcile}
-                    title="Audit and match transaction ledgers"
-                />
-                <Button
                     text="Export Statement"
                     version="v2"
                     bg="primary"
@@ -192,7 +175,7 @@ const Transaction = () => {
                 />
             </div>
         ),
-        [handleReconcile, handleExportStatement]
+        [handleExportStatement]
     );
 
     return (

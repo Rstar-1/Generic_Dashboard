@@ -15,11 +15,7 @@ import {
 
 // Navigation tabs for User management
 const TABS = [
-    { name: "All Users", value: "all" },
-    { name: "Administrators", value: "Administrator" },
-    { name: "Vendors", value: "Vendor" },
-    { name: "Standard Users", value: "User" },
-    { name: "Active Accounts", value: "Active" },
+    { name: "All Users", value: "all" }
 ];
 
 const SIDEBAR_TO_TAB = {
@@ -172,33 +168,6 @@ const User = () => {
         [statusFilter]
     );
 
-    const quickActionNode = useMemo(
-        () => (
-            <div className="flex items-center gap-8">
-                <Button
-                    text="Export Directory"
-                    version="v2"
-                    bg="white"
-                    color="dark"
-                    border="tertiary"
-                    icon="File"
-                    onClick={handleExportUsers}
-                    title="Export system user directory as JSON"
-                />
-                <Button
-                    text="Add User"
-                    version="v2"
-                    bg="primary"
-                    color="white"
-                    icon="Users"
-                    onClick={handleAddUser}
-                    title="Register a new system user"
-                />
-            </div>
-        ),
-        [handleExportUsers, handleAddUser]
-    );
-
     return (
         <MainLayout
             sidebarTitle={usersSidebarData.title}
@@ -208,7 +177,7 @@ const User = () => {
             headerIcon={<Icon name="Users" width="18" height="18" />}
             headerTitle="System Users"
             headerSub="Manage authorized platform operators, credential assignments, active sessions, and access roles"
-            quickAction={quickActionNode}
+            quickAction=''
             showTabControls={true}
             tabs={TABS}
             activeTab={activeTab}
@@ -218,7 +187,7 @@ const User = () => {
             hasActiveFilters={hasActiveFilters}
             onClearAllFilters={handleClearFilters}
         >
-            <div className="bg-white rounded-8 bord p-20 shadow-sm">
+            <div className="bg-white p-14 rounded-10">
                 <Table
                     title="User Directory"
                     subtitle="Authenticated platform operators, administrators, and vendor partners"

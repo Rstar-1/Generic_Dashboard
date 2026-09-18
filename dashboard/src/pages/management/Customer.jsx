@@ -6,7 +6,6 @@ import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
 import { showToast } from "../../components/common/Toast";
 
-// Data and table column definitions from apiData.js
 import {
     customersSidebarData,
     customersTableColumns,
@@ -15,11 +14,7 @@ import {
 
 // Tabs for customer management
 const TABS = [
-    { name: "All Customers", value: "all" },
-    { name: "Active", value: "Active" },
-    { name: "Premium Tier", value: "Premium" },
-    { name: "Pending", value: "Pending" },
-    { name: "Inactive", value: "Inactive" },
+    { name: "All Customers", value: "all" }
 ];
 
 const SIDEBAR_TO_TAB = {

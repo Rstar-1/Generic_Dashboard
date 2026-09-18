@@ -15,10 +15,7 @@ import {
 
 // Tabs for task management
 const TABS = [
-    { name: "All Tasks", value: "all" },
-    { name: "High Priority", value: "Admin" },
-    { name: "Medium Priority", value: "User" },
-    { name: "Low Priority", value: "Member" },
+    { name: "All Tasks", value: "all" }
 ];
 
 const SIDEBAR_TO_TAB = {

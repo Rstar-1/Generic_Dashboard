@@ -1,3 +1,4 @@
+import { formatDate } from "./formatDate";
 const menuData = [
   {
     name: "Dashboard",
@@ -173,12 +174,6 @@ const rolesTableColumns = [
     accessor: "name",
     ui: "badge",
     style: { minWidth: "150px" },
-  },
-  {
-    header: "Description",
-    accessor: "description",
-    ui: "text",
-    style: { minWidth: "250px" },
   },
   {
     header: "Permissions",
@@ -1989,23 +1984,8 @@ const pageSidebarData = {
   analytics: analyticsSidebarData,
 };
 
-export const formatDate = (val) => {
-  if (!val) return "-";
-  if (typeof val === "object" && val !== null) {
-    if (val.$date) val = val.$date;
-  }
-  if (typeof val === "string") {
-    const trimmed = val.trim();
-    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
-      return trimmed;
-    }
-  }
-  const d = new Date(val);
-  if (isNaN(d.getTime())) return String(val);
-  return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-};
-
 export {
+  formatDate,
   usersSidebarData,
   rolesSidebarData,
   customersSidebarData,

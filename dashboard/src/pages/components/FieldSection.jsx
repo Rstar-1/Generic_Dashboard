@@ -239,7 +239,7 @@ const FieldSection = () => {
             filterInputs={filterInputsNode}
             hasActiveFilters={hasActiveFilters}
             onClearAllFilters={handleResetSettings}
-            defaultShowFilters={true}
+            defaultShowFilters={false}
         >
             {/* Sections List */}
             {visibleSections.map((section) => (
