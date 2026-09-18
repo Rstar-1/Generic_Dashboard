@@ -177,7 +177,7 @@ const Transaction = () => {
                     bg="white"
                     color="dark"
                     border="tertiary"
-                    icon="Rotate"
+                    icon="Refresh"
                     onClick={handleReconcile}
                     title="Audit and match transaction ledgers"
                 />
@@ -186,7 +186,7 @@ const Transaction = () => {
                     version="v2"
                     bg="primary"
                     color="white"
-                    icon="FileText"
+                    icon="File"
                     onClick={handleExportStatement}
                     title="Download financial ledger statement"
                 />

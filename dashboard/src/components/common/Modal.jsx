@@ -215,7 +215,7 @@ export const DeleteModal = memo(
             className="flex items-center justify-center rounded-full bg-light-danger text-danger mb-12 mx-auto"
             style={{ width: "56px", height: "56px" }}
           >
-            <Icon name="Delete" width="26" height="26" strokeWidth="2" />
+            <Icon name="Trash" width="26" height="26" strokeWidth="2" />
           </div>
           <h4 className="title-text font-bold text-dark">{title}</h4>
           <p className="mini-text text-gray mt-10">{message}</p>

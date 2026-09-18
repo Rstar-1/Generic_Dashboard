@@ -25,9 +25,11 @@ export const getOptValue = (opt) =>
   opt && typeof opt === "object" ? opt.value : opt;
 
 export const normalizeVersion = (version) => {
-  if (version === 2 || version === "2" || version === "v2") return "v2";
-  if (version === 3 || version === "3" || version === "v3") return "v3";
-  if (version === 4 || version === "4" || version === "v4") return "v4";
+  const v = String(version ?? "").toLowerCase().trim();
+  if (v === "0" || v === "v0") return "v0";
+  if (v === "2" || v === "v2") return "v2";
+  if (v === "3" || v === "v3") return "v3";
+  if (v === "4" || v === "v4") return "v4";
   return "v1";
 };
 
@@ -82,23 +84,53 @@ export const getInputStyle = (
     };
   }
 
-  if (normVer === "v4") {
+  if (normVer === "v0") {
     return {
       ...baseStyle,
-      borderRadius: "0px",
-      border: "none",
-      borderBottom: `1px solid ${
+      height: "32px",
+      borderRadius: "4px",
+      fontSize: "12px",
+      border: `1px solid ${
         error
           ? "var(--danger)"
           : isFocused
             ? "var(--primary)"
-            : outline
-              ? "#d1d5db"
-              : "var(--forth)"
+            : border
+              ? typeof border === "string"
+                ? border
+                : "var(--border, #e2e8f0)"
+              : outline
+                ? "var(--border, #e2e8f0)"
+                : "transparent"
       }`,
-      backgroundColor: "transparent",
+      backgroundColor: isFocused ? "var(--white)" : "var(--forth)",
       color: "var(--dark)",
-      transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+      transition: "all 0.2s ease",
+    };
+  }
+
+  if (normVer === "v4") {
+    const bottomColor = error
+      ? "var(--danger)"
+      : isFocused
+        ? "var(--primary)"
+        : border
+          ? typeof border === "string"
+            ? border
+            : "var(--primary)"
+          : outline
+            ? "#94a3b8"
+            : "#cbd5e1";
+
+    return {
+      ...baseStyle,
+      borderRadius: "0px",
+      border: "none",
+      borderBottom: `2px solid ${bottomColor}`,
+      backgroundColor: isFocused ? "var(--white)" : "transparent",
+      color: "var(--dark)",
+      textIndent: "4px",
+      transition: "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease",
     };
   }
 
@@ -167,21 +199,50 @@ export const getBoxStyle = (
     };
   }
 
-  if (normVer === "v4") {
+  if (normVer === "v0") {
     return {
       ...baseStyle,
-      borderRadius: "0px",
-      border: "none",
-      borderBottom: `1px solid ${
+      height: "32px",
+      borderRadius: "4px",
+      fontSize: "12px",
+      border: `1px solid ${
         error
           ? "var(--danger)"
           : active
             ? "var(--primary)"
-            : outline
-              ? "#d1d5db"
-              : "var(--forth)"
+            : border
+              ? typeof border === "string"
+                ? border
+                : "var(--border, #e2e8f0)"
+              : outline
+                ? "var(--border, #e2e8f0)"
+                : "transparent"
       }`,
-      backgroundColor: "transparent",
+      backgroundColor: active ? "var(--white)" : "var(--forth)",
+    };
+  }
+
+  if (normVer === "v4") {
+    const bottomColor = error
+      ? "var(--danger)"
+      : active
+        ? "var(--primary)"
+        : border
+          ? typeof border === "string"
+            ? border
+            : "var(--primary)"
+          : outline
+            ? "#94a3b8"
+            : "#cbd5e1";
+
+    return {
+      ...baseStyle,
+      borderRadius: "0px",
+      border: "none",
+      borderBottom: `2px solid ${bottomColor}`,
+      backgroundColor: active ? "var(--white)" : "transparent",
+      color: "var(--dark)",
+      transition: "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease",
     };
   }
 

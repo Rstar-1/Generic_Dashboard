@@ -200,6 +200,7 @@ const MainLayout = memo(({
     hasActiveFilters = false,
     onClearAllFilters = () => { },
     filterInputs = null,
+    defaultShowFilters = false,
     showSidebar = true,
     quickStyle,
     children,
@@ -208,7 +209,7 @@ const MainLayout = memo(({
     const navigate = useNavigate();
     const location = useLocation();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
-    const [showFilters, setShowFilters] = useState(false);
+    const [showFilters, setShowFilters] = useState(defaultShowFilters);
 
     // Toggle handlers wrapped in useCallback
     const handleToggleSidebar = useCallback(() => {

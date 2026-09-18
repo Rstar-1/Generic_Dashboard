@@ -215,7 +215,7 @@ const Role = () => {
                     bg="white"
                     color="dark"
                     border="tertiary"
-                    icon="FileText"
+                    icon="File"
                     onClick={handleExportRoles}
                     title="Export RBAC matrix as JSON"
                 />

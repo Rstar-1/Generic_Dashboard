@@ -2,14 +2,14 @@ const menuData = [
   {
     name: "Dashboard",
     route: "/dashboard",
-    icon: "Dashboard",
+    icon: "Grid",
     status: true,
     role: ["admin", "vendor", "Manager"],
   },
   {
     name: "Analytics",
     route: "/analytics",
-    icon: "TrendingUp",
+    icon: "Trending",
     status: true,
     role: ["admin", "vendor", "Manager"],
   },
@@ -655,11 +655,11 @@ const analyticsSidebarData = {
   items: [
     { name: "Articles", color: "#8b5cf6", icon: "Clipboard" },
     { name: "Product", color: "#1e74db", icon: "Layers" },
-    { name: "Order", color: "#10b981", icon: "ShoppingBag" },
-    { name: "Payment", color: "#f59e0b", icon: "CreditCard" },
+    { name: "Order", color: "#10b981", icon: "Bag" },
+    { name: "Payment", color: "#f59e0b", icon: "Payment" },
     { name: "Users", color: "#ec4899", icon: "Users" },
-    { name: "Google Analytics", color: "#3b82f6", icon: "TrendingUp" },
-    { name: "Leads", color: "#f97316", icon: "UserPlus" },
+    { name: "Google Analytics", color: "#3b82f6", icon: "Trending" },
+    { name: "Leads", color: "#f97316", icon: "Users" },
   ],
 };
 

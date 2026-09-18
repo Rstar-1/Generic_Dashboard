@@ -181,7 +181,7 @@ const User = () => {
                     bg="white"
                     color="dark"
                     border="tertiary"
-                    icon="FileText"
+                    icon="File"
                     onClick={handleExportUsers}
                     title="Export system user directory as JSON"
                 />
@@ -190,7 +190,7 @@ const User = () => {
                     version="v2"
                     bg="primary"
                     color="white"
-                    icon="UserPlus"
+                    icon="Users"
                     onClick={handleAddUser}
                     title="Register a new system user"
                 />

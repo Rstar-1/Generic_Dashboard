@@ -395,6 +395,16 @@ input,
     margin: 0px !important;
 }
 
+.largepara-text {
+    font-size: 24px !important;
+    line-height: 30px !important;
+
+    @media (max-width: 640px) {
+        font-size: 20px !important;
+        line-height: 28px !important;
+    }
+}
+
 .headpara-text {
     font-size: 20px !important;
     line-height: 30px !important;

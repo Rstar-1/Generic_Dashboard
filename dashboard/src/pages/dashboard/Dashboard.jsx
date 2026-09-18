@@ -214,8 +214,8 @@ const STATIC_DATA = {
         { id: 5, name: "Standard Ribbed Clear Strips", category: "Standard", price: 2900, stock: 350 }
     ],
     dashboardCounts: [
-        { title: "Total Sales", value: "4,89,000", prefix: "₹ ", change: "+12.5%", isPositive: true, icon: "TrendingUp" },
-        { title: "Total Orders", value: "1,248", prefix: "", change: "+8.2%", isPositive: true, icon: "Orders" },
+        { title: "Total Sales", value: "4,89,000", prefix: "₹ ", change: "+12.5%", isPositive: true, icon: "Trending" },
+        { title: "Total Orders", value: "1,248", prefix: "", change: "+8.2%", isPositive: true, icon: "Bag" },
         { title: "Total Revenue", value: "8,65,400", prefix: "₹ ", change: "+15.3%", isPositive: true, icon: "Analytic" }
     ],
     earningsBreakdown: [

@@ -178,7 +178,7 @@ const Tasks = () => {
                     bg="white"
                     color="dark"
                     border="tertiary"
-                    icon="FileText"
+                    icon="File"
                     onClick={handleExportTasks}
                     title="Export task list to JSON"
                 />

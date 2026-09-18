@@ -186,7 +186,7 @@ const Customer = () => {
                     bg="white"
                     color="dark"
                     border="tertiary"
-                    icon="FileText"
+                    icon="File"
                     onClick={handleExportData}
                     title="Export customer list as JSON/CSV"
                 />

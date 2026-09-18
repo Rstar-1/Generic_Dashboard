@@ -14,15 +14,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                     <polyline points="9 22 9 12 15 12 15 22"></polyline>
                 </svg>
             );
-        case "Dashboard":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-            );
         case "Grid":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
@@ -44,22 +35,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                     <line x1="1" y1="14" x2="7" y2="14"></line>
                     <line x1="9" y1="8" x2="15" y2="8"></line>
                     <line x1="17" y1="16" x2="23" y2="16"></line>
-                </svg>
-            );
-        case "Product":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                </svg>
-            );
-        case "Product List":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
                 </svg>
             );
         case "GitHub":
@@ -129,28 +104,10 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                     <line x1="9" y1="17" x2="15" y2="17"></line>
                 </svg>
             );
-        case "Inventory":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-                    <line x1="9" y1="9" x2="15" y2="9"></line>
-                    <line x1="9" y1="13" x2="15" y2="13"></line>
-                    <line x1="9" y1="17" x2="15" y2="17"></line>
-                </svg>
-            );
         case "Reviews":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-            );
-        case "Orders":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <path d="M16 10a4 4 0 0 1-8 0"></path>
                 </svg>
             );
         case "Analytic":
@@ -195,7 +152,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                 </svg>
             );
         case "Alert":
-        case "Warning":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} strokeLinecap="round" strokeLinejoin="round" className={`flex ${className}`} {...props}>
                     <circle cx="12" cy="12" r="10"></circle>
@@ -225,15 +181,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                 </svg>
             );
         case "Customers":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-            );
-        case "Network":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -322,13 +269,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
             );
-        case "Spinner":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} style={{ animation: "spin 1.2s linear infinite", ...props.style }} {...props}>
-                    <circle cx="12" cy="12" r="10" stroke="rgba(0,0,0,0.1)" />
-                    <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--primary)" />
-                </svg>
-            );
         case "Loading":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} style={{ animation: "spin 1.2s linear infinite", ...props.style }} {...props}>
@@ -352,23 +292,7 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                     <line x1="14" y1="11" x2="14" y2="17"></line>
                 </svg>
             );
-        case "Delete":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    <line x1="10" y1="11" x2="10" y2="17"></line>
-                    <line x1="14" y1="11" x2="14" y2="17"></line>
-                </svg>
-            );
         case "MapPin":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                </svg>
-            );
-        case "Location":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
@@ -390,15 +314,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                 </svg>
             );
         case "Grow":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <line x1="19" y1="8" x2="19" y2="14" />
-                    <line x1="16" y1="11" x2="22" y2="11" />
-                </svg>
-            );
-        case "UserPlus":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -429,7 +344,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                 </svg>
             );
         case "ArrowUpRight":
-        case "ArrowTopRight":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} strokeLinecap="round" strokeLinejoin="round" className={`flex ${className}`} {...props}>
                     <line x1="7" y1="17" x2="17" y2="7"></line>
@@ -459,7 +373,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                 </svg>
             );
         case "Facebook":
-        case "FacebookF":
             return (
                 <svg viewBox="0 0 320 512" width={defaultWidth} height={defaultHeight} fill={fill || "#1877F2"} className={`flex ${className}`} {...props}>
                     <path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z" />
@@ -483,19 +396,7 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051C.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" />
                 </svg>
             );
-        case "Verified":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} fill={fill || "#0284c7"} className={`flex ${className}`} {...props}>
-                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                </svg>
-            );
         case "Check":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            );
-        case "Checkmark":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
                     <polyline points="20 6 9 17 4 12"></polyline>
@@ -509,40 +410,20 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
             );
         case "WhatsAppShare":
             return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} fill={fill || "#ffffff"} className={`flex ${className}`} {...props}>
-                    <path d="M12.031 7.247c-2.611 0-4.734 2.122-4.734 4.734 0 1.057.349 2.033.94 2.822l-1.002 2.997 3.078-.979c.749.52 1.655.827 2.632.827 2.612 0 4.735-2.122 4.735-4.735 0-2.611-2.123-4.734-4.649-4.734z" />
-                </svg>
-            );
-        case "WhatsAppBubble":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} fill={fill || "#ffffff"} className={`flex ${className}`} {...props}>
+                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} fill={fill || "#16a34a"} className={`flex ${className}`} {...props}>
                     <path d="M12.031 7.247c-2.611 0-4.734 2.122-4.734 4.734 0 1.057.349 2.033.94 2.822l-1.002 2.997 3.078-.979c.749.52 1.655.827 2.632.827 2.612 0 4.735-2.122 4.735-4.735 0-2.611-2.123-4.734-4.649-4.734z" />
                 </svg>
             );
         case "Twitter":
             return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} fill={fill || "#ffffff"} className={`flex ${className}`} {...props}>
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-            );
-        case "X":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} fill={fill || "#ffffff"} className={`flex ${className}`} {...props}>
+                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} fill={fill || "#1DA1F2"} className={`flex ${className}`} {...props}>
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
             );
         case "LinkedIn":
-        case "LinkedInIn":
             return (
-                <svg viewBox="0 0 448 512" width={defaultWidth} height={defaultHeight} fill={fill || "#ffffff"} className={`flex ${className}`} {...props}>
+                <svg viewBox="0 0 448 512" width={defaultWidth} height={defaultHeight} fill={fill || "#0A66C2"} className={`flex ${className}`} {...props}>
                     <path d="M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z" />
-                </svg>
-            );
-        case "Link":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                 </svg>
             );
         case "CopyLink":
@@ -563,20 +444,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
                     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                     <polyline points="17 6 23 6 23 12"></polyline>
-                </svg>
-            );
-        case "TrendingUp":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                    <polyline points="17 6 23 6 23 12"></polyline>
-                </svg>
-            );
-        case "PaperPlane":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>
             );
         case "Send":
@@ -608,31 +475,12 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                 </svg>
             );
-        case "ShoppingCart":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <circle cx="9" cy="21" r="1"></circle>
-                    <circle cx="20" cy="21" r="1"></circle>
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                </svg>
-            );
-        case "ShoppingBag":
         case "Bag":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
                     <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
                     <line x1="3" y1="6" x2="21" y2="6"></line>
                     <path d="M16 10a4 4 0 0 1-8 0"></path>
-                </svg>
-            );
-        case "Truck":
-        case "Shipping":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <rect x="1" y="3" width="15" height="13"></rect>
-                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
-                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
                 </svg>
             );
         case "Percent":
@@ -681,22 +529,18 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                 </svg>
             );
         case "Call":
-        case "PhoneFilled":
             return (
                 <svg viewBox="0 0 512 512" width={defaultWidth} height={defaultHeight} fill={fill || "currentColor"} className={`flex ${className}`} {...props}>
                     <path d="M493.4 401.5l-104-71.1c-11.3-7.7-26.5-6.3-36.3 3.5l-44.5 44.5c-61.9-31.5-112.5-82.1-144-144l44.5-44.5c9.8-9.8 11.2-25 3.5-36.3l-71.1-104c-8.5-12.4-25.1-16.6-38.6-9.9L24.8 77.2C10.1 84.6 0 100.1 0 117.2c0 217.6 177.2 394.8 394.8 394.8 17.1 0 32.6-10.1 40-24.8l38.2-77.9c6.7-13.5 2.5-30.1-9.9-38.6z" />
                 </svg>
             );
         case "Support":
-        case "Headset":
-        case "Headphones":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
                     <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
                     <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
                 </svg>
             );
-        case "CreditCard":
         case "Payment":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
@@ -704,10 +548,7 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                     <line x1="1" y1="10" x2="23" y2="10"></line>
                 </svg>
             );
-        case "Rotate":
-        case "RotateCcw":
         case "Refresh":
-        case "Returns":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
                     <polyline points="1 4 1 10 7 10"></polyline>
@@ -723,7 +564,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                 </svg>
             );
         case "Box":
-        case "Package":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
                     <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
@@ -738,14 +578,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                     <line x1="7" y1="7" x2="17" y2="7"></line>
                     <line x1="7" y1="12" x2="13" y2="12"></line>
-                </svg>
-            );
-        case "Rolls":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <ellipse cx="12" cy="6" rx="8" ry="3"></ellipse>
-                    <path d="M4 6v12c0 1.66 3.58 3 8 3s8-1.34 8-3V6"></path>
-                    <path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3"></path>
                 </svg>
             );
         case "Layers":
@@ -903,7 +735,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                 </svg>
             );
         case "Video":
-        case "Camera":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} strokeLinecap="round" strokeLinejoin="round" className={`flex ${className}`} {...props}>
                     <polygon points="23 7 16 12 23 17 23 7"></polygon>
@@ -911,15 +742,12 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                 </svg>
             );
         case "Hangup":
-        case "CallEnd":
-        case "PhoneOff":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} fill={fill || "currentColor"} className={`flex ${className}`} {...props}>
                     <path d="M12 9c-2.5 0-4.8.8-6.6 2.2l-2.1-2.1C5.8 7.3 8.7 6.3 12 6.3s6.2 1 8.7 2.8l-2.1 2.1C16.8 9.8 14.5 9 12 9z" />
                 </svg>
             );
         case "Volume":
-        case "Speaker":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} strokeLinecap="round" strokeLinejoin="round" className={`flex ${className}`} {...props}>
                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -966,7 +794,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                 </svg>
             );
         case "File":
-        case "FileText":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} strokeLinecap="round" strokeLinejoin="round" className={`flex ${className}`} {...props}>
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -987,7 +814,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                 </svg>
             );
         case "Bot":
-        case "Chatbot":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} strokeLinecap="round" strokeLinejoin="round" className={`flex ${className}`} {...props}>
                     <path d="M12 6V2" />
@@ -1015,8 +841,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                 </svg>
             );
         case "Screen":
-        case "Focus":
-        case "Scan":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} strokeLinecap="round" strokeLinejoin="round" className={`flex ${className}`} {...props}>
                     <path d="M4 8V4h4" />
@@ -1026,8 +850,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                 </svg>
             );
         case "Display":
-        case "MoveDiagonal":
-        case "DiagonalArrow":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} strokeLinecap="round" strokeLinejoin="round" className={`flex ${className}`} {...props}>
                     <polyline points="13 5 19 5 19 11" />
@@ -1035,9 +857,7 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                     <line x1="19" y1="5" x2="5" y2="19" />
                 </svg>
             );
-        case "AluminiumCase":
         case "CaseGrid":
-        case "DotsGrid":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} fill={stroke || fill || "currentColor"} className={`flex ${className}`} {...props}>
                     <circle cx="8" cy="5" r="1.5" />
@@ -1058,5 +878,26 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
             return null;
     }
 });
+
+export const ALL_ICONS = [
+    "Home", "Grid", "Management", "GitHub", "CMS", "AI", "Meta",
+    "Json", "Builder", "Google Analytic", "Task Manager", "Reviews", "Analytic",
+    "ChevronRight", "ChevronLeft", "ChevronDown", "ChevronsUpDown", "Info", "Alert", "Filter",
+    "MoreVertical", "Users", "Customers", "Settings", "Reports", "Sun", "Moon", "Help",
+    "Logout", "Lock", "Unlock", "Star", "Search", "Loading", "Edit", "Trash",
+    "MapPin", "Shield", "ShieldCheck", "Grow", "Business", "ArrowLeft", "ArrowRight",
+    "ArrowUpRight", "ArrowUp", "Google", "Trustpilot", "Facebook", "FacebookCircle",
+    "YouTube", "Instagram", "Check", "WhatsApp", "WhatsAppShare",
+    "Twitter", "LinkedIn", "CopyLink", "Heart", "Trending",
+    "Send", "LinkedInOutline", "TwitterOutline", "Cart", "Bag",
+    "Percent", "Receipt", "Mail", "Map", "Clock", "Phone", "Call",
+    "Support", "Payment", "Refresh",
+    "Clipboard", "Box", "Sheets", "Layers", "GridDots", "Building", "Media", "Globe",
+    "Award", "Curtain", "Sheet", "Roll", "Film", "CurtainAlt", "ClearFilm", "Menu", "Close", "Feather",
+    "Code", "Rocket", "Zap", "Video", "Hangup", "Volume",
+    "Eye", "EyeOff", "Calendar", "ExternalLink", "Upload", "File", "Plus", "Minus", "Bot",
+    "Sparkles", "Battery", "Screen", "Display",
+    "CaseGrid"
+];
 
 export default Icon;
