@@ -12,6 +12,7 @@ import {
   getBoxStyle,
   getDragDropStyle,
   getOtpBoxStyle,
+  getQuantityStyle,
   SLIDER_STYLES,
 } from "./fieldsStyles";
 
@@ -33,9 +34,7 @@ const CalendarDropdown = React.memo(
 
     const firstDayIndex = new Date(datepickerY, datepickerM, 1).getDay();
     const adjustedIndex = isRange
-      ? firstDayIndex === 0
-        ? 6
-        : firstDayIndex - 1
+      ? firstDayIndex === 0 ? 6 : firstDayIndex - 1
       : firstDayIndex;
     const totalDays = new Date(datepickerY, datepickerM + 1, 0).getDate();
 
@@ -49,9 +48,9 @@ const CalendarDropdown = React.memo(
 
     const changeMonth = useCallback(
       (offset) => {
-        const date = new Date(datepickerY, datepickerM + offset, 1);
-        setDatepickerM(date.getMonth());
-        setDatepickerY(date.getFullYear());
+        const d = new Date(datepickerY, datepickerM + offset, 1);
+        setDatepickerM(d.getMonth());
+        setDatepickerY(d.getFullYear());
       },
       [datepickerY, datepickerM, setDatepickerM, setDatepickerY]
     );
@@ -60,7 +59,6 @@ const CalendarDropdown = React.memo(
       (day) => {
         if (!day) return;
         const cellDate = `${datepickerY}-${pad(datepickerM + 1)}-${pad(day)}`;
-
         if (isRange) {
           if (!fromDate || (fromDate && toDate)) {
             onChange?.({ fromDate: cellDate, toDate: "" });
@@ -90,9 +88,7 @@ const CalendarDropdown = React.memo(
             className="mini-text border-0 rounded px-2 py-2"
           >
             {MONTH_NAMES.map((m, i) => (
-              <option key={m} value={i}>
-                {m}
-              </option>
+              <option key={m} value={i}>{m}</option>
             ))}
           </select>
           <select
@@ -101,80 +97,43 @@ const CalendarDropdown = React.memo(
             className="mini-text border-0 rounded px-2 py-2"
           >
             {YEARS.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
+              <option key={y} value={y}>{y}</option>
             ))}
           </select>
         </div>
 
         <div className="flex items-center justify-between mb-8">
-          <div
-            className="small-text text-gray font-500 cursor-pointer"
-            onClick={() => changeMonth(-1)}
-          >
-            ◀
-          </div>
-          <p className="mini-text text-dark font-500">
-            {MONTH_NAMES[datepickerM]} {datepickerY}
-          </p>
-          <div
-            className="small-text text-gray font-500 cursor-pointer"
-            onClick={() => changeMonth(1)}
-          >
-            ▶
-          </div>
+          <div className="small-text text-gray font-500 cursor-pointer" onClick={() => changeMonth(-1)}>◀</div>
+          <p className="mini-text text-dark font-500">{MONTH_NAMES[datepickerM]} {datepickerY}</p>
+          <div className="small-text text-gray font-500 cursor-pointer" onClick={() => changeMonth(1)}>▶</div>
         </div>
 
         <div className="grid-cols-7 gap-4">
           {(isRange ? DAY_NAMES_MON : DAY_NAMES_SUN).map((d) => (
-            <p className="mini-text text-dark font-500" key={d}>
-              {d}
-            </p>
+            <p className="mini-text text-dark font-500" key={d}>{d}</p>
           ))}
 
           {days.map((d, i) => {
-            const cellDate = d
-              ? `${datepickerY}-${pad(datepickerM + 1)}-${pad(d)}`
-              : "";
+            const cellDate = d ? `${datepickerY}-${pad(datepickerM + 1)}-${pad(d)}` : "";
             const isStart = isRange && fromDate && cellDate === fromDate;
             const isEnd = isRange && toDate && cellDate === toDate;
-            const isInRange =
-              isRange &&
-              d &&
-              fromDate &&
-              toDate &&
-              new Date(cellDate) > new Date(fromDate) &&
-              new Date(cellDate) < new Date(toDate);
+            const isInRange = isRange && d && fromDate && toDate && new Date(cellDate) > new Date(fromDate) && new Date(cellDate) < new Date(toDate);
             const isSelected = !isRange && d && value === cellDate;
 
-            const bg =
-              isStart || isEnd || isSelected
-                ? "var(--secondary, #3b82f6)"
-                : isInRange
-                  ? "rgba(99, 102, 241, 0.15)"
-                  : "transparent";
+            const bg = (isStart || isEnd || isSelected)
+              ? "var(--secondary, #3b82f6)"
+              : isInRange ? "rgba(99, 102, 241, 0.15)" : "transparent";
 
-            const color =
-              isStart || isEnd || isSelected
-                ? "var(--white, #fff)"
-                : d
-                  ? "var(--gray, #4b5563)"
-                  : "transparent";
+            const color = (isStart || isEnd || isSelected)
+              ? "var(--white, #fff)"
+              : d ? "var(--gray, #4b5563)" : "transparent";
 
             return (
               <p
                 key={i}
-                className={`mini-text font-500 flex items-center justify-center ${d ? "cursor-pointer" : ""
-                  }`}
+                className={`mini-text font-500 flex items-center justify-center ${d ? "cursor-pointer" : ""}`}
                 onClick={() => handleDayClick(d)}
-                style={{
-                  width: "100%",
-                  height: "36px",
-                  background: bg,
-                  color,
-                  borderRadius: 2,
-                }}
+                style={{ width: "100%", height: "36px", background: bg, color, borderRadius: 2 }}
               >
                 {d}
               </p>
@@ -185,11 +144,11 @@ const CalendarDropdown = React.memo(
     );
   }
 );
-
 CalendarDropdown.displayName = "CalendarDropdown";
 
 const OtpGroup = React.memo(
-  ({ count, value, onChange, otpRefs }) => {
+  ({ count = 6, value = "", onChange, otpRefs, version = "v1", error = false }) => {
+    const [focusedIdx, setFocusedIdx] = useState(-1);
     const otpArray = useMemo(
       () => (typeof value === "string" ? value.split("").slice(0, count) : []),
       [value, count]
@@ -241,39 +200,33 @@ const OtpGroup = React.memo(
 
     return (
       <div className="flex gap-10" style={{ padding: "4px 0" }}>
-        {Array.from({ length: count }).map((_, index) => (
-          <input
-            key={index}
-            ref={(el) => {
-              otpRefs.current[index] = el;
-            }}
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={1}
-            value={otpArray[index] || ""}
-            onPaste={handlePaste}
-            onChange={(e) => handleChange(e, index)}
-            onKeyDown={(e) => handleKeyDown(e, index)}
-            className="text-center font-600 text-gray mini-text"
-            style={getOtpBoxStyle(false)}
-            onFocus={(e) => {
-              e.target.style.borderColor = "var(--primary)";
-              e.target.style.boxShadow = "0 0 0 3px rgba(30, 64, 175, 0.12)";
-              e.target.style.transform = "translateY(-1px)";
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = "#d1d5db";
-              e.target.style.boxShadow = "none";
-              e.target.style.transform = "none";
-            }}
-          />
-        ))}
+        {Array.from({ length: count }).map((_, index) => {
+          const isFocused = focusedIdx === index;
+          return (
+            <input
+              key={index}
+              ref={(el) => {
+                if (otpRefs?.current) otpRefs.current[index] = el;
+              }}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={1}
+              value={otpArray[index] || ""}
+              onPaste={handlePaste}
+              onChange={(e) => handleChange(e, index)}
+              onKeyDown={(e) => handleKeyDown(e, index)}
+              onFocus={() => setFocusedIdx(index)}
+              onBlur={() => setFocusedIdx(-1)}
+              className="text-center font-600 mini-text"
+              style={getOtpBoxStyle(version, isFocused, error)}
+            />
+          );
+        })}
       </div>
     );
   }
 );
-
 OtpGroup.displayName = "OtpGroup";
 
 const Fields = React.memo(
@@ -296,7 +249,7 @@ const Fields = React.memo(
     icon,
     iconPosition = "right",
     error: propError,
-    version = 1,
+    version = "v1",
     ...props
   }) => {
     const [localError, setLocalError] = useState("");
@@ -311,8 +264,6 @@ const Fields = React.memo(
     const otpRefs = useRef([]);
     const fileInputRef = useRef(null);
 
-    const normVer = normalizeVersion(version);
-
     const toggleOpen = useCallback(() => {
       setIsOpen((prev) => {
         const next = !prev;
@@ -325,32 +276,21 @@ const Fields = React.memo(
       });
     }, [fieldId]);
 
-    const [datepickerM, setDatepickerM] = useState(() => {
-      const dateVal =
-        typeof value === "string" ? value : value?.fromDate || value?.toDate;
-      const parsed = dateVal ? new Date(dateVal) : new Date();
-      return !isNaN(parsed.getTime()) ? parsed.getMonth() : new Date().getMonth();
-    });
+    const parseDateVal = (val) => {
+      const d = typeof val === "string" ? val : val?.fromDate || val?.toDate;
+      const parsed = d ? new Date(d) : new Date();
+      return isNaN(parsed.getTime()) ? new Date() : parsed;
+    };
 
-    const [datepickerY, setDatepickerY] = useState(() => {
-      const dateVal =
-        typeof value === "string" ? value : value?.fromDate || value?.toDate;
-      const parsed = dateVal ? new Date(dateVal) : new Date();
-      return !isNaN(parsed.getTime())
-        ? parsed.getFullYear()
-        : new Date().getFullYear();
-    });
+    const [datepickerM, setDatepickerM] = useState(() => parseDateVal(value).getMonth());
+    const [datepickerY, setDatepickerY] = useState(() => parseDateVal(value).getFullYear());
 
     const [internalQty, setInternalQty] = useState(() => {
       if (value !== undefined && value !== null && value !== "") {
         const num = Number(value);
         return !isNaN(num) ? num : 1;
       }
-      if (
-        props.defaultValue !== undefined &&
-        props.defaultValue !== null &&
-        props.defaultValue !== ""
-      ) {
+      if (props.defaultValue !== undefined && props.defaultValue !== null && props.defaultValue !== "") {
         const num = Number(props.defaultValue);
         return !isNaN(num) ? num : 1;
       }
@@ -366,17 +306,13 @@ const Fields = React.memo(
 
     useEffect(() => {
       if (!isOpen) return;
-
       const handleOutsideClick = (e) => {
         if (fieldRef.current && !fieldRef.current.contains(e.target)) {
           setIsOpen(false);
         }
       };
-
       const handleOtherOpen = (e) => {
-        if (e.detail !== fieldId) {
-          setIsOpen(false);
-        }
+        if (e.detail !== fieldId) setIsOpen(false);
       };
 
       document.addEventListener("mousedown", handleOutsideClick);
@@ -406,8 +342,7 @@ const Fields = React.memo(
 
     const handleChange = useCallback(
       (e) => {
-        const val =
-          e?.target?.type === "checkbox" ? e.target.checked : e?.target?.value;
+        const val = e?.target?.type === "checkbox" ? e.target.checked : e?.target?.value;
         setLocalError(validate(val));
         onChange?.(val);
       },
@@ -425,34 +360,19 @@ const Fields = React.memo(
           const opt = options.find((o) => getOptValue(o) === val);
           return opt ? getOptLabel(opt) : val;
         });
-        return (
-          labels.join(", ") + (value.length > 2 ? ` +${value.length - 2}` : "")
-        );
+        return labels.join(", ") + (value.length > 2 ? ` +${value.length - 2}` : "");
       }
       const opt = options.find((o) => getOptValue(o) === value);
       return opt ? getOptLabel(opt) : value || "Select";
     }, [type, value, options]);
 
     const computedInputStyle = useMemo(
-      () =>
-        getInputStyle(version, {
-          error: Boolean(error),
-          isFocused,
-          outline,
-          border,
-        }),
+      () => getInputStyle(version, { error: Boolean(error), isFocused, outline, border }),
       [version, error, isFocused, outline, border]
     );
 
     const computedBoxStyle = useMemo(
-      () =>
-        getBoxStyle(version, {
-          error: Boolean(error),
-          isFocused,
-          isOpen,
-          outline,
-          border,
-        }),
+      () => getBoxStyle(version, { error: Boolean(error), isFocused, isOpen, outline, border }),
       [version, error, isFocused, isOpen, outline, border]
     );
 
@@ -470,7 +390,6 @@ const Fields = React.memo(
     );
 
     const clsInput = `text-gray w-full mini-text ${className}`;
-
     const minQty = props.min !== undefined ? Number(props.min) : 1;
     const maxQty = props.max !== undefined ? Number(props.max) : Infinity;
     const stepQty = props.step !== undefined ? Math.max(1, Number(props.step)) : 1;
@@ -533,40 +452,41 @@ const Fields = React.memo(
             )}
           </div>
         ) : (
-          <input
-            type={inputType}
-            {...commonProps}
-            className={clsInput}
-          />
+          <input type={inputType} {...commonProps} className={clsInput} />
         );
       }
 
       switch (type) {
-        case "password":
+        case "password": {
+          const hasLeftIcon = icon && iconPosition === "left";
           return (
-            <div
-              className="relative w-full flex items-center overflow-hidden"
-              style={{ ...computedBoxStyle, padding: 0 }}
-            >
+            <div className="relative w-full flex items-center overflow-hidden">
+              {hasLeftIcon && (
+                <div className="absolute left-0 text-gray flex items-center pointer-events-none p-10 mx-2 rounded-5">
+                  <Icon name={icon} width="16" height="16" stroke="var(--gray)" />
+                </div>
+              )}
               <input
                 type={showPassword ? "text" : "password"}
                 {...commonProps}
-                style={{ ...computedInputStyle, border: "none", ...style }}
-                className={`${clsInput} pr-36`}
+                style={{
+                  ...commonProps.style,
+                  ...(hasLeftIcon ? { paddingLeft: "38px", textIndent: "0" } : {}),
+                  paddingRight: "38px",
+                  ...style,
+                }}
+                className={clsInput}
               />
               <div
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute top-0 right-0 m-12 cursor-pointer text-gray"
+                className="absolute right-0 top-0 h-full flex items-center pr-14 cursor-pointer text-gray"
                 style={{ background: "transparent" }}
               >
-                <Icon
-                  name={showPassword ? "Eye" : "EyeOff"}
-                  width="15"
-                  height="15"
-                />
+                <Icon name={showPassword ? "Eye" : "EyeOff"} width="15" height="15" />
               </div>
             </div>
           );
+        }
 
         case "range-datepicker": {
           const fromDate = value?.fromDate || "";
@@ -578,28 +498,10 @@ const Fields = React.memo(
             >
               <div
                 className="flex items-center justify-between h-full px-14 cursor-pointer"
-                onClick={() => {
-                  if (!isOpen) {
-                    const dateToUse = fromDate || toDate;
-                    if (dateToUse) {
-                      const parsed = new Date(dateToUse);
-                      if (!isNaN(parsed.getTime())) {
-                        setDatepickerM(parsed.getMonth());
-                        setDatepickerY(parsed.getFullYear());
-                      }
-                    }
-                  }
-                  toggleOpen();
-                }}
+                onClick={toggleOpen}
               >
-                <div className="w-10">
-                  <Icon
-                    name="Calendar"
-                    width="16"
-                    height="16"
-                    stroke="gray"
-                    className="cursor-pointer"
-                  />
+                <div className="center-div">
+                  <Icon name="Calendar" width="16" height="16" stroke="gray" className="cursor-pointer" />
                 </div>
                 <div className="mini-text text-gray font-500 w-40">
                   {fromDate ? fromDate.split("-").reverse().join(" / ") : "Start Date"}
@@ -647,13 +549,7 @@ const Fields = React.memo(
                 }}
               >
                 <p className="mini-text text-gray line-clamp1">{dateStr || "mm/dd/yyyy"}</p>
-                <Icon
-                  name="Calendar"
-                  width="16"
-                  height="16"
-                  stroke="gray"
-                  className="cursor-pointer"
-                />
+                <Icon name="Calendar" width="16" height="16" stroke="gray" className="cursor-pointer" />
               </div>
 
               {isOpen && (
@@ -679,10 +575,7 @@ const Fields = React.memo(
               className={`flex items-center gap-6 cursor-pointer h-input ${className}`}
               style={{ ...computedBoxStyle, ...style }}
             >
-              <span
-                className="rounded-full ml-10"
-                style={{ width: "20px", height: "20px", backgroundColor: hexValue }}
-              />
+              <span className="rounded-full ml-10" style={{ width: "20px", height: "20px", backgroundColor: hexValue }} />
               <p className="mini-text text-gray uppercase font-500">{hexValue}</p>
               <input
                 type="color"
@@ -696,7 +589,8 @@ const Fields = React.memo(
           );
         }
 
-        case "textarea":
+        case "textarea": {
+          const isV4 = normalizeVersion(version) === "v4";
           return (
             <textarea
               {...commonProps}
@@ -705,12 +599,13 @@ const Fields = React.memo(
                 ...style,
                 resize: "vertical",
                 minHeight: "90px",
-                padding: '10px 10px',
-                textIndent: '0px',
-                borderRadius: '6px'
+                padding: "10px 10px",
+                textIndent: "0px",
+                borderRadius: isV4 ? "0px" : (style?.borderRadius || "6px"),
               }}
             />
           );
+        }
 
         case "checkbox": {
           if (!options || options.length === 0) {
@@ -735,11 +630,7 @@ const Fields = React.memo(
                 const isChecked = selectedValues.includes(optVal);
 
                 return (
-                  <label
-                    key={optVal}
-                    className="flex items-center gap-3 cursor-pointer"
-                    style={{ userSelect: "none" }}
-                  >
+                  <label key={optVal} className="flex items-center gap-3 cursor-pointer" style={{ userSelect: "none" }}>
                     <input
                       type="checkbox"
                       checked={isChecked}
@@ -779,11 +670,7 @@ const Fields = React.memo(
                 const optLabel = getOptLabel(opt);
                 const optVal = getOptValue(opt);
                 return (
-                  <label
-                    key={optVal}
-                    className="flex items-center gap-3 cursor-pointer"
-                    style={{ userSelect: "none" }}
-                  >
+                  <label key={optVal} className="flex items-center gap-3 cursor-pointer" style={{ userSelect: "none" }}>
                     <input
                       type="radio"
                       checked={value === optVal}
@@ -842,9 +729,7 @@ const Fields = React.memo(
                   type="button"
                   onClick={() => {
                     let targetUrl = value;
-                    if (!/^https?:\/\//i.test(targetUrl)) {
-                      targetUrl = `https://${targetUrl}`;
-                    }
+                    if (!/^https?:\/\//i.test(targetUrl)) targetUrl = `https://${targetUrl}`;
                     window.open(targetUrl, "_blank");
                   }}
                   className="absolute flex items-center justify-center cursor-pointer border-0 rounded-5"
@@ -867,10 +752,7 @@ const Fields = React.memo(
           const hasFile = value && value.length > 0;
           const fileName = hasFile ? value[0].name : "No file chosen";
           return (
-            <div
-              className={`cursor-pointer relative overflow-hidden ${className}`}
-              style={{ ...computedBoxStyle, ...style }}
-            >
+            <div className={`cursor-pointer relative overflow-hidden ${className}`} style={{ ...computedBoxStyle, ...style }}>
               <div className="flex items-center justify-between px-12 h-full">
                 <span className="mini-text text-gray">{fileName}</span>
                 <div className="flex items-center gap-4 relative z-10">
@@ -900,41 +782,27 @@ const Fields = React.memo(
           );
         }
 
-        case "dragfile":
+        case "dragfile": {
+          const handleDrag = (e, activeState) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragging(activeState);
+          };
+
           return (
             <div
-              onDragEnter={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragging(true);
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragging(true);
-              }}
-              onDragLeave={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragging(false);
-              }}
+              onDragEnter={(e) => handleDrag(e, true)}
+              onDragOver={(e) => handleDrag(e, true)}
+              onDragLeave={(e) => handleDrag(e, false)}
               onDrop={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragging(false);
+                handleDrag(e, false);
                 if (e.dataTransfer.files?.length) onChange?.([...e.dataTransfer.files]);
               }}
               onClick={() => fileInputRef.current?.click()}
               style={{ ...getDragDropStyle(isDragging), ...style }}
             >
               <div className="flex flex-column items-center" style={{ pointerEvents: "none" }}>
-                <Icon
-                  name="Upload"
-                  width="36"
-                  height="36"
-                  stroke="currentColor"
-                  style={{ marginBottom: "10px", color: "#6366f1" }}
-                />
+                <Icon name="Upload" width="36" height="36" stroke="currentColor" style={{ marginBottom: "10px", color: "#6366f1" }} />
                 <p className="small-text font-600" style={{ margin: "0 0 6px 0" }}>Drag & Drop Files here</p>
                 <p className="mini-text" style={{ margin: "0", color: "#6b7280" }}>
                   or <span style={{ textDecoration: "underline", color: "#6366f1" }}>click to browse</span> from file manager
@@ -966,13 +834,7 @@ const Fields = React.memo(
                       style={{ border: "1px solid #e5e7eb", borderRadius: "8px", padding: "8px 12px", color: "#1f2937" }}
                     >
                       <div className="flex items-center gap-8" style={{ overflow: "hidden" }}>
-                        <Icon
-                          name="File"
-                          width="16"
-                          height="16"
-                          stroke="currentColor"
-                          style={{ color: "#6b7280", flexShrink: 0 }}
-                        />
+                        <Icon name="File" width="16" height="16" stroke="currentColor" style={{ color: "#6b7280", flexShrink: 0 }} />
                         <span style={{ textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{file.name}</span>
                         <span style={{ color: "#9ca3af", fontSize: "11px", flexShrink: 0 }}>({(file.size / 1024).toFixed(1)} KB)</span>
                       </div>
@@ -984,12 +846,8 @@ const Fields = React.memo(
                           onChange?.(newFiles);
                         }}
                         className="flex items-center justify-center cursor-pointer border-0"
-                        style={{
-                          background: "none",
-                          color: "#9ca3af",
-                          padding: "4px",
-                          borderRadius: "4px",
-                        }}
+                        style={{ background: "none", color: "#9ca3af", padding: "4px", borderRadius: "4px" }}
+                        title="Remove file"
                       >
                         <Icon name="Close" width="14" height="14" stroke="currentColor" />
                       </button>
@@ -999,23 +857,14 @@ const Fields = React.memo(
               )}
             </div>
           );
+        }
 
         case "select":
         case "multiselect": {
           const isMulti = type === "multiselect";
           return (
-            <div
-              className={`dropdown-box ${className}`}
-              style={{
-                ...computedBoxStyle,
-                zIndex: isOpen ? 50 : 1,
-                ...style,
-              }}
-            >
-              <div
-                className={`flex items-center justify-between h-full px-14 cursor-pointer`}
-                onClick={toggleOpen}
-              >
+            <div className={`dropdown-box ${className}`} style={{ ...computedBoxStyle, zIndex: isOpen ? 50 : 1, ...style }}>
+              <div className="flex items-center justify-between h-full px-14 cursor-pointer" onClick={toggleOpen}>
                 <p className="mini-text text-gray line-clamp1">{displayValue}</p>
                 {isMulti && value?.length ? (
                   <Icon
@@ -1072,12 +921,8 @@ const Fields = React.memo(
                         className="flex items-center gap-8 p-12 cursor-pointer mini-text text-gray bordb"
                         style={{ userSelect: "none", transition: "background-color 0.15s ease" }}
                         onClick={handleSelect}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f9fafb";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#f9fafb"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                       >
                         <input
                           type="checkbox"
@@ -1096,26 +941,22 @@ const Fields = React.memo(
           );
         }
 
-        case "quantity":
+        case "quantity": {
+          const qtyStyles = getQuantityStyle(version, { error: Boolean(error), isFocused });
           return (
-            <div
-              className={`flex items-center justify-between bg-white border-ec rounded-5 px-5 h-select ${className}`}
-              style={{ width: "130px", ...style }}
-            >
+            <div className={`${className || ""}`} style={{ ...qtyStyles.container, ...style }}>
               <button
                 type="button"
                 onClick={handleQtyDecrement}
                 disabled={isQtyDisabled || internalQty <= minQty}
-                className="center-div text-white rounded-5 bg-primary cursor-pointer border-0"
                 style={{
-                  transition: "background-color 0.15s ease, opacity 0.15s ease",
-                  flexShrink: 0,
-                  opacity: isQtyDisabled || internalQty <= minQty ? 0.6 : 1,
+                  ...qtyStyles.btn,
+                  opacity: isQtyDisabled || internalQty <= minQty ? 0.5 : 1,
                   cursor: isQtyDisabled || internalQty <= minQty ? "not-allowed" : "pointer",
                 }}
                 aria-label="Decrease quantity"
               >
-                <Icon name="Minus" width="14" height="14" stroke="currentColor" strokeWidth="3" />
+                <Icon name="Minus" width={qtyStyles.iconSize} height={qtyStyles.iconSize} stroke="currentColor" strokeWidth="3" />
               </button>
 
               <input
@@ -1124,6 +965,16 @@ const Fields = React.memo(
                 pattern="[0-9]*"
                 value={internalQty}
                 disabled={isQtyDisabled}
+                onFocus={handleFocus}
+                onBlur={(e) => {
+                  handleBlur(e);
+                  const num = Number(internalQty);
+                  if (isNaN(num) || num < minQty) {
+                    handleQtyUpdate(minQty);
+                  } else if (num > maxQty) {
+                    handleQtyUpdate(maxQty);
+                  }
+                }}
                 onChange={(e) => {
                   const raw = e.target.value.replace(/[^0-9]/g, "");
                   if (raw === "") {
@@ -1134,16 +985,7 @@ const Fields = React.memo(
                   const num = parseInt(raw, 10);
                   if (!isNaN(num)) handleQtyUpdate(num);
                 }}
-                onBlur={() => {
-                  const num = Number(internalQty);
-                  if (isNaN(num) || num < minQty) {
-                    handleQtyUpdate(minQty);
-                  } else if (num > maxQty) {
-                    handleQtyUpdate(maxQty);
-                  }
-                }}
-                className="mini-text text-dark font-600 text-center border-0"
-                style={{ outline: "none", background: "transparent", width: "100%", minWidth: "0" }}
+                style={qtyStyles.input}
                 aria-label="Quantity"
               />
 
@@ -1151,29 +993,24 @@ const Fields = React.memo(
                 type="button"
                 onClick={handleQtyIncrement}
                 disabled={isQtyDisabled || internalQty >= maxQty}
-                className="center-div text-white rounded-5 bg-primary cursor-pointer border-0"
                 style={{
-                  transition: "background-color 0.15s ease, opacity 0.15s ease",
-                  flexShrink: 0,
-                  opacity: isQtyDisabled || internalQty >= maxQty ? 0.6 : 1,
+                  ...qtyStyles.btn,
+                  opacity: isQtyDisabled || internalQty >= maxQty ? 0.5 : 1,
                   cursor: isQtyDisabled || internalQty >= maxQty ? "not-allowed" : "pointer",
                 }}
                 aria-label="Increase quantity"
               >
-                <Icon name="Plus" width="14" height="14" stroke="currentColor" strokeWidth="3" />
+                <Icon name="Plus" width={qtyStyles.iconSize} height={qtyStyles.iconSize} stroke="currentColor" strokeWidth="3" />
               </button>
             </div>
           );
+        }
 
         case "rating":
           return (
             <div className="flex items-center gap-4">
               {[1, 2, 3, 4, 5].map((star) => (
-                <div
-                  key={star}
-                  className='cursor-pointer'
-                  onClick={() => !props.disabled && onChange?.(star)}
-                >
+                <div key={star} className="cursor-pointer" onClick={() => !props.disabled && onChange?.(star)}>
                   <Icon
                     name="Star"
                     width="22"
@@ -1194,6 +1031,8 @@ const Fields = React.memo(
               value={value}
               onChange={onChange}
               otpRefs={otpRefs}
+              version={version}
+              error={Boolean(error)}
             />
           );
         }
@@ -1212,12 +1051,8 @@ const Fields = React.memo(
               <style>{SLIDER_STYLES}</style>
               <div className="flex justify-between items-center mb-4">
                 <p className="mini-text text-gray font-400">₹{min}</p>
-                <p className="mini-text text-primary font-600">
-                  Up to ₹{val.toLocaleString()}
-                </p>
-                <p className="mini-text text-gray font-400">
-                  ₹{max.toLocaleString()}
-                </p>
+                <p className="mini-text text-primary font-600">Up to ₹{val.toLocaleString()}</p>
+                <p className="mini-text text-gray font-400">₹{max.toLocaleString()}</p>
               </div>
               <input
                 type="range"
