@@ -339,33 +339,44 @@ input,
 
 /* ======================= Start-Fontsize ======================= */
 .largehead-text {
-    font-size: 84px !important;
+    font-size: 130px !important;
     margin: 0px !important;
-    line-height: 90px !important;
+    line-height: 130px !important;
 
     @media (max-width: 640px) {
         font-size: 42px !important;
         margin: 0px !important;
-        line-height: 56px !important;
-        font-weight: 500 !important;
+        line-height: 48px !important;
+    }
+}
+
+.largemid-text {
+    font-size: 80px !important;
+    margin: 0px !important;
+    line-height: 85px !important;
+
+    @media (max-width: 640px) {
+        font-size: 42px !important;
+        margin: 0px !important;
+        line-height: 48px !important;
     }
 }
 
 .large-text {
     font-size: 52px !important;
     margin: 0px !important;
-    line-height: 65px !important;
+    line-height: 60px !important;
 
     @media (max-width: 640px) {
-        font-size: 36px !important;
+        font-size: 32px !important;
         margin: 0px !important;
-        line-height: 56px !important;
+        line-height: 43px !important;
     }
 }
 
 .head-text {
-    font-size: 40px !important;
-    line-height: 52px !important;
+    font-size: 34px !important;
+    line-height: 44px !important;
     margin: 0px !important;
 
     @media (max-width: 640px) {
@@ -376,8 +387,9 @@ input,
 }
 
 .title-text {
-    font-size: 24px !important;
+    font-size: 23px !important;
     margin: 0px !important;
+    line-height: 30px !important;
 
     @media (max-width: 640px) {
         font-size: 20px !important;
@@ -386,12 +398,14 @@ input,
 }
 
 .mid-text {
-    font-size: 18px !important;
+    font-size: 17px !important;
+    line-height: 22px !important;
     margin: 0px !important;
 }
 
 .headmini-text {
-    font-size: 14px !important;
+    font-size: 15px !important;
+    line-height: 20px !important;
     margin: 0px !important;
 }
 
@@ -410,13 +424,13 @@ input,
     line-height: 30px !important;
 
     @media (max-width: 640px) {
-        font-size: 20px !important;
-        line-height: 28px !important;
+        font-size: 18px !important;
+        line-height: 26px !important;
     }
 }
 
 .midpara-text {
-    font-size: 18px !important;
+    font-size: 17px !important;
 
     @media (max-width: 640px) {
         font-size: 15px !important;
@@ -425,17 +439,21 @@ input,
 }
 
 .para-text {
-    font-size: 16px !important;
+    font-size: 15px !important;
     line-height: 22px !important;
 
     @media (max-width: 640px) {
-        font-size: 16px !important;
+        font-size: 15px !important;
     }
 }
 
 .small-text {
     font-size: 13px !important;
-    line-height: 26px !important;
+    line-height: 20px !important;
+
+    @media (max-width: 640px) {
+        font-size: 13.5px !important;
+    }
 }
 
 .mini-text {

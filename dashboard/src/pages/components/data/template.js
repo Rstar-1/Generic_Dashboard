@@ -49,7 +49,8 @@ export const SIDEBAR_TO_TAB = {
 
 // Typography Options
 export const HEAD_FONTSIZE_OPTIONS = [
-  { label: ".largehead-text (84px / 42px)", value: "largehead-text" },
+  { label: ".largehead-text (130px / 42px)", value: "largehead-text" },
+  { label: ".largemid-text (80px / 42px)", value: "largemid-text" },
   { label: ".large-text (52px / 36px)", value: "large-text" },
   { label: ".head-text (40px / 24px)", value: "head-text" },
   { label: ".title-text (24px / 20px)", value: "title-text" },

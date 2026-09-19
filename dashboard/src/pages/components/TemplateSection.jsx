@@ -636,7 +636,7 @@ const ComponentPlayground = memo(({ config }) => {
                         next.fontWeight = "font-400";
                     }
                 } else if (val === "h2") {
-                    const headValues = ["largehead-text", "large-text", "head-text", "title-text", "mid-text", "headmini-text"];
+                    const headValues = ["largehead-text", "largemid-text", "large-text", "head-text", "title-text", "mid-text", "headmini-text"];
                     if (!headValues.includes(prev.fontSizeClass)) {
                         next.fontSizeClass = "head-text";
                     }
