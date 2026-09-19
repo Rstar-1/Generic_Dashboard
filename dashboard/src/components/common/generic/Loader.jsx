@@ -41,7 +41,7 @@ const Loader = React.memo(() => {
             letterSpacing: "0.2em",
           }}
         >
-          OPT
+          IOM
         </div>
       </div>
       <p
@@ -53,7 +53,7 @@ const Loader = React.memo(() => {
           letterSpacing: "0.3em",
         }}
       >
-        Optimizing Experience
+        KAIAOM
       </p>
 
       <style>
