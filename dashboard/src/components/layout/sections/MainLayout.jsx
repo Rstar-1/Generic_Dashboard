@@ -116,7 +116,7 @@ const MainLayoutHeader = memo(({
     const showFilterControls = showTabControls && activeTab !== "Analytic" && (filterDescription || filterInputs || hasActiveFilters);
 
     return (
-        <div className="sticky top-0 left-0 w-full z-50">
+        <div className="sticky top-0 left-0 w-full z-99">
             <div className="flex items-center justify-between bg-white px-14 py-9 bordb">
                 <div className="flex items-center gap-12">
                     {headerIcon && (
@@ -168,7 +168,7 @@ const MainLayoutHeader = memo(({
                             </div>
 
                             {showFilters && filterInputs && (
-                                <div className="bg-forth border-t border-b p-16 gap-16" style={{ transition: "all 0.3s ease" }}>
+                                <div className="bg-forth border-t border-b p-16 gap-12" style={{ transition: "all 0.3s ease" }}>
                                     {filterInputs}
                                 </div>
                             )}
