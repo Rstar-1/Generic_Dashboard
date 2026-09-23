@@ -16,8 +16,7 @@ const SidebarLink = memo(({ to, label, iconName, shortcut, isCollapsed }) => {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={({ isActive }) =>
-        `flex items-center rounded-5 small-text font-500 list-none mb-2 ${
-          isCollapsed ? "justify-center py-8" : "justify-between p-8"
+        `flex items-center rounded-5 small-text font-500 list-none mb-2 ${isCollapsed ? "justify-center py-8" : "justify-between p-8"
         } ${isActive || hovered ? "bg-forth text-dark" : "text-gray"}`
       }
     >
@@ -48,11 +47,11 @@ const SidebarHeader = memo(({ isCollapsed, displayRole, onToggle, onCollapse }) 
         className="bg-secondary icon-lg rounded-5 cursor-pointer flex items-center justify-center"
         onClick={onToggle}
       >
-        <p className="text-white font-500 headpara-text">B</p>
+        <p className="text-white font-500 headpara-text">K</p>
       </div>
       {!isCollapsed && (
         <div>
-          <h3 className="headmini-text text-secondary font-600 uppercase">Barasingha</h3>
+          <h3 className="headmini-text text-secondary font-600 uppercase">KAIOM</h3>
           <p className="mini-text text-gray capitalize">{displayRole}</p>
         </div>
       )}
@@ -110,9 +109,8 @@ const SidebarProfile = memo(({ isCollapsed, userImage, userName, userMobile, fir
         to="/profile"
         onMouseEnter={() => setProfileHovered(true)}
         onMouseLeave={() => setProfileHovered(false)}
-        className={`flex items-center rounded-5 ${profileHovered ? "bg-forth" : ""} ${
-          isCollapsed ? "justify-center p-6" : "justify-between p-10"
-        }`}
+        className={`flex items-center rounded-5 ${profileHovered ? "bg-forth" : ""} ${isCollapsed ? "justify-center p-6" : "justify-between p-10"
+          }`}
       >
         <div className="flex items-center gap-8">
           {userImage && !imgError ? (

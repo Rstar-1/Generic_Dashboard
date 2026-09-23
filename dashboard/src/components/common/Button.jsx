@@ -5,7 +5,7 @@ const VERSION_CLASSES = {
   v0: "px-16 py-4 sm-px-12 sm-py-4 mini-text",
   v1: "px-20 py-9 para-text",
   v2: "px-19 py-8 sm-px-10 sm-py-7 mini-text",
-  v3: "w-full py-9 sm-py-12 mini-text",
+  v3: "w-full py-9 sm-py-12 small-text",
   icon: "p-8",
   none: "",
 };
@@ -23,7 +23,7 @@ const Button = memo(
     border = "",
     className = "",
     style = {},
-    onClick = () => {},
+    onClick = () => { },
     type = "button",
     disabled = false,
     variant = "filled",
@@ -43,10 +43,17 @@ const Button = memo(
 
     // Dynamic border class
     const borderClass = useMemo(() => {
+      if (border === "none" || border === "0") return "border-0";
       if (border) return isHexBorder ? "" : `border-${border}`;
-      if (isOutline) return isHexBg ? "" : `border-${bg}`;
+      if (isOutline) {
+        if (!bg || bg === "none" || bg === "transparent") {
+          if (color && color !== "white") return isHexColor ? "" : `border-${color}`;
+          return "border-0";
+        }
+        return isHexBg ? "" : `border-${bg}`;
+      }
       return "border-0";
-    }, [border, isOutline, isHexBorder, isHexBg, bg]);
+    }, [border, isOutline, isHexBorder, isHexBg, bg, color, isHexColor]);
 
     // Dynamic background class
     const bgClass = useMemo(() => {
@@ -58,8 +65,9 @@ const Button = memo(
     const textClass = useMemo(() => {
       if (isOutline) {
         if (color && color !== "white") return isHexColor ? "" : `text-${color}`;
-        if (border) return isHexBorder ? "" : `text-${border}`;
-        return isHexBg ? "" : `text-${bg}`;
+        if (border && border !== "none" && border !== "0") return isHexBorder ? "" : `text-${border}`;
+        if (bg && bg !== "none" && bg !== "transparent") return isHexBg ? "" : `text-${bg}`;
+        return "";
       }
       return isHexColor ? "" : `text-${color}`;
     }, [isOutline, color, border, isHexColor, isHexBorder, isHexBg, bg]);
@@ -74,25 +82,39 @@ const Button = memo(
       if (isHexColor) base.color = color;
 
       // Handle border explicitly
-      if (border) {
+      if (border === "none" || border === "0") {
+        base.border = "none";
+      } else if (border === "transparent") {
+        base.border = "1px solid transparent";
+      } else if (border) {
         base.border = isHexBorder
           ? `1px solid ${border}`
           : `1px solid var(--${border}, currentColor)`;
       } else if (isOutline) {
-        base.border = isHexBg
-          ? `1px solid ${bg}`
-          : `1px solid var(--${bg}, currentColor)`;
+        if (bg === "none") {
+          base.border = "none";
+        } else if (bg === "transparent") {
+          base.border = "1px solid transparent";
+        } else if (bg) {
+          base.border = isHexBg
+            ? `1px solid ${bg}`
+            : `1px solid var(--${bg}, currentColor)`;
+        } else {
+          base.border = "none";
+        }
       } else {
         base.border = "none";
       }
 
       // Handle outline text color fallback
       if (isOutline && color === "white") {
-        const activeColor = border || bg;
-        if (isColorCode(activeColor)) {
-          base.color = activeColor;
-        } else {
-          base.color = `var(--${activeColor}, currentColor)`;
+        const activeColor = (border && border !== "none" && border !== "0") ? border : (bg && bg !== "none" && bg !== "transparent" ? bg : "");
+        if (activeColor) {
+          if (isColorCode(activeColor)) {
+            base.color = activeColor;
+          } else {
+            base.color = `var(--${activeColor}, currentColor)`;
+          }
         }
       }
 
@@ -130,9 +152,8 @@ const Button = memo(
         type={type}
         onClick={handleClick}
         disabled={disabled}
-        className={`${versionClass} rounded-5 ${borderClass} ${bgClass} ${textClass} ${
-          disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-        } ${className}`}
+        className={`${versionClass} rounded-5 ${borderClass} ${bgClass} ${textClass} ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+          } ${className}`}
         style={computedStyle}
         {...props}
       >

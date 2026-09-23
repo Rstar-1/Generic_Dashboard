@@ -291,7 +291,7 @@ const TopProductsCard = memo(({ products }) => (
                         style={{ borderColor: "var(--tertiary)" }}
                     >
                         <div className="w-80">
-                            <h4 className="text-dark headmini-text font-500" style={{ maxWidth: "170px" }}>
+                            <h4 className="text-dark headmini-text font-500">
                                 {item.name}
                             </h4>
                             <p className="mini-text text-gray font-400">{item.category}</p>
