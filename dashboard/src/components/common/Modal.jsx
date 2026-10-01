@@ -49,8 +49,8 @@ export const Modal = memo(
     const isFullscreen = size === "fullscreen";
 
     const wrapperClass = isSidebar || isFullscreen
-      ? "flex fixed top-0 left-0 w-full h-100 z-99"
-      : "flex items-center justify-center fixed top-0 left-0 w-full h-100 z-99 overflow-hidden";
+      ? "flex fixed top-0 left-0 w-full h-100 z-999"
+      : "flex items-center justify-center fixed top-0 left-0 w-full h-100 z-999 overflow-hidden";
 
     const wrapperStyle = useMemo(
       () =>
@@ -64,11 +64,11 @@ export const Modal = memo(
     );
 
     const cardClass = isSidebar
-      ? `bg-white relative z-999 b-shadow border-ec p-0 overflow-auto h-100 sm-w-full ${placement === "right" ? "animate-sidebar-right" : "animate-sidebar-left"
+      ? `bg-white relative z-99 b-shadow border-ec p-0 overflow-auto h-100 sm-w-full ${placement === "right" ? "animate-sidebar-right" : "animate-sidebar-left"
       }`
       : isFullscreen
-        ? "bg-white relative z-999 b-shadow border-ec p-0 overflow-auto w-full h-100 animate-modal-scale"
-        : "bg-white relative z-999 rounded-10 b-shadow border-ec p-0 overflow-auto animate-modal-scale sm-w-full";
+        ? "bg-white relative z-99 b-shadow border-ec p-0 overflow-auto w-full h-100 animate-modal-scale"
+        : "bg-white relative z-99 rounded-10 b-shadow border-ec p-0 overflow-auto animate-modal-scale sm-w-full";
 
     const sizeStyle = useMemo(
       () => ({

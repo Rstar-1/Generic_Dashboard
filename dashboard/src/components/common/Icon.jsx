@@ -80,14 +80,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                     <polyline points="8 6 2 12 8 18"></polyline>
                 </svg>
             );
-        case "Builder":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                    <polyline points="2 17 12 22 22 17"></polyline>
-                    <polyline points="2 12 12 17 22 12"></polyline>
-                </svg>
-            );
         case "Google Analytic":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
@@ -646,14 +638,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                     <line x1="3" y1="9" x2="21" y2="9" />
                 </svg>
             );
-        case "Sheet":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
-                    <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                    <polyline points="2 17 12 22 22 17" />
-                    <polyline points="2 12 12 17 22 12" />
-                </svg>
-            );
         case "Roll":
             return (
                 <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
@@ -874,6 +858,46 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                     <circle cx="16" cy="19" r="1.5" />
                 </svg>
             );
+        case "Music":
+            return (
+                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
+                    <path d="M9 18V5l12-2v13" />
+                    <circle cx="6" cy="18" r="3" />
+                    <circle cx="18" cy="16" r="3" />
+                </svg>
+            );
+        case "Server":
+            return (
+                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
+                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                    <line x1="6" y1="6" x2="6.01" y2="6" />
+                    <line x1="6" y1="18" x2="6.01" y2="18" />
+                </svg>
+            );
+        case "ChevronUp":
+            return (
+                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
+                    <polyline points="18 15 12 9 6 15" />
+                </svg>
+            );
+        case "Wifi":
+            return (
+                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
+                    <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+                    <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+                    <line x1="12" y1="20" x2="12.01" y2="20" />
+                </svg>
+            );
+        case "Rss":
+            return (
+                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} className={`flex ${className}`} {...props}>
+                    <path d="M4 11a9 9 0 0 1 9 9" />
+                    <path d="M4 4a16 16 0 0 1 16 16" />
+                    <circle cx="5" cy="19" r="1" />
+                </svg>
+            );
         default:
             return null;
     }
@@ -881,8 +905,8 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
 
 export const ALL_ICONS = [
     "Home", "Grid", "Management", "GitHub", "CMS", "AI", "Meta",
-    "Json", "Builder", "Google Analytic", "Task Manager", "Reviews", "Analytic",
-    "ChevronRight", "ChevronLeft", "ChevronDown", "ChevronsUpDown", "Info", "Alert", "Filter",
+    "Json", "Google Analytic", "Task Manager", "Reviews", "Analytic",
+    "ChevronRight", "ChevronLeft", "ChevronDown", "ChevronsUpDown", "ChevronUp", "Info", "Alert", "Filter",
     "MoreVertical", "Users", "Customers", "Settings", "Reports", "Sun", "Moon", "Help",
     "Logout", "Lock", "Unlock", "Star", "Search", "Loading", "Edit", "Trash",
     "MapPin", "Shield", "ShieldCheck", "Grow", "Business", "ArrowLeft", "ArrowRight",
@@ -893,10 +917,10 @@ export const ALL_ICONS = [
     "Percent", "Receipt", "Mail", "Map", "Clock", "Phone", "Call",
     "Support", "Payment", "Refresh",
     "Clipboard", "Box", "Sheets", "Layers", "GridDots", "Building", "Media", "Globe",
-    "Award", "Curtain", "Sheet", "Roll", "Film", "CurtainAlt", "ClearFilm", "Menu", "Close", "Feather",
+    "Award", "Curtain", "Roll", "Film", "CurtainAlt", "ClearFilm", "Menu", "Close", "Feather",
     "Code", "Rocket", "Zap", "Video", "Hangup", "Volume",
     "Eye", "EyeOff", "Calendar", "ExternalLink", "Upload", "File", "Plus", "Minus", "Bot",
-    "Sparkles", "Battery", "Screen", "Display",
+    "Sparkles", "Battery", "Screen", "Display", "Music", "Server", "Wifi", "Rss",
     "CaseGrid"
 ];
 

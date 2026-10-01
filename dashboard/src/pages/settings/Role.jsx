@@ -1,119 +1,126 @@
-import React, { useState, useCallback, useMemo, memo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
-import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
 import { showToast } from "../../components/common/Toast";
+import { rolesTableColumns, rolesData as initialRolesData } from "../../utils/apiData";
 
-// Data and table column definitions from apiData.js
-import {
-    rolesSidebarData,
-    rolesTableColumns,
-    rolesData as initialRolesData,
-} from "../../utils/apiData";
+const ITEMS_PER_PAGE = 5;
 
-// Navigation tabs for Role management
 const TABS = [
-    { name: "All Roles", value: "all" }
+    { name: "All Roles", value: "all" },
 ];
 
-const SIDEBAR_TO_TAB = {
-    "All Roles": "all"
-};
+const ROLE_OPTIONS = [
+    { label: "All Roles", value: "all" },
+    { label: "Customer", value: "customer" },
+    { label: "Admin", value: "admin" },
+    { label: "Accountant", value: "accountant" },
+    { label: "Manager", value: "manager" },
+    { label: "Product", value: "product" },
+];
+
+const STATUS_OPTIONS = [
+    { label: "All Statuses", value: "all" },
+    { label: "Active Only", value: "Active" },
+    { label: "Inactive Only", value: "Inactive" },
+];
+
+const PERMISSION_OPTIONS = [
+    { label: "All Permissions", value: "all" },
+    { label: "User Management (manage_users)", value: "manage_users" },
+    { label: "Role Management (manage_roles)", value: "manage_roles" },
+    { label: "Product Management (manage_products)", value: "manage_products" },
+    { label: "Analytics Access (view_analytics)", value: "view_analytics" },
+    { label: "Reports & Audit (view_reports)", value: "view_reports" },
+    { label: "Full System Access (full_access)", value: "full_access" },
+];
 
 // Memoized Filter Drawer Content
-const FilterDrawerContent = memo(({ statusFilter, setStatusFilter, permissionFilter, setPermissionFilter }) => {
-    const statusOptions = useMemo(
-        () => [
-            { label: "All Statuses", value: "all" },
-            { label: "Active Only", value: "Active" },
-            { label: "Inactive Only", value: "Inactive" },
-        ],
-        []
-    );
-
-    const permissionOptions = useMemo(
-        () => [
-            { label: "All Permissions", value: "all" },
-            { label: "User Management (manage_users)", value: "manage_users" },
-            { label: "Role Management (manage_roles)", value: "manage_roles" },
-            { label: "Product Management (manage_products)", value: "manage_products" },
-            { label: "Analytics Access (view_analytics)", value: "view_analytics" },
-            { label: "Reports & Audit (view_reports)", value: "view_reports" },
-            { label: "Full System Access (full_access)", value: "full_access" },
-        ],
-        []
-    );
-
-    return (
-        <div className="grid-cols-2 gap-16">
-            <Fields
-                type="select"
-                label="Role Status"
-                options={statusOptions}
-                value={statusFilter}
-                onChange={setStatusFilter}
-            />
-            <Fields
-                type="select"
-                label="Required Permission Capability"
-                options={permissionOptions}
-                value={permissionFilter}
-                onChange={setPermissionFilter}
-            />
-        </div>
-    );
-});
+const FilterDrawerContent = memo(({
+    role,
+    onRoleChange,
+    status,
+    onStatusChange,
+    permission,
+    onPermissionChange
+}) => (
+    <div className="grid-cols-4 gap-12">
+        <Fields
+            type="select"
+            label="Role Filter"
+            options={ROLE_OPTIONS}
+            value={role}
+            onChange={onRoleChange}
+        />
+        <Fields
+            type="select"
+            label="Role Status"
+            options={STATUS_OPTIONS}
+            value={status}
+            onChange={onStatusChange}
+        />
+        <Fields
+            type="select"
+            label="Required Permission Capability"
+            options={PERMISSION_OPTIONS}
+            value={permission}
+            onChange={onPermissionChange}
+        />
+    </div>
+));
 FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Role = () => {
     const [roles, setRoles] = useState(initialRolesData);
     const [activeTab, setActiveTab] = useState("all");
-    const [selectedCategory, setSelectedCategory] = useState("All Roles");
+    const [roleFilter, setRoleFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [permissionFilter, setPermissionFilter] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
 
-    // Sidebar items with dynamic role count calculations
-    const sidebarItems = useMemo(() => {
-        return rolesSidebarData.items.map((item) => {
-            let count = roles.length;
-            if (item.role !== "all") {
-                count = roles.filter((r) => r.role === item.role).length;
-            }
-            return { ...item, count, icon: "Shield" };
-        });
-    }, [roles]);
+    // Keep roles state synchronized when mock data updates
+    useEffect(() => {
+        setRoles(initialRolesData);
+    }, [initialRolesData]);
 
-    // Handlers wrapped in useCallback for zero unnecessary re-renders
-    const handleSidebarItemClick = useCallback((name) => {
-        setSelectedCategory(name);
-        setCurrentPage(1);
-        const mappedTab = SIDEBAR_TO_TAB[name] || "all";
-        setActiveTab(mappedTab);
-    }, []);
-
-    const handleTabChange = useCallback((tabValue) => {
-        setActiveTab(tabValue);
-        setCurrentPage(1);
-        const foundEntry = Object.entries(SIDEBAR_TO_TAB).find(([, val]) => val === tabValue);
-        if (foundEntry) setSelectedCategory(foundEntry[0]);
-        else setSelectedCategory("All Roles");
-    }, []);
-
-    const handleSearchChange = useCallback((value) => {
-        setSearchQuery(value);
+    const handleTabChange = useCallback((val) => {
+        const nextTab = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
+        setActiveTab(nextTab);
+        setRoleFilter(nextTab);
         setCurrentPage(1);
     }, []);
 
-    const handlePageChange = useCallback((newPage) => {
-        setCurrentPage(newPage);
+    const handleRoleChange = useCallback((val) => {
+        const nextRole = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
+        setRoleFilter(nextRole);
+        setActiveTab(nextRole);
+        setCurrentPage(1);
+    }, []);
+
+    const handleStatusChange = useCallback((val) => {
+        const nextStatus = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
+        setStatusFilter(nextStatus);
+        setCurrentPage(1);
+    }, []);
+
+    const handlePermissionChange = useCallback((val) => {
+        const nextPerm = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
+        setPermissionFilter(nextPerm);
+        setCurrentPage(1);
+    }, []);
+
+    const handleSearchChange = useCallback((val) => {
+        const nextQuery = typeof val === "string" ? val : (val?.target?.value ?? "");
+        setSearchQuery(nextQuery);
+        setCurrentPage(1);
     }, []);
 
     const handleClearFilters = useCallback(() => {
+        setActiveTab("all");
+        setRoleFilter("all");
         setStatusFilter("all");
         setPermissionFilter("all");
         setSearchQuery("");
@@ -136,72 +143,71 @@ const Role = () => {
         showToast(`Role "${row.name}" revoked & archived!`, "danger");
     }, []);
 
+    // Multi-criteria filtering with case-insensitive role, tab, status, and permissions
     const filteredRoles = useMemo(() => {
+        const q = searchQuery.toLowerCase().trim();
+        const targetTab = String(activeTab || "all").toLowerCase().trim();
+        const targetRole = String(roleFilter || "all").toLowerCase().trim();
+        const targetStatus = String(statusFilter || "all").toLowerCase().trim();
+        const targetPermission = String(permissionFilter || "all").trim();
+
         return roles.filter((item) => {
-            // Tab / Category filter
-            const matchesTab =
-                activeTab === "all" ||
-                (activeTab === "Active" ? item.status === "Active" : item.role === activeTab);
+            const itemRole = String(item.role || item.name || "").toLowerCase().trim();
+            const rawStatus = item.status;
+            const itemStatus = (typeof rawStatus === "boolean" ? (rawStatus ? "active" : "inactive") : String(rawStatus || "")).toLowerCase().trim();
 
-            // Status filter
-            const matchesStatus = statusFilter === "all" || item.status === statusFilter;
-
-            // Permission filter
+            const matchesTab = targetTab === "all" || itemRole === targetTab;
+            const matchesRole = targetRole === "all" || itemRole === targetRole;
+            const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
             const matchesPermission =
-                permissionFilter === "all" ||
-                (Array.isArray(item.permissions) && item.permissions.includes(permissionFilter));
+                targetPermission === "all" ||
+                (Array.isArray(item.permissions) && item.permissions.includes(targetPermission));
 
-            // Search query filter
-            const q = searchQuery.toLowerCase().trim();
             const matchesSearch =
                 !q ||
-                item.name.toLowerCase().includes(q) ||
-                (item.description && item.description.toLowerCase().includes(q)) ||
-                item.role.toLowerCase().includes(q) ||
-                (Array.isArray(item.permissions) &&
-                    item.permissions.some((p) => p.toLowerCase().includes(q)));
+                String(item.name || "").toLowerCase().includes(q) ||
+                String(item.description || "").toLowerCase().includes(q) ||
+                itemRole.includes(q) ||
+                item.permissions?.some((p) => String(p || "").toLowerCase().includes(q)) ||
+                item.pages?.some((p) => String(p || "").toLowerCase().includes(q));
 
-            return matchesTab && matchesStatus && matchesPermission && matchesSearch;
+            return matchesTab && matchesRole && matchesStatus && matchesPermission && matchesSearch;
         });
-    }, [roles, activeTab, statusFilter, permissionFilter, searchQuery]);
+    }, [roles, activeTab, roleFilter, statusFilter, permissionFilter, searchQuery]);
 
     const paginatedRoles = useMemo(() => {
-        const start = (currentPage - 1) * itemsPerPage;
-        return filteredRoles.slice(start, start + itemsPerPage);
-    }, [filteredRoles, currentPage, itemsPerPage]);
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredRoles.slice(start, start + ITEMS_PER_PAGE);
+    }, [filteredRoles, currentPage]);
 
-    const hasActiveFilters = useMemo(
-        () => statusFilter !== "all" || permissionFilter !== "all" || searchQuery !== "",
-        [statusFilter, permissionFilter, searchQuery]
-    );
+    const hasActiveFilters = activeTab !== "all" || roleFilter !== "all" || statusFilter !== "all" || permissionFilter !== "all" || Boolean(searchQuery);
 
     const filterInputsNode = useMemo(
         () => (
             <FilterDrawerContent
-                statusFilter={statusFilter}
-                setStatusFilter={setStatusFilter}
-                permissionFilter={permissionFilter}
-                setPermissionFilter={setPermissionFilter}
+                role={roleFilter}
+                onRoleChange={handleRoleChange}
+                status={statusFilter}
+                onStatusChange={handleStatusChange}
+                permission={permissionFilter}
+                onPermissionChange={handlePermissionChange}
             />
         ),
-        [statusFilter, permissionFilter]
+        [roleFilter, handleRoleChange, statusFilter, permissionFilter, handleStatusChange, handlePermissionChange]
     );
 
     return (
         <MainLayout
-            sidebarTitle={rolesSidebarData.title}
-            sidebarItems={sidebarItems}
-            selectedSidebarItem={selectedCategory}
-            onSidebarItemClick={handleSidebarItemClick}
+            showSidebar={false}
             headerIcon={<Icon name="Shield" width="18" height="18" />}
             headerTitle="Role Permissions & RBAC"
             headerSub="Define security profiles, granular permissions, privilege hierarchies, and user assignments"
-            quickAction=''
+            quickAction=""
             showTabControls={true}
             tabs={TABS}
             activeTab={activeTab}
             onTabChange={handleTabChange}
-            filterDescription="Filter role profiles by permission privilege, status, or keyword search"
+            filterDescription="Filter role profiles by customer role, permission privilege, status, or keyword search"
             filterInputs={filterInputsNode}
             hasActiveFilters={hasActiveFilters}
             onClearAllFilters={handleClearFilters}
@@ -213,9 +219,9 @@ const Role = () => {
                     data={paginatedRoles}
                     columns={rolesTableColumns}
                     totalItems={filteredRoles.length}
-                    itemsPerPage={itemsPerPage}
+                    itemsPerPage={ITEMS_PER_PAGE}
                     page={currentPage}
-                    onPageChange={handlePageChange}
+                    onPageChange={setCurrentPage}
                     searchQuery={searchQuery}
                     onSearchChange={handleSearchChange}
                     searchPlaceholder="Search roles by title, description, or permissions..."

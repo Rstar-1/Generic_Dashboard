@@ -124,7 +124,7 @@ export const Badge = memo(({
             return (
                 <div
                     onClick={onClick}
-                    className={`inline-flex items-center gap-6 ${onClick ? "cursor-pointer hover:opacity-85" : ""} ${className}`}
+                    className={`flex items-center gap-8 ${onClick ? "cursor-pointer" : ""} ${className}`}
                     style={style}
                     {...props}
                 >
@@ -139,8 +139,8 @@ export const Badge = memo(({
                         }}
                     />
                     <p
-                        className={`${capitalize ? "capitalize" : ""} ${sizeClass} font-500`}
-                        style={{ color: statusTextColor, padding: 0, margin: 0 }}
+                        className={`${capitalize ? "capitalize" : ""} mini-text font-500`}
+                        style={{ color: statusTextColor }}
                     >
                         {label}
                     </p>

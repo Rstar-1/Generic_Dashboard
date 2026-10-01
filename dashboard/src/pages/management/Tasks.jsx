@@ -1,56 +1,52 @@
-import React, { useState, useCallback, useMemo, memo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
 import { showToast } from "../../components/common/Toast";
-
-// Data and table column definitions from apiData.js
 import {
     tasksSidebarData,
     tasksTableColumns,
     tasksData as initialTasksData,
 } from "../../utils/apiData";
 
-// Tabs for task management
-const TABS = [
-    { name: "All Tasks", value: "all" }
+const ITEMS_PER_PAGE = 5;
+const TABS = [{ name: "All Tasks", value: "all" }];
+
+const PRIORITY_OPTIONS = [
+    { label: "All Priorities", value: "all" },
+    { label: "High Priority", value: "High" },
+    { label: "Medium Priority", value: "Medium" },
+    { label: "Low Priority", value: "Low" },
 ];
 
-const SIDEBAR_TO_TAB = {
-    "All Tasks": "all",
-    "High Priority": "Admin",
-    "Medium Priority": "User",
-    "Low Priority": "Member",
-};
+const STATUS_OPTIONS = [
+    { label: "All Statuses", value: "all" },
+    { label: "Active Only", value: "Active" },
+    { label: "Pending Only", value: "Pending" },
+    { label: "Failed Only", value: "Failed" },
+];
 
 // Memoized Filter Drawer Content
-const FilterDrawerContent = memo(({ tagFilter, setTagFilter }) => {
-    const tagOptions = useMemo(
-        () => [
-            { label: "All Categories", value: "all" },
-            { label: "Frontend", value: "Frontend" },
-            { label: "Security & RBAC", value: "Security" },
-            { label: "DevOps & Cloud", value: "DevOps" },
-            { label: "Payments & API", value: "Payments" },
-            { label: "Database", value: "Database" },
-        ],
-        []
-    );
-
-    return (
-        <div className="grid-cols-3 gap-12">
-            <Fields
-                type="select"
-                label="Module Filter"
-                options={tagOptions}
-                value={tagFilter}
-                onChange={setTagFilter}
-            />
-        </div>
-    );
-});
+const FilterDrawerContent = memo(({ priority, onPriorityChange, status, onStatusChange }) => (
+    <div className="grid-cols-4 gap-12">
+        <Fields
+            type="select"
+            label="Priority Filter"
+            options={PRIORITY_OPTIONS}
+            value={priority}
+            onChange={onPriorityChange}
+        />
+        <Fields
+            type="select"
+            label="Status Filter"
+            options={STATUS_OPTIONS}
+            value={status}
+            onChange={onStatusChange}
+        />
+    </div>
+));
 FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Tasks = () => {
@@ -58,51 +54,69 @@ const Tasks = () => {
     const [activeTab, setActiveTab] = useState("all");
     const [selectedCategory, setSelectedCategory] = useState("All Tasks");
     const [searchQuery, setSearchQuery] = useState("");
-    const [tagFilter, setTagFilter] = useState("all");
+    const [priorityFilter, setPriorityFilter] = useState("all");
+    const [statusFilter, setStatusFilter] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
 
-    // Sidebar items with dynamic task count calculations
+    // Keep tasks state synchronized when initial dataset updates
+    useEffect(() => {
+        setTasks(initialTasksData);
+    }, [initialTasksData]);
+
+    const handleSearchChange = useCallback((val) => {
+        const next = typeof val === "string" ? val : (val?.target?.value ?? "");
+        setSearchQuery(next);
+        setCurrentPage(1);
+    }, []);
+
+    const handlePriorityFilterChange = useCallback((val) => {
+        const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
+        setPriorityFilter(next);
+        setCurrentPage(1);
+    }, []);
+
+    const handleStatusFilterChange = useCallback((val) => {
+        const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
+        setStatusFilter(next);
+        setCurrentPage(1);
+    }, []);
+
+    // Sidebar items with real-time dynamic count calculations
     const sidebarItems = useMemo(() => {
-        return tasksSidebarData.items.map((item) => {
-            let count = tasks.length;
-            if (item.priority !== "all") {
-                count = tasks.filter((t) => t.priority === item.priority).length;
-            }
-            return { ...item, count, icon: "Clipboard" };
-        });
+        const counts = tasks.reduce((acc, t) => {
+            const p = t.priority?.toLowerCase();
+            if (p) acc[p] = (acc[p] || 0) + 1;
+            return acc;
+        }, {});
+
+        return tasksSidebarData.items.map((item) => ({
+            ...item,
+            icon: "Clipboard",
+            count: item.priority === "all" ? tasks.length : (counts[item.priority?.toLowerCase()] || 0),
+        }));
     }, [tasks]);
 
-    // Handlers wrapped in useCallback
+    // Sidebar & tab navigation handlers
     const handleSidebarItemClick = useCallback((name) => {
         setSelectedCategory(name);
         setCurrentPage(1);
-        const mappedTab = SIDEBAR_TO_TAB[name] || "all";
-        setActiveTab(mappedTab);
+        const item = tasksSidebarData.items.find((i) => i.name === name);
+        setActiveTab(item?.priority || "all");
     }, []);
 
     const handleTabChange = useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
-        const foundEntry = Object.entries(SIDEBAR_TO_TAB).find(([, val]) => val === tabValue);
-        if (foundEntry) setSelectedCategory(foundEntry[0]);
-        else setSelectedCategory("All Tasks");
-    }, []);
-
-    const handleSearchChange = useCallback((value) => {
-        setSearchQuery(value);
-        setCurrentPage(1);
-    }, []);
-
-    const handlePageChange = useCallback((newPage) => {
-        setCurrentPage(newPage);
+        const item = tasksSidebarData.items.find((i) => i.priority === tabValue);
+        setSelectedCategory(item ? item.name : "All Tasks");
     }, []);
 
     const handleClearFilters = useCallback(() => {
-        setTagFilter("all");
+        setPriorityFilter("all");
+        setStatusFilter("all");
         setSearchQuery("");
         setCurrentPage(1);
-        showToast("Task filters cleared", "info");
+        showToast("Task filters reset", "info");
     }, []);
 
     // Action handlers for rows
@@ -119,78 +133,76 @@ const Tasks = () => {
         showToast(`Task ${row.id} completed & archived!`, "success");
     }, []);
 
-    const handleCreateTask = useCallback(() => {
-        showToast("Create Task dialog initialized!", "success");
-    }, []);
-
     const handleExportTasks = useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(tasks, null, 2));
         showToast("Task backlog exported to clipboard!", "success");
     }, [tasks]);
 
-    // Filter and paginate data
+    // Multi-criteria filtering: sidebar priority, drawer priority, status & search
     const filteredTasks = useMemo(() => {
+        const q = searchQuery.toLowerCase().trim();
+        const targetTab = String(activeTab || "all").toLowerCase().trim();
+        const targetPriority = String(priorityFilter || "all").toLowerCase().trim();
+        const targetStatus = String(statusFilter || "all").toLowerCase().trim();
+
         return tasks.filter((item) => {
-            // Tab / Category filter
-            const matchesTab = activeTab === "all" || item.priority === activeTab;
+            const itemPriority = String(item.priority || "").toLowerCase().trim();
+            const itemStatus = String(item.status || "").toLowerCase().trim();
 
-            // Tag filter
-            const matchesTag =
-                tagFilter === "all" ||
-                (Array.isArray(item.tags) && item.tags.some((t) => t.toLowerCase().includes(tagFilter.toLowerCase())));
+            const matchesTab = targetTab === "all" || itemPriority === targetTab;
+            const matchesPriority = targetPriority === "all" || itemPriority === targetPriority;
+            const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
 
-            // Search query filter
-            const q = searchQuery.toLowerCase().trim();
             const matchesSearch =
                 !q ||
-                item.title.toLowerCase().includes(q) ||
-                item.id.toLowerCase().includes(q) ||
-                (item.assignee?.name && item.assignee.name.toLowerCase().includes(q));
+                String(item.title || "").toLowerCase().includes(q) ||
+                String(item.id || "").toLowerCase().includes(q) ||
+                itemPriority.includes(q) ||
+                itemStatus.includes(q) ||
+                String(item.assignee?.name || "").toLowerCase().includes(q) ||
+                String(item.assignee?.mobile || "").toLowerCase().includes(q);
 
-            return matchesTab && matchesTag && matchesSearch;
+            return matchesTab && matchesPriority && matchesStatus && matchesSearch;
         });
-    }, [tasks, activeTab, tagFilter, searchQuery]);
+    }, [tasks, activeTab, priorityFilter, statusFilter, searchQuery]);
 
     const paginatedTasks = useMemo(() => {
-        const start = (currentPage - 1) * itemsPerPage;
-        return filteredTasks.slice(start, start + itemsPerPage);
-    }, [filteredTasks, currentPage, itemsPerPage]);
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredTasks.slice(start, start + ITEMS_PER_PAGE);
+    }, [filteredTasks, currentPage]);
 
     const hasActiveFilters = useMemo(
-        () => tagFilter !== "all" || searchQuery !== "",
-        [tagFilter, searchQuery]
+        () => priorityFilter !== "all" || statusFilter !== "all" || Boolean(searchQuery.trim()),
+        [priorityFilter, statusFilter, searchQuery]
     );
 
     const filterInputsNode = useMemo(
-        () => <FilterDrawerContent tagFilter={tagFilter} setTagFilter={setTagFilter} />,
-        [tagFilter]
+        () => (
+            <FilterDrawerContent
+                priority={priorityFilter}
+                onPriorityChange={handlePriorityFilterChange}
+                status={statusFilter}
+                onStatusChange={handleStatusFilterChange}
+            />
+        ),
+        [priorityFilter, handlePriorityFilterChange, statusFilter, handleStatusFilterChange]
     );
 
     const quickActionNode = useMemo(
         () => (
-            <div className="flex items-center gap-8">
-                <Button
-                    text="Export Tasks"
-                    version="v2"
-                    bg="white"
-                    color="dark"
-                    border="tertiary"
-                    icon="File"
-                    onClick={handleExportTasks}
-                    title="Export task list to JSON"
-                />
-                <Button
-                    text="New Task"
-                    version="v2"
-                    bg="primary"
-                    color="white"
-                    icon="Plus"
-                    onClick={handleCreateTask}
-                    title="Create a new task item"
-                />
-            </div>
+            <Button
+                text="Export CSV"
+                version="v2"
+                bg="primary"
+                variant="outline"
+                border="primary"
+                color="white"
+                icon="File"
+                title="Download task backlog"
+                onClick={handleExportTasks}
+            />
         ),
-        [handleExportTasks, handleCreateTask]
+        [handleExportTasks]
     );
 
     return (
@@ -212,31 +224,29 @@ const Tasks = () => {
             hasActiveFilters={hasActiveFilters}
             onClearAllFilters={handleClearFilters}
         >
-            <div>
-                <Table
-                    title="Task Backlog & Assignments"
-                    subtitle="Track sprint progress, deliverables, and team member assignments"
-                    data={paginatedTasks}
-                    columns={tasksTableColumns}
-                    totalItems={filteredTasks.length}
-                    itemsPerPage={itemsPerPage}
-                    page={currentPage}
-                    onPageChange={handlePageChange}
-                    searchQuery={searchQuery}
-                    onSearchChange={handleSearchChange}
-                    searchPlaceholder="Search task by title, ID, or assignee..."
-                    itemName="tasks"
-                    collapsible={true}
-                    maxVisibleColumns={5}
-                    minWidth="1050px"
-                    onView={handleViewTask}
-                    onEdit={handleEditTask}
-                    onDelete={handleDeleteTask}
-                    viewTitle="View Task Details"
-                    editTitle="Edit Task"
-                    deleteTitle="Complete & Archive"
-                />
-            </div>
+            <Table
+                title="Task Backlog & Assignments"
+                subtitle="Track sprint progress, deliverables, and team member assignments"
+                data={paginatedTasks}
+                columns={tasksTableColumns}
+                totalItems={filteredTasks.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                page={currentPage}
+                onPageChange={setCurrentPage}
+                searchQuery={searchQuery}
+                onSearchChange={handleSearchChange}
+                searchPlaceholder="Search task by title, ID, assignee, or mobile..."
+                itemName="tasks"
+                collapsible={true}
+                maxVisibleColumns={5}
+                minWidth="1050px"
+                onView={handleViewTask}
+                onEdit={handleEditTask}
+                onDelete={handleDeleteTask}
+                viewTitle="View Task Details"
+                editTitle="Edit Task"
+                deleteTitle="Complete & Archive"
+            />
         </MainLayout>
     );
 };

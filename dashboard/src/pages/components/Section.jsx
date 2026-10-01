@@ -141,21 +141,29 @@ const Section = () => {
         setPreviewItem(item);
     }, []);
 
-    // Code Modal handlers
+    // Code Modal & Copy handlers
     const handleOpenSectionCode = useCallback((section) => {
-        const code = generateSectionCode(section);
+        const code = section?.code || generateSectionCode(section);
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(code);
+            showToast(`${section.title} UI code copied to clipboard!`, "success");
+        }
         setCodeModal({
             isOpen: true,
-            title: `${section.title} JSX Code`,
+            title: `${section.title} Section UI Code`,
             code,
         });
     }, []);
 
     const handleOpenItemCode = useCallback((item, section) => {
-        const code = generateItemCode(item, section);
+        const code = item?.code || generateItemCode(item, section);
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(code);
+            showToast(`${section.title || "Section"} (${item.badge || "Variant"}) UI code copied!`, "success");
+        }
         setCodeModal({
             isOpen: true,
-            title: `${section.title || "Section"} (${item.badge || "Variant"}) Code`,
+            title: `${section.title || "Section"} (${item.badge || "Variant"}) UI Code`,
             code,
         });
     }, []);
@@ -163,9 +171,14 @@ const Section = () => {
     const handleCopyCode = useCallback(() => {
         if (navigator.clipboard) {
             navigator.clipboard.writeText(codeModal.code);
-            showToast("Section JSX code copied to clipboard!", "success");
+            showToast("Section UI code copied to clipboard!", "success");
         }
     }, [codeModal.code]);
+
+    // Responsive sidebar items with live counts
+    const sidebarItems = useMemo(() => {
+        return SIDEBAR_ITEMS;
+    }, []);
 
     // Filter master array by activeTab
     const filteredSections = useMemo(() => {
@@ -175,7 +188,7 @@ const Section = () => {
     return (
         <MainLayout
             sidebarTitle="Section Groups"
-            sidebarItems={SIDEBAR_ITEMS}
+            sidebarItems={sidebarItems}
             selectedSidebarItem={selectedCategory}
             onSidebarItemClick={handleSidebarItemClick}
             headerIcon={<Icon name="Layers" width="18" height="18" />}

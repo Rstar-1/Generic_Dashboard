@@ -4,9 +4,11 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // 🧩 Layout
 import Layout from '../components/layout/Layout';
 import Loader from '../components/common/generic/Loader';
+import BotLayout from '../components/layout/BotLayout';
 
 // 📦 Lazy Pages
 const Dashboard = lazy(() => import('../pages/dashboard/Dashboard'));
+const Analytics = lazy(() => import('../pages/analytics/Analytics'));
 const FieldSection = lazy(() => import('../pages/components/FieldSection'));
 const Section = lazy(() => import('../pages/components/Section'));
 const TemplateSection = lazy(() => import('../pages/components/TemplateSection'));
@@ -16,6 +18,8 @@ const Transaction = lazy(() => import('../pages/management/Transaction'));
 const User = lazy(() => import('../pages/settings/User'));
 const Role = lazy(() => import('../pages/settings/Role'));
 
+const Bot = lazy(() => import('../pages/bot/Bot'));
+
 function AppRoutes() {
     return (
         <Suspense fallback={<Loader />}>
@@ -23,6 +27,7 @@ function AppRoutes() {
                 <Route path="/" element={<Layout />}>
                     <Route index element={<Navigate to="/dashboard" replace />} />
                     <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="analytics" element={<Analytics />} />
                     <Route path="components/fields" element={<FieldSection />} />
                     <Route path="components/sections" element={<Section />} />
                     <Route path="components/templates" element={<TemplateSection />} />
@@ -34,6 +39,10 @@ function AppRoutes() {
                     <Route path="transactions" element={<Transaction />} />
                     <Route path="settings/users" element={<User />} />
                     <Route path="settings/roles" element={<Role />} />
+                </Route>
+                <Route path="/bot" element={<BotLayout />}>
+                    <Route index element={<Bot />} />
+                    <Route path="bot" element={<Bot />} />
                 </Route>
                 <Route path="*" element={<h2 style={{ textAlign: 'center', padding: '100px 20px' }}>404 - Page Not Found</h2>} />
             </Routes>

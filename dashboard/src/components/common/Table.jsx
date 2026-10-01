@@ -102,12 +102,12 @@ const ProfileCell = React.memo(({ col, row }) => {
     const imgStyle = { width: "40px", height: "40px", flexShrink: 0, ...col.imgStyle, ...col.imageStyle };
 
     return (
-        <div className="flex items-center gap-12">
+        <div className="flex items-center gap-8">
             {imgUrl ? (
-                <Image src={imgUrl} alt={name} className="rounded-5 object-contain bg-forth p-2 border-tertiary" style={imgStyle} />
+                <Image src={imgUrl} alt={name} className="rounded-5 object-cover bg-forth" style={imgStyle} />
             ) : (
-                <div style={{ background: favColor, width: "32px", height: "32px", borderRadius: "50%", flexShrink: 0 }} className="center-div">
-                    <p className="mini-text text-white font-600">
+                <div style={{ background: favColor, width: "40px", height: "40px" }} className="flex items-center justify-center rounded-5">
+                    <p className="headpara-text text-white font-500">
                         {name ? String(name).charAt(0).toUpperCase() : "?"}
                     </p>
                 </div>
@@ -263,15 +263,19 @@ const TableCell = React.memo(({
                 );
             case "status": {
                 const lower = String(cellValue || "").toLowerCase();
-                const isActive = typeof cellValue === "boolean" ? cellValue : ["active", "approved", "published", "true"].includes(lower);
-                const statusColor = isActive ? "#10b981" : "#ef4444";
-                const displayLabel = cellValue && typeof cellValue === "string" ? cellValue : (isActive ? "Active" : "Inactive");
+                const isSuccess = typeof cellValue === "boolean"
+                    ? cellValue
+                    : ["active", "approved", "published", "completed", "success", "paid", "delivered", "true"].includes(lower);
+                const isWarning = ["pending", "in progress", "processing", "waiting", "review"].includes(lower);
+                const statusColor = isSuccess ? "#10b981" : isWarning ? "#f59e0b" : "#ef4444";
+                const textColor = isSuccess ? "var(--success)" : isWarning ? "var(--warning)" : "var(--danger)";
+                const displayLabel = cellValue && typeof cellValue === "string" ? cellValue : (isSuccess ? "Active" : isWarning ? "Pending" : "Inactive");
                 return (
                     <Badge
                         variant="status"
                         dot={statusColor}
                         text={displayLabel}
-                        textColor={isActive ? "var(--success, #10b981)" : "var(--danger, #ef4444)"}
+                        textColor={textColor}
                         className="small-text font-500"
                     />
                 );
@@ -380,15 +384,14 @@ const TableRow = React.memo(({
                     if (col.accessor === "_expand") {
                         return (
                             <td key={colIdx} className="p-10 text-center bordb" style={{ verticalAlign: "middle" }}>
-                                <button
-                                    type="button"
+                                <Button
                                     onClick={() => onToggleExpand(rowId)}
-                                    className="p-6 rounded-5 border-0 bg-light text-primary hover:bg-primary hover:text-white cursor-pointer flex items-center justify-center"
-                                    style={{ margin: "0 auto", transition: "all 0.2s ease", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
+                                    icon={isExpanded ? "ChevronUp" : "ChevronDown"}
+                                    bg="tertiary"
+                                    color="dark"
+                                    version="icon"
                                     title={isExpanded ? "Collapse Details" : "Expand Details"}
-                                >
-                                    <Icon name="ChevronDown" width="14" height="14" strokeWidth="2.5" />
-                                </button>
+                                />
                             </td>
                         );
                     }
@@ -645,7 +648,7 @@ const Table = ({
                                     const rowId = row._id || row.id || rowIdx;
                                     return (
                                         <TableRow
-                                            key={rowId}
+                                            key={`${rowId}_${rowIdx}`}
                                             row={row}
                                             rowIdx={rowIdx}
                                             displayHeaders={displayHeaders}

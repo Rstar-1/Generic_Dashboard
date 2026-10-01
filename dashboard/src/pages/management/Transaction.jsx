@@ -1,56 +1,54 @@
-import React, { useState, useCallback, useMemo, memo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
 import { showToast } from "../../components/common/Toast";
-
-// Data and table column definitions from apiData.js
 import {
     transactionsSidebarData,
     transactionsTableColumns,
     transactionsData as initialTransactionsData,
 } from "../../utils/apiData";
 
-// Tabs for transaction management
-const TABS = [
-    { name: "All Transactions", value: "all" }
+const ITEMS_PER_PAGE = 5;
+const TABS = [{ name: "All Transactions", value: "all" }];
+
+const STATUS_OPTIONS = [
+    { label: "All Statuses", value: "all" },
+    { label: "Completed", value: "Completed" },
+    { label: "Pending", value: "Pending" },
+    { label: "Failed", value: "Failed" },
 ];
 
-const SIDEBAR_TO_TAB = {
-    "All Transactions": "all",
-    "Completed": "Active",
-    "Pending": "Pending",
-    "Failed": "Inactive",
-    "Failed / Refunded": "Inactive",
-};
+const METHOD_OPTIONS = [
+    { label: "All Payment Methods", value: "all" },
+    { label: "Cash On Delivery", value: "Cash On Delivery" },
+    { label: "Credit Card", value: "Credit Card" },
+    { label: "Wire Transfer", value: "Wire Transfer" },
+    { label: "UPI / NetBanking", value: "UPI / NetBanking" },
+    { label: "Debit Card", value: "Debit Card" },
+];
 
 // Memoized Filter Drawer Content
-const FilterDrawerContent = memo(({ methodFilter, setMethodFilter }) => {
-    const methodOptions = useMemo(
-        () => [
-            { label: "All Payment Methods", value: "all" },
-            { label: "Credit Card", value: "Credit Card" },
-            { label: "Wire Transfer", value: "Wire Transfer" },
-            { label: "UPI / NetBanking", value: "UPI / NetBanking" },
-            { label: "Debit Card", value: "Debit Card" },
-        ],
-        []
-    );
-
-    return (
-        <div className="grid-cols-3 gap-12">
-            <Fields
-                type="select"
-                label="Payment Method Filter"
-                options={methodOptions}
-                value={methodFilter}
-                onChange={setMethodFilter}
-            />
-        </div>
-    );
-});
+const FilterDrawerContent = memo(({ status, onStatusChange, method, onMethodChange }) => (
+    <div className="grid-cols-4 gap-12">
+        <Fields
+            type="select"
+            label="Transaction Status"
+            options={STATUS_OPTIONS}
+            value={status}
+            onChange={onStatusChange}
+        />
+        <Fields
+            type="select"
+            label="Payment Method"
+            options={METHOD_OPTIONS}
+            value={method}
+            onChange={onMethodChange}
+        />
+    </div>
+));
 FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Transaction = () => {
@@ -58,51 +56,69 @@ const Transaction = () => {
     const [activeTab, setActiveTab] = useState("all");
     const [selectedCategory, setSelectedCategory] = useState("All Transactions");
     const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
     const [methodFilter, setMethodFilter] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
 
-    // Sidebar items with dynamic transaction count calculations
+    // Synchronize state when mock dataset updates
+    useEffect(() => {
+        setTransactions(initialTransactionsData);
+    }, [initialTransactionsData]);
+
+    const handleSearchChange = useCallback((val) => {
+        const next = typeof val === "string" ? val : (val?.target?.value ?? "");
+        setSearchQuery(next);
+        setCurrentPage(1);
+    }, []);
+
+    const handleStatusFilterChange = useCallback((val) => {
+        const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
+        setStatusFilter(next);
+        setCurrentPage(1);
+    }, []);
+
+    const handleMethodFilterChange = useCallback((val) => {
+        const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
+        setMethodFilter(next);
+        setCurrentPage(1);
+    }, []);
+
+    // Sidebar items with real-time dynamic count calculations
     const sidebarItems = useMemo(() => {
-        return transactionsSidebarData.items.map((item) => {
-            let count = transactions.length;
-            if (item.status !== "all") {
-                count = transactions.filter((t) => t.status === item.status).length;
-            }
-            return { ...item, count, icon: "CMS" };
-        });
+        const counts = transactions.reduce((acc, t) => {
+            const s = t.status?.toLowerCase();
+            if (s) acc[s] = (acc[s] || 0) + 1;
+            return acc;
+        }, {});
+
+        return transactionsSidebarData.items.map((item) => ({
+            ...item,
+            icon: "CMS",
+            count: item.status === "all" ? transactions.length : (counts[item.status?.toLowerCase()] || 0),
+        }));
     }, [transactions]);
 
-    // Handlers wrapped in useCallback
+    // Sidebar & tab navigation handlers
     const handleSidebarItemClick = useCallback((name) => {
         setSelectedCategory(name);
         setCurrentPage(1);
-        const mappedTab = SIDEBAR_TO_TAB[name] || "all";
-        setActiveTab(mappedTab);
+        const item = transactionsSidebarData.items.find((i) => i.name === name);
+        setActiveTab(item?.status || "all");
     }, []);
 
     const handleTabChange = useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
-        const foundEntry = Object.entries(SIDEBAR_TO_TAB).find(([, val]) => val === tabValue);
-        if (foundEntry) setSelectedCategory(foundEntry[0]);
-        else setSelectedCategory("All Transactions");
-    }, []);
-
-    const handleSearchChange = useCallback((value) => {
-        setSearchQuery(value);
-        setCurrentPage(1);
-    }, []);
-
-    const handlePageChange = useCallback((newPage) => {
-        setCurrentPage(newPage);
+        const item = transactionsSidebarData.items.find((i) => i.status === tabValue);
+        setSelectedCategory(item ? item.name : "All Transactions");
     }, []);
 
     const handleClearFilters = useCallback(() => {
+        setStatusFilter("all");
         setMethodFilter("all");
         setSearchQuery("");
         setCurrentPage(1);
-        showToast("Transaction filters cleared", "info");
+        showToast("Transaction filters reset", "info");
     }, []);
 
     // Action handlers for rows
@@ -124,56 +140,70 @@ const Transaction = () => {
         showToast("Financial statement exported to clipboard!", "success");
     }, [transactions]);
 
-    // Filter and paginate data
+    // Multi-criteria filtering: sidebar status, drawer status, payment method & search
     const filteredTransactions = useMemo(() => {
+        const q = searchQuery.toLowerCase().trim();
+        const targetTab = String(activeTab || "all").toLowerCase().trim();
+        const targetStatus = String(statusFilter || "all").toLowerCase().trim();
+        const targetMethod = String(methodFilter || "all").toLowerCase().trim();
+
         return transactions.filter((item) => {
-            // Tab / Category filter
-            const matchesTab = activeTab === "all" || item.status === activeTab;
+            const itemStatus = String(item.status || "").toLowerCase().trim();
+            const itemMethod = String(item.method || "").toLowerCase().trim();
 
-            // Method filter
-            const matchesMethod = methodFilter === "all" || item.method === methodFilter;
+            const matchesTab = targetTab === "all" || itemStatus === targetTab;
+            const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
+            const matchesMethod = targetMethod === "all" || itemMethod === targetMethod;
 
-            // Search query filter
-            const q = searchQuery.toLowerCase().trim();
             const matchesSearch =
                 !q ||
-                item.transactionId.toLowerCase().includes(q) ||
-                item.amount.toLowerCase().includes(q) ||
-                (item.customer?.name && item.customer.name.toLowerCase().includes(q)) ||
-                (item.customer?.email && item.customer.email.toLowerCase().includes(q));
+                String(item.transactionId || "").toLowerCase().includes(q) ||
+                String(item.amount || "").toLowerCase().includes(q) ||
+                itemMethod.includes(q) ||
+                itemStatus.includes(q) ||
+                String(item.customer?.name || "").toLowerCase().includes(q) ||
+                String(item.customer?.email || "").toLowerCase().includes(q) ||
+                String(item.customer?.mobile || "").toLowerCase().includes(q);
 
-            return matchesTab && matchesMethod && matchesSearch;
+            return matchesTab && matchesStatus && matchesMethod && matchesSearch;
         });
-    }, [transactions, activeTab, methodFilter, searchQuery]);
+    }, [transactions, activeTab, statusFilter, methodFilter, searchQuery]);
 
     const paginatedTransactions = useMemo(() => {
-        const start = (currentPage - 1) * itemsPerPage;
-        return filteredTransactions.slice(start, start + itemsPerPage);
-    }, [filteredTransactions, currentPage, itemsPerPage]);
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredTransactions.slice(start, start + ITEMS_PER_PAGE);
+    }, [filteredTransactions, currentPage]);
 
     const hasActiveFilters = useMemo(
-        () => methodFilter !== "all" || searchQuery !== "",
-        [methodFilter, searchQuery]
+        () => statusFilter !== "all" || methodFilter !== "all" || Boolean(searchQuery.trim()),
+        [statusFilter, methodFilter, searchQuery]
     );
 
     const filterInputsNode = useMemo(
-        () => <FilterDrawerContent methodFilter={methodFilter} setMethodFilter={setMethodFilter} />,
-        [methodFilter]
+        () => (
+            <FilterDrawerContent
+                status={statusFilter}
+                onStatusChange={handleStatusFilterChange}
+                method={methodFilter}
+                onMethodChange={handleMethodFilterChange}
+            />
+        ),
+        [statusFilter, handleStatusFilterChange, methodFilter, handleMethodFilterChange]
     );
 
     const quickActionNode = useMemo(
         () => (
-            <div className="flex items-center gap-8">
-                <Button
-                    text="Export Statement"
-                    version="v2"
-                    bg="primary"
-                    color="white"
-                    icon="File"
-                    onClick={handleExportStatement}
-                    title="Download financial ledger statement"
-                />
-            </div>
+            <Button
+                text="Export Statement"
+                version="v2"
+                bg="primary"
+                variant="outline"
+                border="primary"
+                color="white"
+                icon="File"
+                onClick={handleExportStatement}
+                title="Download financial ledger statement"
+            />
         ),
         [handleExportStatement]
     );
@@ -197,31 +227,29 @@ const Transaction = () => {
             hasActiveFilters={hasActiveFilters}
             onClearAllFilters={handleClearFilters}
         >
-            <div>
-                <Table
-                    title="Payment Ledger & Invoices"
-                    subtitle="Chronological transaction records with gateway status and payment method"
-                    data={paginatedTransactions}
-                    columns={transactionsTableColumns}
-                    totalItems={filteredTransactions.length}
-                    itemsPerPage={itemsPerPage}
-                    page={currentPage}
-                    onPageChange={handlePageChange}
-                    searchQuery={searchQuery}
-                    onSearchChange={handleSearchChange}
-                    searchPlaceholder="Search by transaction ID, customer name, or email..."
-                    itemName="transactions"
-                    collapsible={true}
-                    maxVisibleColumns={5}
-                    minWidth="1050px"
-                    onView={handleViewTransaction}
-                    onEdit={handleEditTransaction}
-                    onDelete={handleDeleteTransaction}
-                    viewTitle="View Invoice Receipt"
-                    editTitle="Adjust Entry"
-                    deleteTitle="Cancel Transaction"
-                />
-            </div>
+            <Table
+                title="Payment Ledger & Invoices"
+                subtitle="Chronological transaction records with gateway status and payment method"
+                data={paginatedTransactions}
+                columns={transactionsTableColumns}
+                totalItems={filteredTransactions.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                page={currentPage}
+                onPageChange={setCurrentPage}
+                searchQuery={searchQuery}
+                onSearchChange={handleSearchChange}
+                searchPlaceholder="Search by transaction ID, customer name, or phone..."
+                itemName="transactions"
+                collapsible={true}
+                maxVisibleColumns={5}
+                minWidth="1050px"
+                onView={handleViewTransaction}
+                onEdit={handleEditTransaction}
+                onDelete={handleDeleteTransaction}
+                viewTitle="View Invoice Receipt"
+                editTitle="Adjust Entry"
+                deleteTitle="Cancel Transaction"
+            />
         </MainLayout>
     );
 };

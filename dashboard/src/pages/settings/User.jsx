@@ -1,53 +1,37 @@
-import React, { useState, useCallback, useMemo, memo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
 import { showToast } from "../../components/common/Toast";
-
-// Data and table column definitions from apiData.js
 import {
     usersSidebarData,
     usersTableColumns,
     usersData as initialUsersData,
 } from "../../utils/apiData";
 
-// Navigation tabs for User management
-const TABS = [
-    { name: "All Users", value: "all" }
+const ITEMS_PER_PAGE = 5;
+const TABS = [{ name: "All Users", value: "all" }];
+
+const STATUS_OPTIONS = [
+    { label: "All Account Statuses", value: "all" },
+    { label: "Active Only", value: "Active" },
+    { label: "Inactive Only", value: "Inactive" },
 ];
 
-const SIDEBAR_TO_TAB = {
-    "All Users": "all",
-    "Administrator": "Administrator",
-    "Vendor": "Vendor",
-    "User": "User",
-};
-
 // Memoized Filter Drawer Content
-const FilterDrawerContent = memo(({ statusFilter, setStatusFilter }) => {
-    const statusOptions = useMemo(
-        () => [
-            { label: "All Account Statuses", value: "all" },
-            { label: "Active Only", value: "Active" },
-            { label: "Inactive Only", value: "Inactive" },
-        ],
-        []
-    );
-
-    return (
-        <div className="grid-cols-3 gap-12">
-            <Fields
-                type="select"
-                label="Account Status Filter"
-                options={statusOptions}
-                value={statusFilter}
-                onChange={setStatusFilter}
-            />
-        </div>
-    );
-});
+const FilterDrawerContent = memo(({ status, onStatusChange }) => (
+    <div className="grid-cols-4 gap-12">
+        <Fields
+            type="select"
+            label="Account Status Filter"
+            options={STATUS_OPTIONS}
+            value={status}
+            onChange={onStatusChange}
+        />
+    </div>
+));
 FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const User = () => {
@@ -57,46 +41,52 @@ const User = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
 
-    // Sidebar items with dynamic user count calculations
+    // Keep users state synced when mock data updates
+    useEffect(() => {
+        setUsers(initialUsersData);
+    }, [initialUsersData]);
+
+    const handleSearchChange = useCallback((val) => {
+        const nextQuery = typeof val === "string" ? val : (val?.target?.value ?? "");
+        setSearchQuery(nextQuery);
+        setCurrentPage(1);
+    }, []);
+
+    const handleStatusFilterChange = useCallback((val) => {
+        const nextStatus = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
+        setStatusFilter(nextStatus);
+        setCurrentPage(1);
+    }, []);
+
+    // Sidebar items with dynamic role count in a single O(N) pass
     const sidebarItems = useMemo(() => {
-        return usersSidebarData.items.map((item) => {
-            let count = users.length;
-            if (item.role === "admin") {
-                count = users.filter((u) => u.role === "Administrator").length;
-            } else if (item.role === "vendor") {
-                count = users.filter((u) => u.role === "Vendor").length;
-            } else if (item.role === "user") {
-                count = users.filter((u) => u.role === "User").length;
-            }
-            return { ...item, count, icon: "Users" };
-        });
+        const counts = users.reduce((acc, u) => {
+            const roleKey = u.role?.toLowerCase();
+            if (roleKey) acc[roleKey] = (acc[roleKey] || 0) + 1;
+            return acc;
+        }, {});
+
+        return usersSidebarData.items.map((item) => ({
+            ...item,
+            icon: "Users",
+            count: item.role === "all" ? users.length : (counts[item.role?.toLowerCase()] || 0),
+        }));
     }, [users]);
 
-    // Handlers wrapped in useCallback for zero unnecessary re-renders
+    // Sidebar & tab navigation handlers
     const handleSidebarItemClick = useCallback((name) => {
         setSelectedCategory(name);
         setCurrentPage(1);
-        const mappedTab = SIDEBAR_TO_TAB[name] || "all";
-        setActiveTab(mappedTab);
+        const item = usersSidebarData.items.find((i) => i.name === name);
+        setActiveTab(item?.role || "all");
     }, []);
 
     const handleTabChange = useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
-        const foundEntry = Object.entries(SIDEBAR_TO_TAB).find(([, val]) => val === tabValue);
-        if (foundEntry) setSelectedCategory(foundEntry[0]);
-        else setSelectedCategory("All Users");
-    }, []);
-
-    const handleSearchChange = useCallback((value) => {
-        setSearchQuery(value);
-        setCurrentPage(1);
-    }, []);
-
-    const handlePageChange = useCallback((newPage) => {
-        setCurrentPage(newPage);
+        const item = usersSidebarData.items.find((i) => i.role === tabValue);
+        setSelectedCategory(item ? item.name : "All Users");
     }, []);
 
     const handleClearFilters = useCallback(() => {
@@ -120,52 +110,64 @@ const User = () => {
         showToast(`User ${row.name} deactivated & removed!`, "danger");
     }, []);
 
-    const handleAddUser = useCallback(() => {
-        showToast("Add System User modal triggered!", "success");
-    }, []);
-
     const handleExportUsers = useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(users, null, 2));
         showToast("System user directory exported to clipboard!", "success");
     }, [users]);
 
-    // Filter and paginate data
+    // Multi-criteria filtering with case-insensitive role & status matching
     const filteredUsers = useMemo(() => {
+        const q = searchQuery.toLowerCase().trim();
+        const targetStatus = String(statusFilter || "all").toLowerCase().trim();
+        const targetRole = String(activeTab || "all").toLowerCase().trim();
+
         return users.filter((item) => {
-            // Tab / Category filter
-            const matchesTab =
-                activeTab === "all" ||
-                (activeTab === "Active" ? item.status === "Active" : item.role === activeTab);
+            const rawStatus = item.status;
+            const itemStatus = (typeof rawStatus === "boolean" ? (rawStatus ? "active" : "inactive") : String(rawStatus || "")).toLowerCase().trim();
+            const itemRole = String(item.role || "").toLowerCase().trim();
 
-            // Status filter
-            const matchesStatus = statusFilter === "all" || item.status === statusFilter;
-
-            // Search query filter
-            const q = searchQuery.toLowerCase().trim();
+            const matchesRole = targetRole === "all" || itemRole === targetRole;
+            const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
             const matchesSearch =
                 !q ||
-                item.name.toLowerCase().includes(q) ||
-                item.email.toLowerCase().includes(q) ||
-                item.mobile.toLowerCase().includes(q) ||
-                item.role.toLowerCase().includes(q);
+                String(item.name || "").toLowerCase().includes(q) ||
+                String(item.email || "").toLowerCase().includes(q) ||
+                String(item.mobile || "").toLowerCase().includes(q) ||
+                itemRole.includes(q);
 
-            return matchesTab && matchesStatus && matchesSearch;
+            return matchesRole && matchesStatus && matchesSearch;
         });
     }, [users, activeTab, statusFilter, searchQuery]);
 
     const paginatedUsers = useMemo(() => {
-        const start = (currentPage - 1) * itemsPerPage;
-        return filteredUsers.slice(start, start + itemsPerPage);
-    }, [filteredUsers, currentPage, itemsPerPage]);
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredUsers.slice(start, start + ITEMS_PER_PAGE);
+    }, [filteredUsers, currentPage]);
 
-    const hasActiveFilters = useMemo(
-        () => statusFilter !== "all" || searchQuery !== "",
-        [statusFilter, searchQuery]
-    );
+    const hasActiveFilters = statusFilter !== "all" || Boolean(searchQuery);
 
     const filterInputsNode = useMemo(
-        () => <FilterDrawerContent statusFilter={statusFilter} setStatusFilter={setStatusFilter} />,
-        [statusFilter]
+        () => <FilterDrawerContent status={statusFilter} onStatusChange={handleStatusFilterChange} />,
+        [statusFilter, handleStatusFilterChange]
+    );
+
+    const quickActionNode = useMemo(
+        () => (
+            <div className="flex items-center gap-8">
+                <Button
+                    text="Export CSV"
+                    version="v2"
+                    bg="primary"
+                    variant="outline"
+                    border="primary"
+                    color="white"
+                    icon="File"
+                    onClick={handleExportUsers}
+                    title="Export system user directory to clipboard"
+                />
+            </div>
+        ),
+        [handleExportUsers]
     );
 
     return (
@@ -177,7 +179,7 @@ const User = () => {
             headerIcon={<Icon name="Users" width="18" height="18" />}
             headerTitle="System Users"
             headerSub="Manage authorized platform operators, credential assignments, active sessions, and access roles"
-            quickAction=''
+            quickAction={quickActionNode}
             showTabControls={true}
             tabs={TABS}
             activeTab={activeTab}
@@ -194,9 +196,9 @@ const User = () => {
                     data={paginatedUsers}
                     columns={usersTableColumns}
                     totalItems={filteredUsers.length}
-                    itemsPerPage={itemsPerPage}
+                    itemsPerPage={ITEMS_PER_PAGE}
                     page={currentPage}
-                    onPageChange={handlePageChange}
+                    onPageChange={setCurrentPage}
                     searchQuery={searchQuery}
                     onSearchChange={handleSearchChange}
                     searchPlaceholder="Search users by name, email, role, or phone..."
