@@ -15,9 +15,21 @@
       "label": "KAIOM",
       "barWidth": "52%"
     },
-    { "id": "ping1", "label": "MANIS", "barWidth": "12%" },
-    { "id": "upload", "label": "INRAC", "barWidth": "52%" },
-    { "id": "ping2", "label": "GLEWO", "barWidth": "52%" }
+    {
+      "id": "download",
+      "label": "KAIOM",
+      "barWidth": "52%"
+    },
+    {
+      "id": "download",
+      "label": "KAIOM",
+      "barWidth": "52%"
+    },
+    {
+      "id": "download",
+      "label": "KAIOM",
+      "barWidth": "32%"
+    }
   ],
   "gauges": [
     { "id": "g1", "label": "CPU", "val": 23, "cls": "g1" },
@@ -59,18 +71,6 @@
       "label": "Task Manager",
       "icon": "Task Manager",
       "kbd": "Ctrl + Shift + Esc"
-    },
-    {
-      "id": "snip",
-      "label": "Screen Snip",
-      "icon": "Screen",
-      "kbd": "Ctrl + Shift + S"
-    },
-    {
-      "id": "set",
-      "label": "Open Settings",
-      "icon": "Settings",
-      "kbd": "Win + I"
     }
   ],
   "notifications": [
@@ -94,13 +94,6 @@
       "title": "Download Complete",
       "subtitle": "Jarvis_v1.0.zip",
       "time": "1h ago"
-    },
-    {
-      "id": 4,
-      "icon": "Refresh",
-      "title": "Windows Update",
-      "subtitle": "Your system is up to date.",
-      "time": "15m ago"
     }
   ],
   "agents": [

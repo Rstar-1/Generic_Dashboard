@@ -9,20 +9,17 @@ const BotLayout = () => {
     return (
         <div className="bot-wrapper">
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap');
-
-                .bot-wrapper {
+               .bot-wrapper {
                   --bg: #010817; --line: #1b8cff; --g: #19b6ff; --t: #e8f5ff; --m: #8db3d8; --ok: #2be36b;
                   box-sizing: border-box;
                   background: radial-gradient(ellipse at 50% 45%, #06336e 0%, #021230 45%, var(--bg) 80%);
                   color: var(--t);
-                  min-height: 100vh;
                   height: 100vh;
-                  overflow: hidden;
+                  overflow: auto;
                 }
             `}</style>
             <BotHeader />
-            <div key={location.key} className="w-full">
+            <div key={location.key}>
                 <Suspense fallback={<Loader />}>
                     <Outlet />
                 </Suspense>

@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { NavLink } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
 import Icon from "../common/Icon";
 import dumpData from "../../pages/bot/dump.json";
+import { stopSpeech, setIsListening, setTranscript } from "../../store/slices/botSlice";
+import SpeechRecognition from "react-speech-recognition";
 
 const SoundWave = React.memo(({ isPlaying = true, onClick }) => {
     const bars = useMemo(() => {
@@ -58,13 +61,21 @@ const BotHeader = ({
     isPlaying: propIsPlaying,
     onTogglePlay: propOnTogglePlay,
 }) => {
+    const dispatch = useDispatch();
+    const { isListening, transcript, isPlayingSpeech } = useSelector((state) => state.bot);
+
     const [internalActiveNav, setInternalActiveNav] = useState("home");
     const [internalTime, setInternalTime] = useState(() => new Date());
-    const [internalPlaying, setInternalPlaying] = useState(true);
 
     const activeNav = propActiveNav !== undefined ? propActiveNav : internalActiveNav;
     const currentTime = propCurrentTime || internalTime;
-    const isPlaying = propIsPlaying !== undefined ? propIsPlaying : internalPlaying;
+    
+    // Wave animation is active when listening or transcript is true (or AI speech is playing), otherwise false
+    const hasTranscript = Boolean(transcript && transcript.trim().length > 0);
+    const isVoiceActive = Boolean(isListening || hasTranscript || isPlayingSpeech);
+    const isPlaying = propIsPlaying !== undefined 
+        ? propIsPlaying 
+        : isVoiceActive;
 
     useEffect(() => {
         if (propCurrentTime) return;
@@ -83,9 +94,24 @@ const BotHeader = ({
     );
 
     const handleTogglePlay = useCallback(() => {
-        if (propOnTogglePlay) propOnTogglePlay();
-        else setInternalPlaying((prev) => !prev);
-    }, [propOnTogglePlay]);
+        if (propOnTogglePlay) {
+            propOnTogglePlay();
+        } else if (isPlayingSpeech) {
+            dispatch(stopSpeech());
+        } else if (isListening) {
+            try {
+                SpeechRecognition.abortListening();
+            } catch (e) {}
+            dispatch(setIsListening(false));
+            dispatch(setTranscript(""));
+        } else {
+            dispatch(setTranscript(""));
+            dispatch(setIsListening(true));
+            try {
+                SpeechRecognition.startListening({ continuous: true, language: "en-US" });
+            } catch (e) {}
+        }
+    }, [propOnTogglePlay, isPlayingSpeech, isListening, dispatch]);
 
     const pad = useCallback((n) => String(n).padStart(2, "0"), []);
 
