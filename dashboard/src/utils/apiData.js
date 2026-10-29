@@ -1,5 +1,4 @@
 import { formatDate } from "./formatDate";
-import { SECTIONS_DATA } from "../pages/components/data/section";
 const menuData = [
   {
     name: "Dashboard",
@@ -16,28 +15,56 @@ const menuData = [
     role: ["admin", "vendor", "Manager"],
   },
   {
-    name: "Components",
+    name: "Category",
     status: true,
     role: ["admin", "vendor", "Manager"],
     category: [
       {
-        name: "Fields",
-        route: "/components/fields",
-        icon: "Layers",
-        status: true,
-        role: ["admin", "vendor"],
-      },
-      {
-        name: "Sections",
-        route: "/components/sections",
-        icon: "Layers",
+        name: "Products",
+        route: "/category/products",
+        icon: "Box",
         status: true,
         role: ["admin", "Manager"],
       },
       {
-        name: "Templates",
-        route: "/components/templates",
-        icon: "Layers",
+        name: "Blogs",
+        route: "/category/blogs",
+        icon: "Clipboard",
+        status: true,
+        role: ["admin", "Manager"],
+      },
+    ],
+  },
+  {
+    name: "Overview",
+    status: true,
+    role: ["admin", "vendor", "Manager"],
+    category: [
+      {
+        name: "Products",
+        route: "/overview/products",
+        icon: "Box",
+        status: true,
+        role: ["admin", "Manager"],
+      },
+      {
+        name: "Blogs",
+        route: "/overview/blogs",
+        icon: "Clipboard",
+        status: true,
+        role: ["admin", "Manager"],
+      },
+      {
+        name: "CMS",
+        route: "/overview/cms",
+        icon: "Clipboard",
+        status: true,
+        role: ["admin", "Manager"],
+      },
+      {
+        name: "SEO",
+        route: "/overview/seo",
+        icon: "Clipboard",
         status: true,
         role: ["admin", "Manager"],
       },
@@ -49,6 +76,13 @@ const menuData = [
     role: ["admin", "vendor", "Manager"],
     category: [
       {
+        name: "Tasks",
+        route: "/management/tasks",
+        icon: "Clipboard",
+        status: true,
+        role: ["admin", "Manager"],
+      },
+      {
         name: "Customers",
         route: "/management/customers",
         icon: "Box",
@@ -56,11 +90,25 @@ const menuData = [
         role: ["admin", "vendor"],
       },
       {
-        name: "Tasks",
-        route: "/management/tasks",
-        icon: "Clipboard",
+        name: "Leads",
+        route: "/management/leads",
+        icon: "CMS",
         status: true,
         role: ["admin", "Manager"],
+      },
+    ],
+  },
+  {
+    name: "Order & Payment",
+    status: true,
+    role: ["admin", "vendor", "Manager"],
+    category: [
+      {
+        name: "Orders",
+        route: "/management/order",
+        icon: "Box",
+        status: true,
+        role: ["admin", "vendor"],
       },
       {
         name: "Transactions",
@@ -74,7 +122,7 @@ const menuData = [
   {
     name: "Users & Roles",
     status: true,
-    role: ["admin", "vendor"],
+    role: ["admin", "vendor", "Manager"],
     category: [
       {
         name: "System Users",
@@ -95,7 +143,7 @@ const menuData = [
 ];
 
 /* ==========================================
-   TABLE COLUMNS DATA
+   GENERIC PAGE TABLE COLUMNS DATA
    ========================================== */
 
 const usersTableColumns = [
@@ -403,58 +451,12 @@ const transactionsTableColumns = [
   },
 ];
 
-const sectionsTableColumns = [
-  {
-    header: "Section Title",
-    accessor: "title",
-    ui: "text",
-    style: { minWidth: "180px" },
-  },
-  {
-    header: "Subtitle / Description",
-    accessor: "subtitle",
-    ui: "text",
-    style: { minWidth: "220px" },
-  },
-  {
-    header: "Section Type",
-    accessor: "type",
-    ui: "badge",
-    style: { minWidth: "120px" },
-  },
-  {
-    header: "Variant Badge",
-    accessor: "badge",
-    ui: "badge",
-    style: { minWidth: "100px" },
-  },
-  {
-    header: "Thumbnail Key",
-    accessor: "image",
-    ui: "text",
-    style: { minWidth: "120px" },
-  },
-  {
-    header: "Component Code",
-    accessor: "code",
-    ui: "text",
-    style: { minWidth: "220px" },
-  },
-  {
-    header: "Active Status",
-    accessor: "status",
-    ui: "status",
-    style: { minWidth: "100px" },
-  },
-];
-
 const analyticsTableColumns = {
   Customers: customersTableColumns,
   Tasks: tasksTableColumns,
   Transaction: transactionsTableColumns,
   Users: usersTableColumns,
   Roles: rolesTableColumns,
-  Sections: sectionsTableColumns,
 };
 
 /* ==========================================
@@ -514,9 +516,12 @@ const analyticsSidebarData = {
     { name: "Transaction", icon: "CMS", color: "#3b82f6" },
     { name: "Users", icon: "Users", color: "#6366f1" },
     { name: "Roles", icon: "Shield", color: "#8b5cf6" },
-    { name: "Sections", icon: "Layers", color: "#ec4899" },
   ],
 };
+
+/* ==========================================
+   GENERIC PAGE DATA CONFIGURATION
+   ========================================== */
 
 const customersData = [
   {
@@ -1009,7 +1014,6 @@ const analyticsData = {
     createdDate: rolesData[0]?.createdDate || "2026-01-10",
     updatedDate: rolesData[0]?.updatedDate || "2026-08-15",
   },
-  Sections: SECTIONS_DATA,
 };
 
 export {
@@ -1020,7 +1024,6 @@ export {
   customersTableColumns,
   tasksTableColumns,
   transactionsTableColumns,
-  sectionsTableColumns,
   analyticsTableColumns,
   usersSidebarData,
   customersSidebarData,

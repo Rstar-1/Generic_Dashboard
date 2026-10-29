@@ -368,11 +368,11 @@ const EarningsReportCard = memo(({ formattedWeeklyTotal, weeklyEarningsData, bre
 EarningsReportCard.displayName = "EarningsReportCard";
 
 const TotalLeadsCard = memo(({ leadsWeeklyData, formattedLeadsCount }) => (
-    <div className="bg-white rounded-5 p-12 h-full flex flex-column justify-between">
+    <div className="bg-white rounded-5 p-12 h-full justify-between">
         <div>
             <h4 className="text-dark mid-text font-600">Total Leads</h4>
             <p className="text-gray mini-text font-400 mt-1">Last Week</p>
-            <div className="mt-8">
+            <div className="mt-8 w-90">
                 <Chart options={SPARKLINE_BAR_OPTIONS} series={[{ data: leadsWeeklyData }]} type="bar" height={180} />
             </div>
         </div>

@@ -6,7 +6,6 @@ import Icon from "../../components/common/Icon";
 import { showToast } from "../../components/common/Toast";
 import {
     customersTableColumns,
-    sectionsTableColumns,
     analyticsTableColumns,
     customersData,
     tasksData,
@@ -16,7 +15,6 @@ import {
     analyticsSidebarData,
     analyticsData,
 } from "../../utils/apiData";
-import { SECTIONS_DATA, generateItemCode } from "../components/data/section";
 
 // Map entity columns to form field definitions
 const getColumnFieldConfig = (col, category) => {
@@ -127,22 +125,6 @@ const getColumnFieldConfig = (col, category) => {
         };
     }
 
-    if (acc === "type" && category === "Sections") {
-        return {
-            name: acc,
-            label: header,
-            type: "select",
-            options: [
-                { label: "Website", value: "website" },
-                { label: "Hero Banner", value: "hero" },
-                { label: "Features", value: "features" },
-                { label: "Testimonials", value: "testimonials" },
-                { label: "Pricing", value: "pricing" },
-            ],
-            placeholder: "Select Section Type",
-        };
-    }
-
     if (acc === "email") {
         return {
             name: acc,
@@ -185,25 +167,6 @@ const Analytics = () => {
     const [jsonError, setJsonError] = useState(null);
     const [isEditingJson, setIsEditingJson] = useState(false);
 
-    // Section UI Code specific state
-    const [selectedSectionIdx, setSelectedSectionIdx] = useState(0);
-    const [selectedVariantIdx, setSelectedVariantIdx] = useState(0);
-    const [codeText, setCodeText] = useState("");
-    const [isEditingCode, setIsEditingCode] = useState(false);
-
-    const isSectionMode = activeCategory === "Sections";
-
-    // Current Section and Variant
-    const currentSection = useMemo(() => {
-        if (!Array.isArray(formData.Sections)) return {};
-        return formData.Sections[selectedSectionIdx] || formData.Sections[0] || {};
-    }, [formData.Sections, selectedSectionIdx]);
-
-    const currentVariant = useMemo(() => {
-        const items = currentSection.items || [];
-        return items[selectedVariantIdx] || items[0] || {};
-    }, [currentSection, selectedVariantIdx]);
-
     // Sidebar items with dynamic counts derived from apiData
     const sidebarItems = useMemo(() => {
         const counts = {
@@ -212,7 +175,6 @@ const Analytics = () => {
             Transaction: transactionsData.length,
             Users: usersData.length,
             Roles: rolesData.length,
-            Sections: SECTIONS_DATA.length,
         };
         return analyticsSidebarData.items.map((item) => ({
             ...item,
@@ -236,36 +198,19 @@ const Analytics = () => {
         return formData[activeCategory] || {};
     }, [formData, activeCategory]);
 
-    // Synchronize Section UI Code
-    useEffect(() => {
-        if (isSectionMode && !isEditingCode) {
-            const code = currentVariant.code || generateItemCode(currentVariant, currentSection);
-            setCodeText(code);
-        }
-    }, [isSectionMode, currentVariant, currentSection, isEditingCode]);
-
     // Synchronize JSON editor text when in JSON mode
     useEffect(() => {
-        if (!isSectionMode && !isEditingJson) {
+        if (!isEditingJson) {
             setJsonText(JSON.stringify(formData[activeCategory] || {}, null, 2));
             setJsonError(null);
         }
-    }, [formData, activeCategory, isEditingJson, isSectionMode]);
+    }, [formData, activeCategory, isEditingJson]);
 
     // Reset editing state upon category switch
     useEffect(() => {
         setIsEditingJson(false);
-        setIsEditingCode(false);
-        if (activeCategory === "Sections") {
-            setSelectedSectionIdx(0);
-            setSelectedVariantIdx(0);
-            const sec = Array.isArray(formData.Sections) ? formData.Sections[0] : {};
-            const item = sec?.items?.[0] || {};
-            setCodeText(item?.code || generateItemCode(item, sec));
-        } else {
-            setJsonText(JSON.stringify(formData[activeCategory] || {}, null, 2));
-            setJsonError(null);
-        }
+        setJsonText(JSON.stringify(formData[activeCategory] || {}, null, 2));
+        setJsonError(null);
     }, [activeCategory]);
 
     const handleFieldChange = useCallback((fieldName, val) => {
@@ -278,29 +223,6 @@ const Analytics = () => {
             },
         }));
     }, [activeCategory]);
-
-    // UI Code Editor handler for Sections
-    const handleCodeChange = useCallback((e) => {
-        const nextCode = e.target.value;
-        setCodeText(nextCode);
-        setIsEditingCode(true);
-        setFormData((prev) => {
-            if (!Array.isArray(prev.Sections)) return prev;
-            const nextSections = [...prev.Sections];
-            const sec = { ...nextSections[selectedSectionIdx] };
-            const items = [...(sec.items || [])];
-            items[selectedVariantIdx] = {
-                ...items[selectedVariantIdx],
-                code: nextCode,
-            };
-            sec.items = items;
-            nextSections[selectedSectionIdx] = sec;
-            return {
-                ...prev,
-                Sections: nextSections,
-            };
-        });
-    }, [selectedSectionIdx, selectedVariantIdx]);
 
     // JSON Editor handlers
     const handleJsonChange = useCallback((e) => {
@@ -331,48 +253,21 @@ const Analytics = () => {
     }, [jsonText]);
 
     const handleReset = useCallback(() => {
-        if (isSectionMode) {
-            setIsEditingCode(false);
-            const defaultSec = SECTIONS_DATA[selectedSectionIdx] || {};
-            const defaultItem = defaultSec.items?.[selectedVariantIdx] || {};
-            const code = defaultItem.code || generateItemCode(defaultItem, defaultSec);
-            setCodeText(code);
-            setFormData((prev) => {
-                if (!Array.isArray(prev.Sections)) return prev;
-                const nextSections = [...prev.Sections];
-                const sec = { ...nextSections[selectedSectionIdx] };
-                const items = [...(sec.items || [])];
-                items[selectedVariantIdx] = {
-                    ...items[selectedVariantIdx],
-                    code,
-                };
-                sec.items = items;
-                nextSections[selectedSectionIdx] = sec;
-                return { ...prev, Sections: nextSections };
-            });
-            showToast(`${currentSection.title || "Section"} (${currentVariant.badge || "Variant"}) UI code reset`, "info");
-        } else {
-            setIsEditingJson(false);
-            const defaultData = analyticsData[activeCategory] || {};
-            setFormData((prev) => ({
-                ...prev,
-                [activeCategory]: defaultData,
-            }));
-            setJsonText(JSON.stringify(defaultData, null, 2));
-            setJsonError(null);
-            showToast(`${activeCategory} form reset to default`, "info");
-        }
-    }, [isSectionMode, selectedSectionIdx, selectedVariantIdx, currentSection, currentVariant, activeCategory]);
+        setIsEditingJson(false);
+        const defaultData = analyticsData[activeCategory] || {};
+        setFormData((prev) => ({
+            ...prev,
+            [activeCategory]: defaultData,
+        }));
+        setJsonText(JSON.stringify(defaultData, null, 2));
+        setJsonError(null);
+        showToast(`${activeCategory} form reset to default`, "info");
+    }, [activeCategory]);
 
     const handleCopy = useCallback(() => {
-        if (isSectionMode) {
-            navigator.clipboard?.writeText(codeText);
-            showToast(`${currentSection.title || "Section"} (${currentVariant.badge || "Variant"}) UI code copied!`, "success");
-        } else {
-            navigator.clipboard?.writeText(jsonText);
-            showToast(`${activeCategory} JSON copied to clipboard!`, "success");
-        }
-    }, [isSectionMode, codeText, jsonText, currentSection, currentVariant, activeCategory]);
+        navigator.clipboard?.writeText(jsonText);
+        showToast(`${activeCategory} JSON copied to clipboard!`, "success");
+    }, [jsonText, activeCategory]);
 
     const quickActionNode = useMemo(() => (
         <div className="flex items-center gap-8">
@@ -386,15 +281,15 @@ const Analytics = () => {
                 onClick={handleReset}
             />
             <Button
-                text={isSectionMode ? "Copy UI Code" : "Copy JSON"}
+                text="Copy JSON"
                 version="v2"
                 bg="primary"
                 color="white"
-                icon={isSectionMode ? "CopyLink" : "File"}
+                icon="File"
                 onClick={handleCopy}
             />
         </div>
-    ), [isSectionMode, handleReset, handleCopy]);
+    ), [handleReset, handleCopy]);
 
     return (
         <MainLayout
@@ -403,12 +298,8 @@ const Analytics = () => {
             selectedSidebarItem={activeCategory}
             onSidebarItemClick={setActiveCategory}
             headerIcon={<Icon name="CMS" width="18" height="18" />}
-            headerTitle={isSectionMode ? "Section UI Code Configuration" : "Entity Field Configuration"}
-            headerSub={
-                isSectionMode
-                    ? `Live UI component code for ${currentSection.title || "Section"} - ${currentVariant.badge || "Variant"}`
-                    : `Dynamic form fields generated from TABLE COLUMNS DATA for ${activeCategory}`
-            }
+            headerTitle="Entity Field Configuration"
+            headerSub={`Dynamic form fields generated from TABLE COLUMNS DATA for ${activeCategory}`}
             quickAction={quickActionNode}
             showTabControls={false}
             showSidebar={true}
@@ -417,99 +308,24 @@ const Analytics = () => {
                 <div className="w-30">
                     <div className="bg-white rounded-5 p-12 overflow-auto" style={{ height: '456px' }}>
                         <h4 className="headmini-text text-dark font-600 bordb pb-8">
-                            {isSectionMode ? "Select Section & Variant" : `${activeCategory} Fields`}
+                            {`${activeCategory} Fields`}
                         </h4>
 
-                        {isSectionMode ? (
-                            <div className="flex flex-column gap-12 mt-10">
-                                <Fields
-                                    type="select"
-                                    label="Select Section"
-                                    name="selectedSection"
-                                    value={selectedSectionIdx}
-                                    options={(formData.Sections || []).map((sec, idx) => ({
-                                        label: sec.title || `Section ${idx + 1}`,
-                                        value: idx,
-                                    }))}
-                                    onChange={(opt) => {
-                                        const idx = typeof opt === "object" && opt !== null ? opt.value : opt;
-                                        setSelectedSectionIdx(Number(idx) || 0);
-                                        setSelectedVariantIdx(0);
-                                        setIsEditingCode(false);
-                                    }}
-                                />
-                                {currentSection.items?.length > 0 && (
+                        <div className="grid-cols-1 gap-12 mt-10">
+                            {fieldConfigs.map((field) => (
+                                <div key={field.name} className="flex flex-column">
                                     <Fields
-                                        type="select"
-                                        label="Select Variant"
-                                        name="selectedVariant"
-                                        value={selectedVariantIdx}
-                                        options={currentSection.items.map((item, idx) => ({
-                                            label: `${item.badge || `Variant ${idx + 1}`}`,
-                                            value: idx,
-                                        }))}
-                                        onChange={(opt) => {
-                                            const idx = typeof opt === "object" && opt !== null ? opt.value : opt;
-                                            setSelectedVariantIdx(Number(idx) || 0);
-                                            setIsEditingCode(false);
-                                        }}
+                                        type={field.type}
+                                        label={field.label}
+                                        name={field.name}
+                                        placeholder={field.placeholder}
+                                        options={field.options}
+                                        value={activeFormData[field.name] ?? ""}
+                                        onChange={(val) => handleFieldChange(field.name, val)}
                                     />
-                                )}
-                                <div className="bordb my-4" />
-                                <Fields
-                                    type="text"
-                                    label="Section Title"
-                                    name="title"
-                                    value={currentSection.title || ""}
-                                    onChange={(val) => {
-                                        const v = typeof val === "object" && val !== null ? val.value : val;
-                                        setFormData((prev) => {
-                                            if (!Array.isArray(prev.Sections)) return prev;
-                                            const nextSections = [...prev.Sections];
-                                            nextSections[selectedSectionIdx] = {
-                                                ...nextSections[selectedSectionIdx],
-                                                title: v,
-                                            };
-                                            return { ...prev, Sections: nextSections };
-                                        });
-                                    }}
-                                />
-                                <Fields
-                                    type="text"
-                                    label="Subtitle / Description"
-                                    name="subtitle"
-                                    value={currentSection.subtitle || ""}
-                                    onChange={(val) => {
-                                        const v = typeof val === "object" && val !== null ? val.value : val;
-                                        setFormData((prev) => {
-                                            if (!Array.isArray(prev.Sections)) return prev;
-                                            const nextSections = [...prev.Sections];
-                                            nextSections[selectedSectionIdx] = {
-                                                ...nextSections[selectedSectionIdx],
-                                                subtitle: v,
-                                            };
-                                            return { ...prev, Sections: nextSections };
-                                        });
-                                    }}
-                                />
-                            </div>
-                        ) : (
-                            <div className="grid-cols-1 gap-12 mt-10">
-                                {fieldConfigs.map((field) => (
-                                    <div key={field.name} className="flex flex-column">
-                                        <Fields
-                                            type={field.type}
-                                            label={field.label}
-                                            name={field.name}
-                                            placeholder={field.placeholder}
-                                            options={field.options}
-                                            value={activeFormData[field.name] ?? ""}
-                                            onChange={(val) => handleFieldChange(field.name, val)}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -517,14 +333,14 @@ const Analytics = () => {
                     <div className="bg-white rounded-5 p-12">
                         <div className="relative rounded-5 overflow-hidden">
                             <textarea
-                                value={isSectionMode ? codeText : jsonText}
-                                onChange={isSectionMode ? handleCodeChange : handleJsonChange}
-                                onBlur={isSectionMode ? () => setIsEditingCode(false) : handleJsonBlur}
+                                value={jsonText}
+                                onChange={handleJsonChange}
+                                onBlur={handleJsonBlur}
                                 spellCheck={false}
                                 className="w-full small-text font-200 p-12"
                                 style={{
                                     backgroundColor: "#0f172a",
-                                    color: isSectionMode ? "#38bdf8" : "#fff",
+                                    color: "#fff",
                                     minHeight: "430px",
                                     border: "none",
                                     outline: "none",
@@ -540,15 +356,9 @@ const Analytics = () => {
 
                         <div className="flex items-center justify-between mt-12">
                             <h4 className="headmini-text text-dark font-600">
-                                {isSectionMode
-                                    ? `${currentSection.title || "Section"} (${currentVariant.badge || "Variant"}) UI Code`
-                                    : `${activeCategory} JSON Editor`}
+                                {`${activeCategory} JSON Editor`}
                             </h4>
-                            {isSectionMode ? (
-                                <span className="mini-text text-primary font-500 bg-light-primary px-8 py-2 rounded-4">
-                                    UI Component JSX
-                                </span>
-                            ) : jsonError ? (
+                            {jsonError ? (
                                 <p className="mini-text text-danger font-500">
                                     Syntax Error
                                 </p>

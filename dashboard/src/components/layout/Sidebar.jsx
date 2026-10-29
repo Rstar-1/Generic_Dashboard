@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
+import React from "react";
 import { NavLink } from "react-router-dom";
+
 import Container from "../common/Container";
 import Icon from "../common/Icon";
 import Fields from "../forms/Fields";
+
 import { menuData } from "../../utils/apiData";
 import { resolveImagePath } from "../../utils/imageResolver";
 
-/* --- Memoized Navigation Link --- */
-const SidebarLink = memo(({ to, label, iconName, shortcut, isCollapsed }) => {
-  const [hovered, setHovered] = useState(false);
+const SidebarLink = React.memo(({ to, label, iconName, shortcut, isCollapsed }) => {
+  const [hovered, setHovered] = React.useState(false);
 
   return (
     <NavLink
@@ -17,7 +18,7 @@ const SidebarLink = memo(({ to, label, iconName, shortcut, isCollapsed }) => {
       onMouseLeave={() => setHovered(false)}
       className={({ isActive }) =>
         `flex items-center rounded-5 small-text font-500 list-none mb-2 ${isCollapsed ? "justify-center py-8" : "justify-between p-8"
-        } ${isActive || hovered ? "bg-forth text-dark" : "text-gray"}`
+        } ${isActive || hovered ? "bg-forth text-primary" : "text-gray"}`
       }
     >
       <div className="flex items-center gap-2">
@@ -39,8 +40,7 @@ const SidebarLink = memo(({ to, label, iconName, shortcut, isCollapsed }) => {
 
 SidebarLink.displayName = "SidebarLink";
 
-/* --- Memoized Header Section --- */
-const SidebarHeader = memo(({ isCollapsed, displayRole, onToggle, onCollapse }) => (
+const SidebarHeader = React.memo(({ isCollapsed, displayRole, onToggle, onCollapse }) => (
   <div className={`pt-16 pb-10 flex items-center ${isCollapsed ? "justify-center px-8" : "justify-between px-16"}`}>
     <div className="flex items-center gap-8">
       <div
@@ -66,8 +66,7 @@ const SidebarHeader = memo(({ isCollapsed, displayRole, onToggle, onCollapse }) 
 
 SidebarHeader.displayName = "SidebarHeader";
 
-/* --- Memoized Search Section --- */
-const SidebarSearch = memo(({ isCollapsed, searchQuery, onSearchChange, onExpand }) => (
+const SidebarSearch = React.memo(({ isCollapsed, searchQuery, onSearchChange, onExpand }) => (
   <div className={isCollapsed ? "px-8 pb-12 flex justify-center" : "px-16 pb-12"}>
     {isCollapsed ? (
       <div
@@ -93,12 +92,11 @@ const SidebarSearch = memo(({ isCollapsed, searchQuery, onSearchChange, onExpand
 
 SidebarSearch.displayName = "SidebarSearch";
 
-/* --- Memoized Profile Footer Section --- */
-const SidebarProfile = memo(({ isCollapsed, userImage, userName, userMobile, firstLetter }) => {
-  const [profileHovered, setProfileHovered] = useState(false);
-  const [imgError, setImgError] = useState(false);
+const SidebarProfile = React.memo(({ isCollapsed, userImage, userName, userMobile, firstLetter }) => {
+  const [profileHovered, setProfileHovered] = React.useState(false);
+  const [imgError, setImgError] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setImgError(false);
   }, [userImage]);
 
@@ -148,35 +146,31 @@ const SidebarProfile = memo(({ isCollapsed, userImage, userName, userMobile, fir
 
 SidebarProfile.displayName = "SidebarProfile";
 
-/* --- Main Sidebar Component --- */
 const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = React.useState("");
 
-  const user = useMemo(
+  const user = React.useMemo(
     () => userProp || { fullname: "Admin User", role: "admin", email: "admin@example.com", mobile: "9876543210" },
     [userProp]
   );
 
-  const displayRole = useMemo(() => user?.role || user?.roleId?.name || "admin", [user]);
+  const displayRole = React.useMemo(() => user?.role || user?.roleId?.name || "admin", [user]);
 
-  // Callbacks for fast, stable event handlers
-  const handleToggle = useCallback(() => setIsCollapsed((prev) => !prev), [setIsCollapsed]);
-  const handleCollapse = useCallback(() => setIsCollapsed(true), [setIsCollapsed]);
-  const handleExpand = useCallback(() => setIsCollapsed(false), [setIsCollapsed]);
-  const handleSearchChange = useCallback((val) => setSearchQuery(val), []);
+  const handleToggle = React.useCallback(() => setIsCollapsed((prev) => !prev), [setIsCollapsed]);
+  const handleCollapse = React.useCallback(() => setIsCollapsed(true), [setIsCollapsed]);
+  const handleExpand = React.useCallback(() => setIsCollapsed(false), [setIsCollapsed]);
+  const handleSearchChange = React.useCallback((val) => setSearchQuery(val), []);
 
-  const isRoleAllowed = useCallback(
+  const isRoleAllowed = React.useCallback(
     (roles) => !roles?.length || roles.some((r) => String(r).toLowerCase() === String(displayRole).toLowerCase()),
     [displayRole]
   );
 
-  // Clear search on collapse
-  useEffect(() => {
+  React.useEffect(() => {
     if (isCollapsed) setSearchQuery("");
   }, [isCollapsed]);
 
-  // Fast menu filtering with role and search matching
-  const filteredMenu = useMemo(() => {
+  const filteredMenu = React.useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
 
     return menuData.reduce((acc, item) => {
@@ -203,14 +197,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
     }, []);
   }, [searchQuery, isRoleAllowed]);
 
-  const userImage = useMemo(() => resolveImagePath(user?.image || user?.avatar || ""), [user]);
+  const userImage = React.useMemo(() => resolveImagePath(user?.image || user?.avatar || ""), [user]);
   const userName = user?.fullname || user?.name || user?.username || "User";
   const userMobile = user?.mobile || user?.phone || user?.email || "";
   const firstLetter = (userName?.trim()?.charAt(0) || "U").toUpperCase();
 
   return (
     <Container version="v0" className="h-100 bg-white overflow-auto">
-      {/* Header */}
       <SidebarHeader
         isCollapsed={isCollapsed}
         displayRole={displayRole}
@@ -218,7 +211,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
         onCollapse={handleCollapse}
       />
 
-      {/* Search Bar / Icon */}
       <SidebarSearch
         isCollapsed={isCollapsed}
         searchQuery={searchQuery}
@@ -226,7 +218,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
         onExpand={handleExpand}
       />
 
-      {/* Navigation Links */}
       <div className={`overflow-auto ${isCollapsed ? "px-8" : "px-16"}`}>
         {filteredMenu.map((item, idx) => {
           if (!item.route && item.category?.length > 0) {
@@ -265,7 +256,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
         })}
       </div>
 
-      {/* Profile Footer */}
       <SidebarProfile
         isCollapsed={isCollapsed}
         userImage={userImage}
@@ -277,4 +267,4 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
   );
 };
 
-export default memo(Sidebar);
+export default React.memo(Sidebar);
