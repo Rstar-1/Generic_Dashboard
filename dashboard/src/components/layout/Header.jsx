@@ -13,9 +13,15 @@ import Button from "../common/Button";
 const ROUTE_TITLES = {
   // Routes from routes/index.jsx
   "/dashboard": "Dashboard",
-  "/components/fields": "Fields",
-  "/components/sections": "Sections",
-  "/components/templates": "Templates",
+  "/category/products": "Product Categories",
+  "/category/blogs": "Blog Categories",
+  "/overview/products": "Products Overview",
+  "/overview/blogs": "Blog Posts Overview",
+  "/overview/cms": "Content Management",
+  "/overview/seo": "SEO Configuration",
+  "/management/order": "Customer Orders",
+  "/orders": "Customer Orders",
+  "/leads": "Customer Leads",
   "/management/customers": "Customers",
   "/customers": "Customers",
   "/management/tasks": "Tasks",

@@ -96,7 +96,7 @@ const ProfileCell = React.memo(({ col, row }) => {
     const obj = (rawVal && typeof rawVal === "object") ? rawVal : {};
     const name = obj.fullname || obj.name || obj.username || (typeof rawVal === "string" ? rawVal : "") || row[col.nameKey || "createdByName"] || row.username || row.name || "";
     const subText = obj.mobile || obj.phone || obj.email || obj.sub || row[col.subKey || "sub"] || row[col.emailKey || "email"] || row.email || row.sub || "";
-    const rawImg = obj.image || obj.avatar || row[col.imageKey || "image"] || row.image || (Array.isArray(row.images) && row.images[0]) || row.avatar || "";
+    const rawImg = obj.image || obj.avatar || row[col.imageKey || "image"] || row.image || row.coverImage || (Array.isArray(row.images) && row.images[0]) || row.avatar || "";
     const imgUrl = resolveImagePath(rawImg);
     const favColor = row[col.colorKey || "favoriteColor"] || "#6366f1";
     const imgStyle = { width: "40px", height: "40px", flexShrink: 0, ...col.imgStyle, ...col.imageStyle };
@@ -265,8 +265,8 @@ const TableCell = React.memo(({
                 const lower = String(cellValue || "").toLowerCase();
                 const isSuccess = typeof cellValue === "boolean"
                     ? cellValue
-                    : ["active", "approved", "published", "completed", "success", "paid", "delivered", "true"].includes(lower);
-                const isWarning = ["pending", "in progress", "processing", "waiting", "review"].includes(lower);
+                    : ["active", "approved", "published", "completed", "success", "paid", "delivered", "true", "indexed"].includes(lower);
+                const isWarning = ["pending", "in progress", "processing", "waiting", "review", "needs attention", "draft"].includes(lower);
                 const statusColor = isSuccess ? "#10b981" : isWarning ? "#f59e0b" : "#ef4444";
                 const textColor = isSuccess ? "var(--success)" : isWarning ? "var(--warning)" : "var(--danger)";
                 const displayLabel = cellValue && typeof cellValue === "string" ? cellValue : (isSuccess ? "Active" : isWarning ? "Pending" : "Inactive");
