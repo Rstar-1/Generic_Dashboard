@@ -1,4 +1,5 @@
 import React from "react";
+
 import Icon from "./../common/Icon";
 import {
   MONTH_NAMES,
@@ -60,8 +61,8 @@ const SelectDropdown = React.memo(
       selectedOpt !== undefined
         ? getOptLabel(selectedOpt)
         : value !== undefined && value !== null
-        ? value
-        : placeholder;
+          ? value
+          : placeholder;
 
     return (
       <div
@@ -1148,22 +1149,35 @@ const Fields = React.memo(
           );
         }
 
-        case "rating":
+        case "rating": {
+          const starSize = props.size || props.starSize || props.iconSize || 22;
+          const starGap = props.gap !== undefined ? props.gap : 4;
+          const activeCol = props.activeColor || "var(--warning)";
+          const inactiveCol = props.inactiveColor || "var(--tertiary)";
           return (
-            <div className="flex items-center gap-4">
+            <div className={`flex items-center gap-${starGap} ${className}`.trim()} style={style}>
               {[1, 2, 3, 4, 5].map((star) => (
-                <div key={star} className="cursor-pointer" onClick={() => !props.disabled && onChange?.(star)}>
+                <div
+                  key={star}
+                  className={props.disabled ? "flex items-center" : "cursor-pointer flex items-center"}
+                  onClick={(e) => {
+                    if (props.disabled) return;
+                    e?.stopPropagation?.();
+                    onChange?.(star);
+                  }}
+                >
                   <Icon
                     name="Star"
-                    width="22"
-                    height="22"
-                    stroke={star <= value ? "var(--warning)" : "var(--tertiary)"}
-                    fill={star <= value ? "var(--warning)" : "var(--tertiary)"}
+                    width={starSize}
+                    height={starSize}
+                    stroke={star <= value ? activeCol : inactiveCol}
+                    fill={star <= value ? activeCol : inactiveCol}
                   />
                 </div>
               ))}
             </div>
           );
+        }
 
         case "otp": {
           const count = otpCount || length || 6;
@@ -1216,7 +1230,7 @@ const Fields = React.memo(
       }
     };
 
-    if (type === "quantity" && !label && !error) {
+    if ((type === "quantity" || type === "rating") && !label && !error) {
       return renderField();
     }
 
