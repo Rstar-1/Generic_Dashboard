@@ -77,13 +77,6 @@ const menuData = [
     role: ["admin", "vendor", "Manager"],
     category: [
       {
-        name: "Tasks",
-        route: "/management/tasks",
-        icon: "Clipboard",
-        status: true,
-        role: ["admin", "Manager"],
-      },
-      {
         name: "Customers",
         route: "/management/customers",
         icon: "Box",
@@ -314,65 +307,6 @@ const customersTableColumns = [
     accessor: "status",
     ui: "status",
     style: { minWidth: "50px" },
-  },
-  {
-    header: "Created",
-    accessor: "createdDate",
-    ui: "date",
-    style: { minWidth: "120px" },
-  },
-  {
-    header: "Updated",
-    accessor: "updatedDate",
-    ui: "date",
-    style: { minWidth: "120px" },
-  },
-  {
-    header: "Actions",
-    accessor: "actions",
-    ui: "actions",
-    style: { minWidth: "110px", textAlign: "right" },
-  },
-];
-
-const tasksTableColumns = [
-  {
-    header: "",
-    accessor: "checkbox",
-    ui: "checkbox",
-    style: { minWidth: "40px" },
-  },
-  {
-    header: "Assignee",
-    accessor: "assignee",
-    ui: "profile",
-    imageKey: "avatar",
-    subKey: "mobile",
-    style: { minWidth: "200px" },
-  },
-  {
-    header: "Task Title",
-    accessor: "title",
-    ui: "text",
-    style: { maxWidth: "190px" },
-  },
-  {
-    header: "Priority",
-    accessor: "priority",
-    ui: "badge",
-    style: { minWidth: "100px" },
-  },
-  {
-    header: "Status",
-    accessor: "status",
-    ui: "status",
-    style: { minWidth: "100px" },
-  },
-  {
-    header: "Due Date",
-    accessor: "dueDate",
-    ui: "date",
-    style: { minWidth: "120px" },
   },
   {
     header: "Created",
@@ -925,7 +859,6 @@ const cmsTableColumns = [
 
 const analyticsTableColumns = {
   Customers: customersTableColumns,
-  Tasks: tasksTableColumns,
   Transaction: transactionsTableColumns,
   Users: usersTableColumns,
   Roles: rolesTableColumns,
@@ -950,23 +883,9 @@ const usersSidebarData = {
 const customersSidebarData = {
   title: "Customer Status",
   items: [
-    { name: "All Type", color: "var(--primary)", status: "all" },
-    { name: "manufacture", color: "var(--success)", status: "Manufacture" },
-    { name: "trader", color: "var(--secondary)", status: "Trader" },
-    { name: "retailer", color: "var(--warning)", status: "Retailer" },
-    { name: "wholeseller", color: "var(--danger)", status: "Wholeseller" },
-    { name: "stockist", color: "var(--info)", status: "Stockist" },
-    { name: "vendor", color: "var(--secondary)", status: "Vendor" },
-  ],
-};
-
-const tasksSidebarData = {
-  title: "Task Priority",
-  items: [
-    { name: "All Tasks", color: "#1e74db", priority: "all" },
-    { name: "High Priority", color: "#ef4444", priority: "High" },
-    { name: "Medium Priority", color: "#f59e0b", priority: "Medium" },
-    { name: "Low Priority", color: "#10b981", priority: "Low" },
+    { name: "All Customers", color: "#1e74db", status: "all" },
+    { name: "Active", color: "#10b981", status: "Active" },
+    { name: "Inactive", color: "#ef4444", status: "Inactive" },
   ],
 };
 
@@ -974,9 +893,8 @@ const transactionsSidebarData = {
   title: "Transaction Status",
   items: [
     { name: "All Transactions", color: "#1e74db", status: "all" },
-    { name: "Completed", color: "#10b981", status: "Completed" },
-    { name: "Pending", color: "#f59e0b", status: "Pending" },
-    { name: "Failed", color: "#ef4444", status: "Failed" },
+    { name: "Active", color: "#10b981", status: "Active" },
+    { name: "Inactive", color: "#ef4444", status: "Inactive" },
   ],
 };
 
@@ -984,7 +902,6 @@ const analyticsSidebarData = {
   title: "Data Models & Entities",
   items: [
     { name: "Customers", icon: "Box", color: "#10b981" },
-    { name: "Tasks", icon: "Clipboard", color: "#f59e0b" },
     { name: "Transaction", icon: "CMS", color: "#3b82f6" },
     { name: "Users", icon: "Users", color: "#6366f1" },
     { name: "Roles", icon: "Shield", color: "#8b5cf6" },
@@ -1001,74 +918,65 @@ const productCategoriesSidebarData = {
 };
 
 const productsSidebarData = {
-  title: "Inventory Status",
+  title: "Product Status",
   items: [
     { name: "All Products", color: "#1e74db", status: "all" },
-    { name: "In Stock", color: "#10b981", status: "In Stock" },
-    { name: "Low Stock", color: "#f59e0b", status: "Low Stock" },
-    { name: "Out of Stock", color: "#ef4444", status: "Out of Stock" },
+    { name: "Active", color: "#10b981", status: "Active" },
+    { name: "Inactive", color: "#ef4444", status: "Inactive" },
   ],
 };
 
 const blogCategoriesSidebarData = {
-  title: "Blog Categories",
+  title: "Category Status",
   items: [
     { name: "All Categories", color: "#1e74db", status: "all" },
     { name: "Active", color: "#10b981", status: "Active" },
-    { name: "Archived", color: "#64748b", status: "Archived" },
+    { name: "Inactive", color: "#ef4444", status: "Inactive" },
   ],
 };
 
 const blogsSidebarData = {
-  title: "Publication Status",
+  title: "Article Status",
   items: [
     { name: "All Articles", color: "#1e74db", status: "all" },
-    { name: "Published", color: "#10b981", status: "Published" },
-    { name: "Draft", color: "#f59e0b", status: "Draft" },
-    { name: "Scheduled", color: "#6366f1", status: "Scheduled" },
+    { name: "Active", color: "#10b981", status: "Active" },
+    { name: "Inactive", color: "#ef4444", status: "Inactive" },
   ],
 };
 
 const leadsSidebarData = {
-  title: "Lead Pipeline",
+  title: "Lead Status",
   items: [
     { name: "All Leads", color: "#1e74db", status: "all" },
-    { name: "New", color: "#3b82f6", status: "New" },
-    { name: "Contacted", color: "#f59e0b", status: "Contacted" },
-    { name: "Qualified", color: "#10b981", status: "Qualified" },
-    { name: "Lost", color: "#ef4444", status: "Lost" },
+    { name: "Active", color: "#10b981", status: "Active" },
+    { name: "Inactive", color: "#ef4444", status: "Inactive" },
   ],
 };
 
 const ordersSidebarData = {
-  title: "Fulfillment Status",
+  title: "Order Status",
   items: [
     { name: "All Orders", color: "#1e74db", status: "all" },
-    { name: "Pending", color: "#f59e0b", status: "Pending" },
-    { name: "Processing", color: "#3b82f6", status: "Processing" },
-    { name: "Shipped", color: "#8b5cf6", status: "Shipped" },
-    { name: "Delivered", color: "#10b981", status: "Delivered" },
-    { name: "Cancelled", color: "#ef4444", status: "Cancelled" },
+    { name: "Active", color: "#10b981", status: "Active" },
+    { name: "Inactive", color: "#ef4444", status: "Inactive" },
   ],
 };
 
 const seoSidebarData = {
-  title: "Indexing & Health",
+  title: "SEO Status",
   items: [
     { name: "All Pages", color: "#1e74db", status: "all" },
-    { name: "Indexed", color: "#10b981", status: "Indexed" },
-    { name: "Needs Attention", color: "#f59e0b", status: "Needs Attention" },
-    { name: "NoIndex", color: "#ef4444", status: "NoIndex" },
+    { name: "Active", color: "#10b981", status: "Active" },
+    { name: "Inactive", color: "#ef4444", status: "Inactive" },
   ],
 };
 
 const cmsSidebarData = {
-  title: "Content Status",
+  title: "Section Status",
   items: [
     { name: "All Sections", color: "#1e74db", status: "all" },
-    { name: "Published", color: "#10b981", status: "Published" },
-    { name: "Draft", color: "#f59e0b", status: "Draft" },
-    { name: "Archived", color: "#64748b", status: "Archived" },
+    { name: "Active", color: "#10b981", status: "Active" },
+    { name: "Inactive", color: "#ef4444", status: "Inactive" },
   ],
 };
 
@@ -1207,69 +1115,6 @@ const customersData = [
   },
 ];
 
-const tasksData = [
-  {
-    id: "TASK-101",
-    title: "Implement Zero-Latency Memoization in MainLayout",
-    assignee: {
-      name: "Ashmita Vinyls",
-      mobile: "9087654321",
-      avatar:
-        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&q=80",
-    },
-    priority: "High",
-    status: "Active",
-    dueDate: "2026-09-20",
-    createdDate: "2026-09-10",
-    updatedDate: "2026-09-14",
-  },
-  {
-    id: "TASK-102",
-    title: "Audit Role Permissions for Customer Management",
-    assignee: {
-      name: "Mayur Computer",
-      mobile: "9087654321",
-      avatar:
-        "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&q=80",
-    },
-    priority: "Medium",
-    status: "Active",
-    dueDate: "2026-09-24",
-    createdDate: "2026-09-11",
-    updatedDate: "2026-09-14",
-  },
-  {
-    id: "TASK-103",
-    title: "Refactor Table Pagination and Expanded Row Views",
-    assignee: {
-      name: "Kepal Enterprise",
-      mobile: "9087654321",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    },
-    priority: "Medium",
-    status: "Failed",
-    dueDate: "2026-09-18",
-    createdDate: "2026-09-08",
-    updatedDate: "2026-09-14",
-  },
-  {
-    id: "TASK-104",
-    title: "Stripe Webhook Handler for Refund Telemetry",
-    assignee: {
-      name: "Krishi Engineering",
-      mobile: "9087654321",
-      avatar:
-        "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=80&q=80",
-    },
-    priority: "Low",
-    status: "Pending",
-    dueDate: "2026-09-28",
-    createdDate: "2026-09-12",
-    updatedDate: "2026-09-14",
-  },
-];
-
 const transactionsData = [
   {
     id: "TXN-901",
@@ -1282,7 +1127,7 @@ const transactionsData = [
     },
     amount: "₹45,800",
     method: "Cash On Delivery",
-    status: "Completed",
+    status: "Active",
     date: "2026-09-14",
   },
   {
@@ -1296,7 +1141,7 @@ const transactionsData = [
     },
     amount: "₹1,12,500",
     method: "Cash On Delivery",
-    status: "Completed",
+    status: "Active",
     date: "2026-09-14",
   },
   {
@@ -1310,7 +1155,7 @@ const transactionsData = [
     },
     amount: "₹24,900",
     method: "UPI / NetBanking",
-    status: "Pending",
+    status: "Active",
     date: "2026-09-13",
   },
   {
@@ -1324,7 +1169,7 @@ const transactionsData = [
     },
     amount: "₹88,000",
     method: "Credit Card",
-    status: "Failed",
+    status: "Inactive",
     date: "2026-09-12",
   },
 ];
@@ -1443,7 +1288,7 @@ const rolesData = [
     permissions: ["dashboard"],
     pages: ["Dashboard"],
     usersCount: 3,
-    status: "active",
+    status: "Active",
     createdDate: "2026-01-15",
     updatedDate: "2026-09-10",
   },
@@ -1454,7 +1299,7 @@ const rolesData = [
     permissions: ["Full_Access"],
     pages: ["Full_Access"],
     usersCount: 3,
-    status: "active",
+    status: "Active",
     createdDate: "2025-12-01",
     updatedDate: "2026-09-15",
   },
@@ -1468,14 +1313,16 @@ const rolesData = [
       "view_orders",
       "add_orders",
       "edit_orders",
+      "trash_orders",
       "view_transactions",
       "add_transactions",
       "edit_transactions",
+      "trash_transactions",
       "view_systemuser",
     ],
     pages: ["Dashboard", "Analytics", "Orders", "Transactions", "System Users"],
     usersCount: 4,
-    status: "active",
+    status: "Active",
     createdDate: "2026-01-20",
     updatedDate: "2026-09-08",
   },
@@ -1489,15 +1336,19 @@ const rolesData = [
       "view_blogcategory",
       "add_blogcategory",
       "edit_blogcategory",
+      "trash_blogcategory",
       "view_blogs",
       "add_blogs",
       "edit_blogs",
+      "trash_blogs",
       "view_cms",
       "add_cms",
       "edit_cms",
+      "trash_cms",
       "view_seo",
       "add_seo",
       "edit_seo",
+      "trash_seo",
       "view_systemuser",
     ],
     pages: [
@@ -1510,7 +1361,7 @@ const rolesData = [
       "System Users",
     ],
     usersCount: 2,
-    status: "active",
+    status: "Active",
     createdDate: "2026-02-10",
     updatedDate: "2026-09-12",
   },
@@ -1524,15 +1375,19 @@ const rolesData = [
       "view_productcategory",
       "add_productcategory",
       "edit_productcategory",
+      "trash_productcategory",
       "view_products",
       "add_products",
       "edit_products",
+      "trash_products",
       "view_customers",
       "add_customers",
       "edit_customers",
+      "trash_customers",
       "view_leads",
       "add_leads",
       "edit_leads",
+      "trash_leads",
       "view_systemuser",
     ],
     pages: [
@@ -1564,21 +1419,12 @@ const analyticsData = {
     createdDate: customersData[0]?.createdDate || "2026-02-14",
     updatedDate: customersData[0]?.updatedDate || "2026-09-14",
   },
-  Tasks: {
-    title: tasksData[0]?.title || "Implement Zero-Latency Memoization",
-    assignee: tasksData[0]?.assignee?.name || "Ashmita Vinyls",
-    priority: tasksData[0]?.priority || "High",
-    status: tasksData[0]?.status || "Active",
-    dueDate: tasksData[0]?.dueDate || "2026-09-20",
-    createdDate: tasksData[0]?.createdDate || "2026-09-10",
-    updatedDate: tasksData[0]?.updatedDate || "2026-09-14",
-  },
   Transaction: {
     transactionId: transactionsData[0]?.transactionId || "TXN-982014",
     customer: transactionsData[0]?.customer?.name || "Ashmita Vinyls",
     amount: transactionsData[0]?.amount || "₹45,800",
     method: transactionsData[0]?.method || "Cash On Delivery",
-    status: transactionsData[0]?.status || "Completed",
+    status: transactionsData[0]?.status || "Active",
     createdDate: transactionsData[0]?.date || "2026-09-14",
     updatedDate: "2026-09-14",
   },
@@ -1689,7 +1535,7 @@ const productsData = [
     category: "Standard PVC",
     price: "₹4,850",
     stock: "142 rolls",
-    status: "In Stock",
+    status: "Active",
     rating: "4.9 ★",
     updatedDate: "2026-09-15",
     image: "product/Product4.jpg",
@@ -1701,7 +1547,7 @@ const productsData = [
     category: "Polar Grade",
     price: "₹6,200",
     stock: "68 rolls",
-    status: "In Stock",
+    status: "Active",
     rating: "4.8 ★",
     updatedDate: "2026-09-14",
     image: "hero.png",
@@ -1713,7 +1559,7 @@ const productsData = [
     category: "Brackets",
     price: "₹1,250",
     stock: "320 pcs",
-    status: "In Stock",
+    status: "Active",
     rating: "5.0 ★",
     updatedDate: "2026-09-12",
     image: "product/Product7.jpg",
@@ -1725,7 +1571,7 @@ const productsData = [
     category: "Anti-Insect",
     price: "₹5,400",
     stock: "12 rolls",
-    status: "Low Stock",
+    status: "Active",
     rating: "4.7 ★",
     updatedDate: "2026-09-10",
     image: "dashimg.png",
@@ -1737,7 +1583,7 @@ const productsData = [
     category: "Magnetic Kit",
     price: "₹8,900",
     stock: "0 pcs",
-    status: "Out of Stock",
+    status: "Inactive",
     rating: "4.9 ★",
     updatedDate: "2026-09-08",
     image: "CROSY.png",
@@ -1749,7 +1595,7 @@ const productsData = [
     category: "Heavy Duty",
     price: "₹7,650",
     stock: "85 rolls",
-    status: "In Stock",
+    status: "Active",
     rating: "4.8 ★",
     updatedDate: "2026-09-06",
     image: "DSBKO.png",
@@ -1761,7 +1607,7 @@ const productsData = [
     category: "Welding Screen",
     price: "₹5,900",
     stock: "8 rolls",
-    status: "Low Stock",
+    status: "Active",
     rating: "4.6 ★",
     updatedDate: "2026-09-02",
     image: "SPLEDO.png",
@@ -1837,7 +1683,7 @@ const blogCategoriesData = [
     badge: "Archive",
     articlesCount: 6,
     views: "14.2k",
-    status: "Archived",
+    status: "Inactive",
     createdDate: "2025-11-12",
     icon: "DSBKO.png",
   },
@@ -1887,7 +1733,7 @@ const blogsData = [
         text: "The selection criteria for strip thickness and door traffic volume made choosing the right rolls completely hassle-free.",
       },
     ],
-    status: "Published",
+    status: "Active",
     views: "18,420",
   },
   {
@@ -1911,7 +1757,7 @@ const blogsData = [
       "Polar grade vinyl reduces refrigeration cycle frequency by sealing extreme temperature differentials.",
     tags: ["Cold Storage", "Energy", "Polar Grade"],
     reviews: [],
-    status: "Published",
+    status: "Active",
     views: "14,820",
   },
   {
@@ -1935,7 +1781,7 @@ const blogsData = [
       "SS304 hardware outlasts standard galvanized brackets by more than 3x in corrosive food processing areas.",
     tags: ["Hardware", "Stainless Steel", "Installation"],
     reviews: [],
-    status: "Published",
+    status: "Active",
     views: "9,450",
   },
   {
@@ -1959,7 +1805,7 @@ const blogsData = [
       "Amber strips act as an invisible physiological barrier to phototactic insects.",
     tags: ["Workplace Safety", "Anti-Insect", "Food Safety"],
     reviews: [],
-    status: "Published",
+    status: "Active",
     views: "18,200",
   },
   {
@@ -1983,7 +1829,7 @@ const blogsData = [
       "Instant magnetic snap-closure cuts door transition air loss by over 80%.",
     tags: ["Automation", "Magnetic Closures", "Logistics"],
     reviews: [],
-    status: "Draft",
+    status: "Inactive",
     views: "3,110",
   },
   {
@@ -2007,7 +1853,7 @@ const blogsData = [
       "Ribbed profiles extend optical clarity and functional lifetime in heavy forklift loading bays.",
     tags: ["Ribbed PVC", "Durability", "Forklift Safety"],
     reviews: [],
-    status: "Scheduled",
+    status: "Active",
     views: "0",
   },
 ];
@@ -2020,7 +1866,7 @@ const leadsData = [
     contact: "+91 98201 44512",
     value: "₹2,45,000",
     source: "Website Enquiry",
-    status: "Qualified",
+    status: "Active",
     assignedTo: "Raj Shetye",
     createdDate: "2026-09-14",
     avatar:
@@ -2033,7 +1879,7 @@ const leadsData = [
     contact: "+91 98112 77334",
     value: "₹85,000",
     source: "Direct Call",
-    status: "Contacted",
+    status: "Active",
     assignedTo: "Pooja Hegde",
     createdDate: "2026-09-13",
     avatar:
@@ -2046,7 +1892,7 @@ const leadsData = [
     contact: "+91 98900 12389",
     value: "₹5,20,000",
     source: "Partner Referral",
-    status: "New",
+    status: "Inactive",
     assignedTo: "Unassigned",
     createdDate: "2026-09-12",
     avatar:
@@ -2059,7 +1905,7 @@ const leadsData = [
     contact: "+91 97654 32190",
     value: "₹1,80,000",
     source: "Google Ads",
-    status: "Qualified",
+    status: "Active",
     assignedTo: "Raj Shetye",
     createdDate: "2026-09-10",
     avatar:
@@ -2072,7 +1918,7 @@ const leadsData = [
     contact: "+91 94401 22890",
     value: "₹65,000",
     source: "Trade Expo",
-    status: "Lost",
+    status: "Inactive",
     assignedTo: "Vikram Mehta",
     createdDate: "2026-08-28",
     avatar:
@@ -2093,7 +1939,7 @@ const ordersData = [
     itemsCount: 6,
     totalAmount: "₹34,800",
     paymentMethod: "UPI / NetBanking",
-    status: "Delivered",
+    status: "Active",
     date: "2026-09-14",
   },
   {
@@ -2108,7 +1954,7 @@ const ordersData = [
     itemsCount: 2,
     totalAmount: "₹12,400",
     paymentMethod: "Credit Card",
-    status: "Shipped",
+    status: "Active",
     date: "2026-09-13",
   },
   {
@@ -2123,7 +1969,7 @@ const ordersData = [
     itemsCount: 14,
     totalAmount: "₹88,500",
     paymentMethod: "Wire Transfer",
-    status: "Processing",
+    status: "Active",
     date: "2026-09-12",
   },
   {
@@ -2138,7 +1984,7 @@ const ordersData = [
     itemsCount: 1,
     totalAmount: "₹4,850",
     paymentMethod: "Cash On Delivery",
-    status: "Pending",
+    status: "Active",
     date: "2026-09-11",
   },
   {
@@ -2153,7 +1999,7 @@ const ordersData = [
     itemsCount: 3,
     totalAmount: "₹18,900",
     paymentMethod: "Credit Card",
-    status: "Cancelled",
+    status: "Inactive",
     date: "2026-09-09",
   },
 ];
@@ -2200,7 +2046,7 @@ const seoData = [
     breadcrumbsText: "Home",
     canonical: "https://ashmitavinyls.com/home",
     seoScore: "98 / 100",
-    status: "Indexed",
+    status: "Active",
     lastCrawled: "2026-10-25",
   },
   {
@@ -2223,7 +2069,7 @@ const seoData = [
     breadcrumbsText: "Home / About Us",
     canonical: "https://ashmitavinyls.com/about",
     seoScore: "92 / 100",
-    status: "Indexed",
+    status: "Active",
     lastCrawled: "2026-10-24",
   },
   {
@@ -2246,7 +2092,7 @@ const seoData = [
     breadcrumbsText: "Home / Products",
     canonical: "https://ashmitavinyls.com/product",
     seoScore: "96 / 100",
-    status: "Indexed",
+    status: "Active",
     lastCrawled: "2026-10-24",
   },
   {
@@ -2270,7 +2116,7 @@ const seoData = [
     breadcrumbsText: "Home / Products / Details",
     canonical: "https://ashmitavinyls.com/product-detail",
     seoScore: "90 / 100",
-    status: "Indexed",
+    status: "Active",
     lastCrawled: "2026-10-23",
   },
   {
@@ -2293,7 +2139,7 @@ const seoData = [
     breadcrumbsText: "Home / Collection",
     canonical: "https://ashmitavinyls.com/collection",
     seoScore: "94 / 100",
-    status: "Indexed",
+    status: "Active",
     lastCrawled: "2026-10-22",
   },
   {
@@ -2316,7 +2162,7 @@ const seoData = [
     breadcrumbsText: "Home / Blog",
     canonical: "https://ashmitavinyls.com/blog",
     seoScore: "93 / 100",
-    status: "Indexed",
+    status: "Active",
     lastCrawled: "2026-10-20",
   },
   {
@@ -2340,7 +2186,7 @@ const seoData = [
     breadcrumbsText: "Home / Blog / Article",
     canonical: "https://ashmitavinyls.com/blog-detail",
     seoScore: "78 / 100",
-    status: "Needs Attention",
+    status: "Inactive",
     lastCrawled: "2026-10-18",
   },
   {
@@ -2363,7 +2209,7 @@ const seoData = [
     breadcrumbsText: "Home / Supplier",
     canonical: "https://ashmitavinyls.com/supplier",
     seoScore: "87 / 100",
-    status: "Indexed",
+    status: "Active",
     lastCrawled: "2026-10-16",
   },
   {
@@ -2386,7 +2232,7 @@ const seoData = [
     breadcrumbsText: "Home / Quality",
     canonical: "https://ashmitavinyls.com/quality",
     seoScore: "89 / 100",
-    status: "Indexed",
+    status: "Active",
     lastCrawled: "2026-10-15",
   },
   {
@@ -2409,7 +2255,7 @@ const seoData = [
     breadcrumbsText: "Home / Connect Us",
     canonical: "https://ashmitavinyls.com/connect",
     seoScore: "95 / 100",
-    status: "Indexed",
+    status: "Active",
     lastCrawled: "2026-10-12",
   },
   {
@@ -2432,7 +2278,7 @@ const seoData = [
     breadcrumbsText: "Home / FAQ",
     canonical: "https://ashmitavinyls.com/faq",
     seoScore: "91 / 100",
-    status: "Indexed",
+    status: "Active",
     lastCrawled: "2026-10-10",
   },
   {
@@ -2455,7 +2301,7 @@ const seoData = [
     breadcrumbsText: "Home / Privacy Policy",
     canonical: "https://ashmitavinyls.com/privacy",
     seoScore: "N/A",
-    status: "NoIndex",
+    status: "Inactive",
     lastCrawled: "2026-10-01",
   },
   {
@@ -2478,7 +2324,7 @@ const seoData = [
     breadcrumbsText: "Home / Terms & Conditions",
     canonical: "https://ashmitavinyls.com/terms",
     seoScore: "N/A",
-    status: "NoIndex",
+    status: "Inactive",
     lastCrawled: "2026-10-01",
   },
 ];
@@ -2519,7 +2365,7 @@ const cmsData = [
     slug: "hero-commercial-banner",
     sectionArea: "Home Hero",
     author: "Raj Shetye",
-    status: "Published",
+    status: "Active",
     revision: "v2.4",
     updatedDate: "2026-09-14",
   },
@@ -2529,7 +2375,7 @@ const cmsData = [
     slug: "cold-storage-thermal-advantages",
     sectionArea: "Feature Section",
     author: "Pooja Hegde",
-    status: "Published",
+    status: "Active",
     revision: "v1.8",
     updatedDate: "2026-09-10",
   },
@@ -2539,7 +2385,7 @@ const cmsData = [
     slug: "trust-badges-certifications",
     sectionArea: "Footer Bar",
     author: "Vikram Mehta",
-    status: "Published",
+    status: "Active",
     revision: "v1.2",
     updatedDate: "2026-09-05",
   },
@@ -2549,7 +2395,7 @@ const cmsData = [
     slug: "festive-bulk-discount-banner",
     sectionArea: "Promo Topbar",
     author: "Raj Shetye",
-    status: "Draft",
+    status: "Inactive",
     revision: "v0.9",
     updatedDate: "2026-09-14",
   },
@@ -2559,7 +2405,7 @@ const cmsData = [
     slug: "monsoon-anti-insect-alert",
     sectionArea: "Banner Area",
     author: "Pooja Hegde",
-    status: "Archived",
+    status: "Inactive",
     revision: "v1.0",
     updatedDate: "2026-08-20",
   },
@@ -2581,7 +2427,6 @@ export {
   usersTableColumns,
   rolesTableColumns,
   customersTableColumns,
-  tasksTableColumns,
   transactionsTableColumns,
   productCategoriesTableColumns,
   productsTableColumns,
@@ -2594,7 +2439,6 @@ export {
   analyticsTableColumns,
   usersSidebarData,
   customersSidebarData,
-  tasksSidebarData,
   transactionsSidebarData,
   analyticsSidebarData,
   productCategoriesSidebarData,
@@ -2606,7 +2450,6 @@ export {
   seoSidebarData,
   cmsSidebarData,
   customersData,
-  tasksData,
   transactionsData,
   usersData,
   rolesData,

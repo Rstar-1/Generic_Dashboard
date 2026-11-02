@@ -4,6 +4,7 @@ import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
+import FilterForm from "../../components/forms/sections/FilterForm";
 import { showToast } from "../../components/common/Toast";
 import {
     blogCategoriesSidebarData,
@@ -17,7 +18,7 @@ const TABS = [{ name: "All Blog Categories", value: "all" }];
 const STATUS_OPTIONS = [
     { label: "All Statuses", value: "all" },
     { label: "Active", value: "Active" },
-    { label: "Archived", value: "Archived" },
+    { label: "Inactive", value: "Inactive" },
 ];
 
 const TOPIC_OPTIONS = [
@@ -28,27 +29,6 @@ const TOPIC_OPTIONS = [
     { label: "Tutorials", value: "Tutorials" },
     { label: "Archive", value: "Archive" },
 ];
-
-// Memoized Filter Drawer Content
-const FilterDrawerContent = React.memo(({ status, onStatusChange, topic, onTopicChange }) => (
-    <div className="grid-cols-4 gap-12">
-        <Fields
-            type="select"
-            label="Category Status"
-            options={STATUS_OPTIONS}
-            value={status}
-            onChange={onStatusChange}
-        />
-        <Fields
-            type="select"
-            label="Topic Tag"
-            options={TOPIC_OPTIONS}
-            value={topic}
-            onChange={onTopicChange}
-        />
-    </div>
-));
-FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const CategoryBlogs = () => {
     const [categories, setCategories] = React.useState(initialBlogCategoriesData);
@@ -176,11 +156,23 @@ const CategoryBlogs = () => {
 
     const filterInputsNode = React.useMemo(
         () => (
-            <FilterDrawerContent
-                status={statusFilter}
-                onStatusChange={handleStatusFilterChange}
-                topic={topicFilter}
-                onTopicChange={handleTopicFilterChange}
+            <FilterForm
+                fields={[
+                    {
+                        type: "select",
+                        label: "Category Status",
+                        options: STATUS_OPTIONS,
+                        value: statusFilter,
+                        onChange: handleStatusFilterChange,
+                    },
+                    {
+                        type: "select",
+                        label: "Topic Tag",
+                        options: TOPIC_OPTIONS,
+                        value: topicFilter,
+                        onChange: handleTopicFilterChange,
+                    },
+                ]}
             />
         ),
         [statusFilter, handleStatusFilterChange, topicFilter, handleTopicFilterChange]
@@ -234,7 +226,7 @@ const CategoryBlogs = () => {
                 searchQuery={searchQuery}
                 onSearchChange={handleSearchChange}
                 searchPlaceholder="Search by category name, tag, or slug..."
-                itemName="categories"
+                itemName="blogcategory"
                 collapsible={true}
                 maxVisibleColumns={5}
                 minWidth="1050px"

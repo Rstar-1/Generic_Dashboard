@@ -4,6 +4,7 @@ import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
+import FilterForm from "../../components/forms/sections/FilterForm";
 import { showToast } from "../../components/common/Toast";
 import {
     productsSidebarData,
@@ -16,10 +17,9 @@ const ITEMS_PER_PAGE = 5;
 const TABS = [{ name: "All Products", value: "all" }];
 
 const STOCK_OPTIONS = [
-    { label: "All Inventory Statuses", value: "all" },
-    { label: "In Stock", value: "In Stock" },
-    { label: "Low Stock", value: "Low Stock" },
-    { label: "Out of Stock", value: "Out of Stock" },
+    { label: "All Statuses", value: "all" },
+    { label: "Active", value: "Active" },
+    { label: "Inactive", value: "Inactive" },
 ];
 
 const CATEGORY_OPTIONS = [
@@ -33,27 +33,6 @@ const CATEGORY_OPTIONS = [
     { label: "Heavy Duty", value: "Heavy Duty" },
     { label: "Welding Screen", value: "Welding Screen" },
 ];
-
-// Memoized Filter Drawer Content
-const FilterDrawerContent = React.memo(({ status, onStatusChange, category, onCategoryChange }) => (
-    <div className="grid-cols-4 gap-12">
-        <Fields
-            type="select"
-            label="Inventory Status"
-            options={STOCK_OPTIONS}
-            value={status}
-            onChange={onStatusChange}
-        />
-        <Fields
-            type="select"
-            label="Product Category"
-            options={CATEGORY_OPTIONS}
-            value={category}
-            onChange={onCategoryChange}
-        />
-    </div>
-));
-FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const OverviewProducts = () => {
     const [products, setProducts] = React.useState(initialProductsData);
@@ -181,11 +160,23 @@ const OverviewProducts = () => {
 
     const filterInputsNode = React.useMemo(
         () => (
-            <FilterDrawerContent
-                status={statusFilter}
-                onStatusChange={handleStatusFilterChange}
-                category={categoryFilter}
-                onCategoryChange={handleCategoryFilterChange}
+            <FilterForm
+                fields={[
+                    {
+                        type: "select",
+                        label: "Product Status",
+                        options: STOCK_OPTIONS,
+                        value: statusFilter,
+                        onChange: handleStatusFilterChange,
+                    },
+                    {
+                        type: "select",
+                        label: "Product Category",
+                        options: CATEGORY_OPTIONS,
+                        value: categoryFilter,
+                        onChange: handleCategoryFilterChange,
+                    },
+                ]}
             />
         ),
         [statusFilter, handleStatusFilterChange, categoryFilter, handleCategoryFilterChange]

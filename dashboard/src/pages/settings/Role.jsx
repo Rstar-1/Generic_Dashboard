@@ -4,6 +4,7 @@ import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
+import FilterForm from "../../components/forms/sections/FilterForm";
 import Button from "../../components/common/Button";
 import { showToast } from "../../components/common/Toast";
 
@@ -27,8 +28,8 @@ const ROLE_OPTIONS = [
 
 const STATUS_OPTIONS = [
     { label: "All Statuses", value: "all" },
-    { label: "Active Only", value: "Active" },
-    { label: "Inactive Only", value: "Inactive" },
+    { label: "Active", value: "Active" },
+    { label: "Inactive", value: "Inactive" },
 ];
 
 const PERMISSION_OPTIONS = [
@@ -40,41 +41,6 @@ const PERMISSION_OPTIONS = [
     { label: "Reports & Audit (view_reports)", value: "view_reports" },
     { label: "Full System Access (full_access)", value: "full_access" },
 ];
-
-// Memoized Filter Drawer Content
-const FilterDrawerContent = React.memo(({
-    role,
-    onRoleChange,
-    status,
-    onStatusChange,
-    permission,
-    onPermissionChange
-}) => (
-    <div className="grid-cols-4 gap-12">
-        <Fields
-            type="select"
-            label="Role Filter"
-            options={ROLE_OPTIONS}
-            value={role}
-            onChange={onRoleChange}
-        />
-        <Fields
-            type="select"
-            label="Role Status"
-            options={STATUS_OPTIONS}
-            value={status}
-            onChange={onStatusChange}
-        />
-        <Fields
-            type="select"
-            label="Required Permission Capability"
-            options={PERMISSION_OPTIONS}
-            value={permission}
-            onChange={onPermissionChange}
-        />
-    </div>
-));
-FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Role = () => {
     const [roles, setRoles] = React.useState(initialRolesData);
@@ -183,13 +149,30 @@ const Role = () => {
 
     const filterInputsNode = React.useMemo(
         () => (
-            <FilterDrawerContent
-                role={roleFilter}
-                onRoleChange={handleRoleChange}
-                status={statusFilter}
-                onStatusChange={handleStatusChange}
-                permission={permissionFilter}
-                onPermissionChange={handlePermissionChange}
+            <FilterForm
+                fields={[
+                    {
+                        type: "select",
+                        label: "Role Filter",
+                        options: ROLE_OPTIONS,
+                        value: roleFilter,
+                        onChange: handleRoleChange,
+                    },
+                    {
+                        type: "select",
+                        label: "Role Status",
+                        options: STATUS_OPTIONS,
+                        value: statusFilter,
+                        onChange: handleStatusChange,
+                    },
+                    {
+                        type: "select",
+                        label: "Required Permission Capability",
+                        options: PERMISSION_OPTIONS,
+                        value: permissionFilter,
+                        onChange: handlePermissionChange,
+                    },
+                ]}
             />
         ),
         [roleFilter, handleRoleChange, statusFilter, permissionFilter, handleStatusChange, handlePermissionChange]

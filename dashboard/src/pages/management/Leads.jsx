@@ -4,6 +4,7 @@ import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
+import FilterForm from "../../components/forms/sections/FilterForm";
 import { showToast } from "../../components/common/Toast";
 import {
     leadsSidebarData,
@@ -15,11 +16,9 @@ const ITEMS_PER_PAGE = 5;
 const TABS = [{ name: "All Leads", value: "all" }];
 
 const STATUS_OPTIONS = [
-    { label: "All Pipeline Stages", value: "all" },
-    { label: "New", value: "New" },
-    { label: "Contacted", value: "Contacted" },
-    { label: "Qualified", value: "Qualified" },
-    { label: "Lost", value: "Lost" },
+    { label: "All Statuses", value: "all" },
+    { label: "Active", value: "Active" },
+    { label: "Inactive", value: "Inactive" },
 ];
 
 const SOURCE_OPTIONS = [
@@ -30,27 +29,6 @@ const SOURCE_OPTIONS = [
     { label: "Google Ads", value: "Google Ads" },
     { label: "Trade Expo", value: "Trade Expo" },
 ];
-
-// Memoized Filter Drawer Content
-const FilterDrawerContent = React.memo(({ status, onStatusChange, source, onSourceChange }) => (
-    <div className="grid-cols-4 gap-12">
-        <Fields
-            type="select"
-            label="Pipeline Status"
-            options={STATUS_OPTIONS}
-            value={status}
-            onChange={onStatusChange}
-        />
-        <Fields
-            type="select"
-            label="Lead Source"
-            options={SOURCE_OPTIONS}
-            value={source}
-            onChange={onSourceChange}
-        />
-    </div>
-));
-FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Leads = () => {
     const [leads, setLeads] = React.useState(initialLeadsData);
@@ -181,11 +159,23 @@ const Leads = () => {
 
     const filterInputsNode = React.useMemo(
         () => (
-            <FilterDrawerContent
-                status={statusFilter}
-                onStatusChange={handleStatusFilterChange}
-                source={sourceFilter}
-                onSourceChange={handleSourceFilterChange}
+            <FilterForm
+                fields={[
+                    {
+                        type: "select",
+                        label: "Pipeline Status",
+                        options: STATUS_OPTIONS,
+                        value: statusFilter,
+                        onChange: handleStatusFilterChange,
+                    },
+                    {
+                        type: "select",
+                        label: "Lead Source",
+                        options: SOURCE_OPTIONS,
+                        value: sourceFilter,
+                        onChange: handleSourceFilterChange,
+                    },
+                ]}
             />
         ),
         [statusFilter, handleStatusFilterChange, sourceFilter, handleSourceFilterChange]

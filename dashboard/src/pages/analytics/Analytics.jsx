@@ -8,7 +8,6 @@ import {
     customersTableColumns,
     analyticsTableColumns,
     customersData,
-    tasksData,
     transactionsData,
     usersData,
     rolesData,
@@ -171,7 +170,6 @@ const Analytics = () => {
     const sidebarItems = React.useMemo(() => {
         const counts = {
             Customers: customersData.length,
-            Tasks: tasksData.length,
             Transaction: transactionsData.length,
             Users: usersData.length,
             Roles: rolesData.length,

@@ -4,6 +4,7 @@ import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
+import FilterForm from "../../components/forms/sections/FilterForm";
 import { showToast } from "../../components/common/Toast";
 import {
     ordersSidebarData,
@@ -15,12 +16,9 @@ const ITEMS_PER_PAGE = 5;
 const TABS = [{ name: "All Orders", value: "all" }];
 
 const STATUS_OPTIONS = [
-    { label: "All Fulfillment Statuses", value: "all" },
-    { label: "Pending", value: "Pending" },
-    { label: "Processing", value: "Processing" },
-    { label: "Shipped", value: "Shipped" },
-    { label: "Delivered", value: "Delivered" },
-    { label: "Cancelled", value: "Cancelled" },
+    { label: "All Statuses", value: "all" },
+    { label: "Active", value: "Active" },
+    { label: "Inactive", value: "Inactive" },
 ];
 
 const METHOD_OPTIONS = [
@@ -30,27 +28,6 @@ const METHOD_OPTIONS = [
     { label: "Wire Transfer", value: "Wire Transfer" },
     { label: "Cash On Delivery", value: "Cash On Delivery" },
 ];
-
-// Memoized Filter Drawer Content
-const FilterDrawerContent = React.memo(({ status, onStatusChange, method, onMethodChange }) => (
-    <div className="grid-cols-4 gap-12">
-        <Fields
-            type="select"
-            label="Order Status"
-            options={STATUS_OPTIONS}
-            value={status}
-            onChange={onStatusChange}
-        />
-        <Fields
-            type="select"
-            label="Payment Method"
-            options={METHOD_OPTIONS}
-            value={method}
-            onChange={onMethodChange}
-        />
-    </div>
-));
-FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Orders = () => {
     const [orders, setOrders] = React.useState(initialOrdersData);
@@ -180,11 +157,23 @@ const Orders = () => {
 
     const filterInputsNode = React.useMemo(
         () => (
-            <FilterDrawerContent
-                status={statusFilter}
-                onStatusChange={handleStatusFilterChange}
-                method={methodFilter}
-                onMethodChange={handleMethodFilterChange}
+            <FilterForm
+                fields={[
+                    {
+                        type: "select",
+                        label: "Order Status",
+                        options: STATUS_OPTIONS,
+                        value: statusFilter,
+                        onChange: handleStatusFilterChange,
+                    },
+                    {
+                        type: "select",
+                        label: "Payment Method",
+                        options: METHOD_OPTIONS,
+                        value: methodFilter,
+                        onChange: handleMethodFilterChange,
+                    },
+                ]}
             />
         ),
         [statusFilter, handleStatusFilterChange, methodFilter, handleMethodFilterChange]

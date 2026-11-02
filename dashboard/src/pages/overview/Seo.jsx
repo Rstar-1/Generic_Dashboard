@@ -4,6 +4,7 @@ import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
+import FilterForm from "../../components/forms/sections/FilterForm";
 import { showToast } from "../../components/common/Toast";
 import {
     seoSidebarData,
@@ -16,10 +17,9 @@ const ITEMS_PER_PAGE = 5;
 const TABS = [{ name: "All Pages", value: "all" }];
 
 const STATUS_OPTIONS = [
-    { label: "All Index Statuses", value: "all" },
-    { label: "Indexed", value: "Indexed" },
-    { label: "Needs Attention", value: "Needs Attention" },
-    { label: "NoIndex", value: "NoIndex" },
+    { label: "All Statuses", value: "all" },
+    { label: "Active", value: "Active" },
+    { label: "Inactive", value: "Inactive" },
 ];
 
 const SCORE_OPTIONS = [
@@ -28,27 +28,6 @@ const SCORE_OPTIONS = [
     { label: "Average Score (70-89)", value: "avg" },
     { label: "Needs Audit (<70)", value: "low" },
 ];
-
-// Memoized Filter Drawer Content
-const FilterDrawerContent = React.memo(({ status, onStatusChange, score, onScoreChange }) => (
-    <div className="grid-cols-4 gap-12">
-        <Fields
-            type="select"
-            label="Index Status"
-            options={STATUS_OPTIONS}
-            value={status}
-            onChange={onStatusChange}
-        />
-        <Fields
-            type="select"
-            label="SEO Score Tier"
-            options={SCORE_OPTIONS}
-            value={score}
-            onChange={onScoreChange}
-        />
-    </div>
-));
-FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Seo = () => {
     const [seoPages, setSeoPages] = React.useState(initialSeoData);
@@ -182,11 +161,23 @@ const Seo = () => {
 
     const filterInputsNode = React.useMemo(
         () => (
-            <FilterDrawerContent
-                status={statusFilter}
-                onStatusChange={handleStatusFilterChange}
-                score={scoreFilter}
-                onScoreChange={handleScoreFilterChange}
+            <FilterForm
+                fields={[
+                    {
+                        type: "select",
+                        label: "Index Status",
+                        options: STATUS_OPTIONS,
+                        value: statusFilter,
+                        onChange: handleStatusFilterChange,
+                    },
+                    {
+                        type: "select",
+                        label: "SEO Score Tier",
+                        options: SCORE_OPTIONS,
+                        value: scoreFilter,
+                        onChange: handleScoreFilterChange,
+                    },
+                ]}
             />
         ),
         [statusFilter, handleStatusFilterChange, scoreFilter, handleScoreFilterChange]

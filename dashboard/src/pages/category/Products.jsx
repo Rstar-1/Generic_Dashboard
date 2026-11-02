@@ -4,6 +4,7 @@ import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
+import FilterForm from "../../components/forms/sections/FilterForm";
 import { showToast } from "../../components/common/Toast";
 import {
     productCategoriesSidebarData,
@@ -16,8 +17,8 @@ const TABS = [{ name: "All Categories", value: "all" }];
 
 const STATUS_OPTIONS = [
     { label: "All Statuses", value: "all" },
-    { label: "Active Only", value: "Active" },
-    { label: "Inactive Only", value: "Inactive" },
+    { label: "Active", value: "Active" },
+    { label: "Inactive", value: "Inactive" },
 ];
 
 const CODE_OPTIONS = [
@@ -27,27 +28,6 @@ const CODE_OPTIONS = [
         value: c.categoryCode,
     })),
 ];
-
-// Memoized Filter Drawer Content
-const FilterDrawerContent = React.memo(({ status, onStatusChange, code, onCodeChange }) => (
-    <div className="grid-cols-4 gap-12">
-        <Fields
-            type="select"
-            label="Category Status"
-            options={STATUS_OPTIONS}
-            value={status}
-            onChange={onStatusChange}
-        />
-        <Fields
-            type="select"
-            label="Category Code"
-            options={CODE_OPTIONS}
-            value={code}
-            onChange={onCodeChange}
-        />
-    </div>
-));
-FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const CategoryProducts = () => {
     const [categories, setCategories] = React.useState(initialCategoriesData);
@@ -175,11 +155,23 @@ const CategoryProducts = () => {
 
     const filterInputsNode = React.useMemo(
         () => (
-            <FilterDrawerContent
-                status={statusFilter}
-                onStatusChange={handleStatusFilterChange}
-                code={codeFilter}
-                onCodeChange={handleCodeFilterChange}
+            <FilterForm
+                fields={[
+                    {
+                        type: "select",
+                        label: "Category Status",
+                        options: STATUS_OPTIONS,
+                        value: statusFilter,
+                        onChange: handleStatusFilterChange,
+                    },
+                    {
+                        type: "select",
+                        label: "Category Code",
+                        options: CODE_OPTIONS,
+                        value: codeFilter,
+                        onChange: handleCodeFilterChange,
+                    },
+                ]}
             />
         ),
         [statusFilter, handleStatusFilterChange, codeFilter, handleCodeFilterChange]
@@ -233,7 +225,7 @@ const CategoryProducts = () => {
                 searchQuery={searchQuery}
                 onSearchChange={handleSearchChange}
                 searchPlaceholder="Search by category name, slug, or code..."
-                itemName="categories"
+                itemName="productcategory"
                 collapsible={true}
                 maxVisibleColumns={5}
                 minWidth="1050px"

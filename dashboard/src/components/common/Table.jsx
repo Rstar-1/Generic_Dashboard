@@ -11,73 +11,88 @@ import {
     resolveImagePath,
     formatDate,
     getFirstValue,
-    getNestedValue
+    getNestedValue,
+    canPerformAction,
+    getCurrentRole,
+    hasPermission
 } from '../../utils';
 
 export { formatDate, Badge, BadgeList };
 
-const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, actions, editTitle, deleteTitle, viewTitle }) => {
+const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, actions, editTitle, deleteTitle, viewTitle, entity }) => {
+    const userRole = getCurrentRole();
+    const activeEntity = col.entity || entity || (typeof window !== "undefined" ? window.location?.pathname : "");
+
     const rowActions = col.actions || actions;
-    if (Array.isArray(rowActions) && rowActions.length > 0) {
-        return (
-            <div className="flex items-center gap-8">
-                {rowActions.map((act, i) => (
-                    <Button
-                        key={i}
-                        type="button"
-                        version="icon"
-                        icon={act.icon}
-                        bg={act.bg}
-                        color={act.color}
-                        onClick={() => act.onClick(row, rowIdx)}
-                        title={act.title}
-                    />
-                ))}
-            </div>
-        );
+
+    const allowedActions = React.useMemo(() => {
+        if (Array.isArray(rowActions) && rowActions.length > 0) {
+            return rowActions.filter((act) => {
+                if (!act) return false;
+                if (act.permission) return hasPermission(userRole, act.permission);
+                if (act.action) return canPerformAction(userRole, act.action, activeEntity);
+                return true;
+            });
+        }
+
+        const editFn = col.onEdit || onEdit;
+        const deleteFn = col.onDelete || onDelete;
+        const viewFn = col.onView || onView;
+        if (!editFn && !deleteFn && !viewFn) return [];
+
+        const list = [];
+        const canView = col.canView !== undefined ? col.canView : canPerformAction(userRole, "view", activeEntity);
+        const canEdit = col.canEdit !== undefined ? col.canEdit : canPerformAction(userRole, "edit", activeEntity);
+        const canDelete = col.canDelete !== undefined ? col.canDelete : canPerformAction(userRole, "delete", activeEntity);
+
+        if (viewFn && canView) {
+            list.push({
+                icon: "Eye",
+                bg: "light-info",
+                color: "info",
+                title: col.viewTitle || viewTitle || "View",
+                onClick: () => viewFn(row, rowIdx),
+            });
+        }
+        if (editFn && canEdit) {
+            list.push({
+                icon: "Edit",
+                bg: "light-primary",
+                color: "primary",
+                title: col.editTitle || editTitle || "Edit",
+                onClick: () => editFn(row, rowIdx),
+            });
+        }
+        if (deleteFn && canDelete) {
+            list.push({
+                icon: "Trash",
+                bg: "light-danger",
+                color: "danger",
+                title: col.deleteTitle || deleteTitle || "Delete",
+                onClick: () => deleteFn(row, rowIdx),
+            });
+        }
+        return list;
+    }, [col, actions, rowActions, onEdit, onDelete, onView, userRole, activeEntity, row, rowIdx, viewTitle, editTitle, deleteTitle]);
+
+    if (!allowedActions.length) {
+        return <span className="mini-text text-gray" style={{ display: "inline-block", minWidth: "20px", textAlign: "center" }}>-</span>;
     }
-
-    const editFn = col.onEdit || onEdit;
-    const deleteFn = col.onDelete || onDelete;
-    const viewFn = col.onView || onView;
-
-    if (!editFn && !deleteFn && !viewFn) return null;
 
     return (
         <div className="flex items-center gap-8">
-            {viewFn && (
+            {allowedActions.map((act, i) => (
                 <Button
+                    key={i}
                     type="button"
                     version="icon"
-                    icon="Eye"
-                    bg="light-info"
-                    color="info"
-                    onClick={() => viewFn(row, rowIdx)}
-                    title={col.viewTitle || viewTitle || "View"}
+                    icon={act.icon}
+                    bg={act.bg}
+                    color={act.color}
+                    onClick={() => act.onClick(row, rowIdx)}
+                    title={act.title}
                 />
-            )}
-            {editFn && (
-                <Button
-                    type="button"
-                    version="icon"
-                    icon="Edit"
-                    bg="light-primary"
-                    color="primary"
-                    onClick={() => editFn(row, rowIdx)}
-                    title={col.editTitle || editTitle || "Edit"}
-                />
-            )}
-            {deleteFn && (
-                <Button
-                    type="button"
-                    version="icon"
-                    icon="Trash"
-                    bg="light-danger"
-                    color="danger"
-                    onClick={() => deleteFn(row, rowIdx)}
-                    title={col.deleteTitle || deleteTitle || "Delete"}
-                />
-            )}
+            ))}
         </div>
     );
 });
@@ -127,7 +142,8 @@ const TableCell = React.memo(({
     actions,
     editTitle,
     deleteTitle,
-    viewTitle
+    viewTitle,
+    itemName
 }) => {
     const rowId = row._id || row.id || rowIdx;
     const cellValue = col.accessor ? getNestedValue(row, col.accessor) : undefined;
@@ -221,6 +237,7 @@ const TableCell = React.memo(({
                 editTitle={editTitle}
                 deleteTitle={deleteTitle}
                 viewTitle={viewTitle}
+                entity={col.entity || itemName}
             />
         );
     }
@@ -592,8 +609,9 @@ const Table = ({
         actions,
         editTitle,
         deleteTitle,
-        viewTitle
-    }), [onEdit, onDelete, onView, actions, editTitle, deleteTitle, viewTitle]);
+        viewTitle,
+        itemName
+    }), [onEdit, onDelete, onView, actions, editTitle, deleteTitle, viewTitle, itemName]);
 
     return (
         <>

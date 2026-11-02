@@ -4,6 +4,7 @@ import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
+import FilterForm from "../../components/forms/sections/FilterForm";
 import { showToast } from "../../components/common/Toast";
 import {
     customersSidebarData,
@@ -16,9 +17,9 @@ const ITEMS_PER_PAGE = 5;
 const TABS = [{ name: "All Customers", value: "all" }];
 
 const STATUS_OPTIONS = [
-    { label: "All Account Statuses", value: "all" },
-    { label: "Active Only", value: "Active" },
-    { label: "Inactive Only", value: "Inactive" },
+    { label: "All Statuses", value: "all" },
+    { label: "Active", value: "Active" },
+    { label: "Inactive", value: "Inactive" },
 ];
 
 const TYPE_OPTIONS = [
@@ -30,27 +31,6 @@ const TYPE_OPTIONS = [
             value: item.status,
         })),
 ];
-
-// Memoized Filter Drawer Content
-const FilterDrawerContent = React.memo(({ status, onStatusChange, type, onTypeChange }) => (
-    <div className="grid-cols-4 gap-12">
-        <Fields
-            type="select"
-            label="Account Status Filter"
-            options={STATUS_OPTIONS}
-            value={status}
-            onChange={onStatusChange}
-        />
-        <Fields
-            type="select"
-            label="Seller Type Filter"
-            options={TYPE_OPTIONS}
-            value={type}
-            onChange={onTypeChange}
-        />
-    </div>
-));
-FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Customer = () => {
     const [customers, setCustomers] = React.useState(initialCustomersData);
@@ -176,11 +156,23 @@ const Customer = () => {
 
     const filterInputsNode = React.useMemo(
         () => (
-            <FilterDrawerContent
-                status={statusFilter}
-                onStatusChange={handleStatusFilterChange}
-                type={typeFilter}
-                onTypeChange={handleTypeFilterChange}
+            <FilterForm
+                fields={[
+                    {
+                        type: "select",
+                        label: "Account Status Filter",
+                        options: STATUS_OPTIONS,
+                        value: statusFilter,
+                        onChange: handleStatusFilterChange,
+                    },
+                    {
+                        type: "select",
+                        label: "Seller Type Filter",
+                        options: TYPE_OPTIONS,
+                        value: typeFilter,
+                        onChange: handleTypeFilterChange,
+                    },
+                ]}
             />
         ),
         [statusFilter, handleStatusFilterChange, typeFilter, handleTypeFilterChange]

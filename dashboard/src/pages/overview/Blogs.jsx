@@ -4,6 +4,7 @@ import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
+import FilterForm from "../../components/forms/sections/FilterForm";
 import { showToast } from "../../components/common/Toast";
 import {
     blogsSidebarData,
@@ -15,10 +16,9 @@ const ITEMS_PER_PAGE = 5;
 const TABS = [{ name: "All Articles", value: "all" }];
 
 const STATUS_OPTIONS = [
-    { label: "All Publication Statuses", value: "all" },
-    { label: "Published", value: "Published" },
-    { label: "Draft", value: "Draft" },
-    { label: "Scheduled", value: "Scheduled" },
+    { label: "All Statuses", value: "all" },
+    { label: "Active", value: "Active" },
+    { label: "Inactive", value: "Inactive" },
 ];
 
 const CATEGORY_OPTIONS = [
@@ -29,27 +29,6 @@ const CATEGORY_OPTIONS = [
     { label: "Workplace Safety", value: "Workplace Safety" },
     { label: "Cold Storage", value: "Cold Storage" },
 ];
-
-// Memoized Filter Drawer Content
-const FilterDrawerContent = React.memo(({ status, onStatusChange, category, onCategoryChange }) => (
-    <div className="grid-cols-4 gap-12">
-        <Fields
-            type="select"
-            label="Publish Status"
-            options={STATUS_OPTIONS}
-            value={status}
-            onChange={onStatusChange}
-        />
-        <Fields
-            type="select"
-            label="Category"
-            options={CATEGORY_OPTIONS}
-            value={category}
-            onChange={onCategoryChange}
-        />
-    </div>
-));
-FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const OverviewBlogs = () => {
     const [blogs, setBlogs] = React.useState(initialBlogsData);
@@ -177,11 +156,23 @@ const OverviewBlogs = () => {
 
     const filterInputsNode = React.useMemo(
         () => (
-            <FilterDrawerContent
-                status={statusFilter}
-                onStatusChange={handleStatusFilterChange}
-                category={categoryFilter}
-                onCategoryChange={handleCategoryFilterChange}
+            <FilterForm
+                fields={[
+                    {
+                        type: "select",
+                        label: "Publish Status",
+                        options: STATUS_OPTIONS,
+                        value: statusFilter,
+                        onChange: handleStatusFilterChange,
+                    },
+                    {
+                        type: "select",
+                        label: "Category",
+                        options: CATEGORY_OPTIONS,
+                        value: categoryFilter,
+                        onChange: handleCategoryFilterChange,
+                    },
+                ]}
             />
         ),
         [statusFilter, handleStatusFilterChange, categoryFilter, handleCategoryFilterChange]

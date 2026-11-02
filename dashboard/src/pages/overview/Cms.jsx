@@ -4,6 +4,7 @@ import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
+import FilterForm from "../../components/forms/sections/FilterForm";
 import { showToast } from "../../components/common/Toast";
 import {
     cmsSidebarData,
@@ -16,9 +17,8 @@ const TABS = [{ name: "All Sections", value: "all" }];
 
 const STATUS_OPTIONS = [
     { label: "All Statuses", value: "all" },
-    { label: "Published", value: "Published" },
-    { label: "Draft", value: "Draft" },
-    { label: "Archived", value: "Archived" },
+    { label: "Active", value: "Active" },
+    { label: "Inactive", value: "Inactive" },
 ];
 
 const AREA_OPTIONS = [
@@ -29,27 +29,6 @@ const AREA_OPTIONS = [
     { label: "Promo Topbar", value: "Promo Topbar" },
     { label: "Banner Area", value: "Banner Area" },
 ];
-
-// Memoized Filter Drawer Content
-const FilterDrawerContent = React.memo(({ status, onStatusChange, area, onAreaChange }) => (
-    <div className="grid-cols-4 gap-12">
-        <Fields
-            type="select"
-            label="Publish Status"
-            options={STATUS_OPTIONS}
-            value={status}
-            onChange={onStatusChange}
-        />
-        <Fields
-            type="select"
-            label="Section Area"
-            options={AREA_OPTIONS}
-            value={area}
-            onChange={onAreaChange}
-        />
-    </div>
-));
-FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Cms = () => {
     const [cmsSections, setCmsSections] = React.useState(initialCmsData);
@@ -174,11 +153,23 @@ const Cms = () => {
 
     const filterInputsNode = React.useMemo(
         () => (
-            <FilterDrawerContent
-                status={statusFilter}
-                onStatusChange={handleStatusFilterChange}
-                area={areaFilter}
-                onAreaChange={handleAreaFilterChange}
+            <FilterForm
+                fields={[
+                    {
+                        type: "select",
+                        label: "Publish Status",
+                        options: STATUS_OPTIONS,
+                        value: statusFilter,
+                        onChange: handleStatusFilterChange,
+                    },
+                    {
+                        type: "select",
+                        label: "Section Area",
+                        options: AREA_OPTIONS,
+                        value: areaFilter,
+                        onChange: handleAreaFilterChange,
+                    },
+                ]}
             />
         ),
         [statusFilter, handleStatusFilterChange, areaFilter, handleAreaFilterChange]

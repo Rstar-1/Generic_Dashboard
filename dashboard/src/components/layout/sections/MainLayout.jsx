@@ -5,6 +5,7 @@ import Button from "../../common/Button";
 import Tab from "../../common/Tab";
 import Icon from "../../common/Icon";
 import { menuData } from "../../../utils/apiData";
+import { canAccessPage, useCurrentUser, canPerformAction } from "../../../utils";
 
 // Category color mapping
 const CATEGORY_COLORS = {
@@ -211,6 +212,9 @@ const MainLayout = React.memo(({
     const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(true);
     const [showFilters, setShowFilters] = React.useState(defaultShowFilters);
 
+    const { role: currentRole } = useCurrentUser();
+    const activeRole = userRole && userRole !== "admin" ? userRole : currentRole;
+
     // Toggle handlers wrapped in useCallback
     const handleToggleSidebar = React.useCallback(() => {
         setIsSidebarCollapsed((prev) => !prev);
@@ -220,19 +224,16 @@ const MainLayout = React.memo(({
         setShowFilters((prev) => !prev);
     }, []);
 
-    // Compute default sidebar items from menuData
+    // Compute default sidebar items from menuData using generic permission system
     const defaultSidebarItems = React.useMemo(() => {
         const items = [];
-        const roleLower = String(userRole).toLowerCase();
 
         menuData.forEach((group) => {
-            const isGroupAllowed = !group.role || group.role.some((r) => String(r).toLowerCase() === roleLower);
-            if (!isGroupAllowed || !group.category) return;
+            if (!group.category) return;
 
             group.category.forEach((sub) => {
                 if (!sub.status) return;
-                const isSubAllowed = !sub.role || sub.role.some((r) => String(r).toLowerCase() === roleLower);
-                if (isSubAllowed) {
+                if (canAccessPage(activeRole, sub.name, group.name)) {
                     items.push({
                         name: sub.name,
                         route: sub.route,
@@ -244,7 +245,7 @@ const MainLayout = React.memo(({
         });
 
         return items;
-    }, [userRole]);
+    }, [activeRole]);
 
     const isUsingDefault = !sidebarItems || sidebarItems.length === 0;
     const resolvedItems = isUsingDefault ? defaultSidebarItems : sidebarItems;
@@ -253,6 +254,15 @@ const MainLayout = React.memo(({
         if (!isUsingDefault) return selectedSidebarItem;
         return defaultSidebarItems.find((item) => item.route === location.pathname)?.name || "";
     }, [isUsingDefault, selectedSidebarItem, defaultSidebarItems, location.pathname]);
+
+    // Role-based permission check for Header Quick Action button (e.g. Add / Create)
+    const canShowQuickAction = React.useMemo(() => {
+        if (!quickAction) return false;
+        if (canPerformAction(activeRole, "add", "all")) return true;
+        const segments = location.pathname.split("/").filter(Boolean);
+        const lastSegment = segments[segments.length - 1] || "";
+        return canPerformAction(activeRole, "add", lastSegment);
+    }, [quickAction, activeRole, location.pathname]);
 
     const handleItemClick = React.useCallback((item) => {
         if (isUsingDefault) {
@@ -287,7 +297,7 @@ const MainLayout = React.memo(({
                         headerIcon={headerIcon}
                         headerTitle={headerTitle}
                         headerSub={headerSub}
-                        quickAction={quickAction}
+                        quickAction={canShowQuickAction ? quickAction : null}
                         quickStyle={quickStyle}
                         showTabControls={showTabControls}
                         tabs={tabs}

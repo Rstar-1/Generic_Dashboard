@@ -4,6 +4,7 @@ import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
+import FilterForm from "../../components/forms/sections/FilterForm";
 import { showToast } from "../../components/common/Toast";
 import {
     usersSidebarData,
@@ -15,24 +16,10 @@ const ITEMS_PER_PAGE = 5;
 const TABS = [{ name: "All Users", value: "all" }];
 
 const STATUS_OPTIONS = [
-    { label: "All Account Statuses", value: "all" },
-    { label: "Active Only", value: "Active" },
-    { label: "Inactive Only", value: "Inactive" },
+    { label: "All Statuses", value: "all" },
+    { label: "Active", value: "Active" },
+    { label: "Inactive", value: "Inactive" },
 ];
-
-// Memoized Filter Drawer Content
-const FilterDrawerContent = React.memo(({ status, onStatusChange }) => (
-    <div className="grid-cols-4 gap-12">
-        <Fields
-            type="select"
-            label="Account Status Filter"
-            options={STATUS_OPTIONS}
-            value={status}
-            onChange={onStatusChange}
-        />
-    </div>
-));
-FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const User = () => {
     const [users, setUsers] = React.useState(initialUsersData);
@@ -142,7 +129,19 @@ const User = () => {
     const hasActiveFilters = statusFilter !== "all" || Boolean(searchQuery);
 
     const filterInputsNode = React.useMemo(
-        () => <FilterDrawerContent status={statusFilter} onStatusChange={handleStatusFilterChange} />,
+        () => (
+            <FilterForm
+                fields={[
+                    {
+                        type: "select",
+                        label: "Account Status Filter",
+                        options: STATUS_OPTIONS,
+                        value: statusFilter,
+                        onChange: handleStatusFilterChange,
+                    },
+                ]}
+            />
+        ),
         [statusFilter, handleStatusFilterChange]
     );
 

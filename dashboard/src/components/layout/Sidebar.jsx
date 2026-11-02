@@ -7,7 +7,7 @@ import Fields from "../forms/Fields";
 
 import { menuData } from "../../utils/apiData";
 import { resolveImagePath } from "../../utils/imageResolver";
-import { getFirstValue } from "../../utils";
+import { getFirstValue, canAccessPage, useCurrentUser } from "../../utils";
 
 const SidebarLink = React.memo(({ to, label, iconName, shortcut, isCollapsed }) => {
   const [hovered, setHovered] = React.useState(false);
@@ -149,23 +149,19 @@ SidebarProfile.displayName = "SidebarProfile";
 
 const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
   const [searchQuery, setSearchQuery] = React.useState("");
+  const { user: authUser, role: authRole } = useCurrentUser();
 
   const user = React.useMemo(
-    () => userProp || { fullname: "Admin User", role: "admin", email: "admin@example.com", mobile: "9876543210" },
-    [userProp]
+    () => userProp || authUser,
+    [userProp, authUser]
   );
 
-  const displayRole = React.useMemo(() => user?.role || user?.roleId?.name || "admin", [user]);
+  const displayRole = React.useMemo(() => user?.role || user?.roleId?.name || authRole, [user, authRole]);
 
   const handleToggle = React.useCallback(() => setIsCollapsed((prev) => !prev), [setIsCollapsed]);
   const handleCollapse = React.useCallback(() => setIsCollapsed(true), [setIsCollapsed]);
   const handleExpand = React.useCallback(() => setIsCollapsed(false), [setIsCollapsed]);
   const handleSearchChange = React.useCallback((val) => setSearchQuery(val), []);
-
-  const isRoleAllowed = React.useCallback(
-    (roles) => !roles?.length || roles.some((r) => String(r).toLowerCase() === String(displayRole).toLowerCase()),
-    [displayRole]
-  );
 
   React.useEffect(() => {
     if (isCollapsed) setSearchQuery("");
@@ -175,10 +171,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
     const q = searchQuery.trim().toLowerCase();
 
     return menuData.reduce((acc, item) => {
-      if (!item?.status || !isRoleAllowed(item.role)) return acc;
+      if (!item?.status) return acc;
 
       if (item.category?.length) {
-        const allowedSubs = item.category.filter((sub) => sub.status && isRoleAllowed(sub.role));
+        const allowedSubs = item.category.filter(
+          (sub) => sub.status && canAccessPage(displayRole, sub.name, item.name)
+        );
         if (!allowedSubs.length) return acc;
 
         const matchedSubs = q ? allowedSubs.filter((sub) => sub.name.toLowerCase().includes(q)) : allowedSubs;
@@ -190,13 +188,15 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
             category: parentMatches && !matchedSubs.length ? allowedSubs : matchedSubs,
           });
         }
-      } else if (!q || item.name.toLowerCase().includes(q)) {
-        acc.push(item);
+      } else if (canAccessPage(displayRole, item.name, item.route)) {
+        if (!q || item.name.toLowerCase().includes(q)) {
+          acc.push(item);
+        }
       }
 
       return acc;
     }, []);
-  }, [searchQuery, isRoleAllowed]);
+  }, [searchQuery, displayRole]);
 
   const userImage = React.useMemo(() => resolveImagePath(getFirstValue(user, ["image", "avatar"])), [user]);
   const userName = getFirstValue(user, ["fullname", "name", "username"], "User");

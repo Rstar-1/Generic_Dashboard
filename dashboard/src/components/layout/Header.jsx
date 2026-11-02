@@ -6,7 +6,7 @@ import Modal from "../common/Modal";
 import FormBuilder from "../forms/FormBuilder";
 import Steps from "../common/Steps";
 import Button from "../common/Button";
-import { getFirstValue } from "../../utils";
+import { getFirstValue, useCurrentUser, setCurrentUser } from "../../utils";
 
 /* ==========================================================================
    STATIC CONFIGURATIONS & ROUTE TITLES
@@ -25,8 +25,6 @@ const ROUTE_TITLES = {
   "/leads": "Customer Leads",
   "/management/customers": "Customers",
   "/customers": "Customers",
-  "/management/tasks": "Tasks",
-  "/tasks": "Tasks",
   "/management/transactions": "Transactions",
   "/transactions": "Transactions",
   "/settings/users": "System Users",
@@ -657,14 +655,9 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Static user state
+  // Reactive user and role state from generic auth hook
+  const { user, role, setUser } = useCurrentUser();
   const [isLoggedIn, setIsLoggedIn] = React.useState(true);
-  const [user, setUser] = React.useState({
-    fullname: "Alex Morgan",
-    role: "Administrator",
-    email: "alex.morgan@example.com",
-    mobile: "9876543210"
-  });
 
   const [isDarkMode, setIsDarkMode] = React.useState(() => document.body.classList.contains("dark-mode"));
   const [isUserDropdownOpen, setIsUserDropdownOpen] = React.useState(false);
@@ -719,17 +712,17 @@ const Header = () => {
       mobile: getFirstValue([formData, prev], ["mobile", "phone"], "9876543210")
     }));
     setIsLoggedIn(true);
-  }, []);
+  }, [setUser]);
 
   const onVerifyOtpSuccessAction = React.useCallback((tempData) => {
     setUser({
       fullname: getFirstValue(tempData, ["fullname", "name"], "New User"),
-      role: getFirstValue(tempData, ["role"], "Vendor"),
+      role: getFirstValue(tempData, ["role"], "admin"),
       email: getFirstValue(tempData, ["email"], "user@example.com"),
       mobile: getFirstValue(tempData, ["mobile", "phone"], "9876543210")
     });
     setIsLoggedIn(true);
-  }, []);
+  }, [setUser]);
 
   const loginMutation = useMockMutation(onLoginSuccessAction);
   const registerMutation = useMockMutation();
@@ -844,6 +837,34 @@ const Header = () => {
                       </div>
                     )}
                   </div>
+
+                  {isLoggedIn && (
+                    <div className="p-8 bordb">
+                      <p className="mini-text text-gray uppercase font-600 mb-6" style={{ fontSize: "10px" }}>
+                        Switch Active Role
+                      </p>
+                      <div className="flex gap-4 flex-wrap">
+                        {["admin", "customer", "accountant", "manager", "product"].map((r) => {
+                          const isCur = String(role || "").toLowerCase() === r;
+                          return (
+                            <span
+                              key={r}
+                              onClick={() => {
+                                setCurrentUser((prev) => ({ ...prev, role: r }));
+                                setIsUserDropdownOpen(false);
+                              }}
+                              className={`cursor-pointer px-6 py-2 rounded-5 mini-text capitalize ${
+                                isCur ? "bg-primary text-white font-600" : "bg-forth text-dark"
+                              }`}
+                              style={{ fontSize: "11px" }}
+                            >
+                              {r}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="p-4">
                     {isLoggedIn ? (
