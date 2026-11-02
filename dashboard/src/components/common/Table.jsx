@@ -2,8 +2,8 @@ import React from 'react';
 import Pagination from "./Pagination";
 import Icon from "./Icon";
 import {
-  resolveImagePath,
-  formatDate
+    resolveImagePath,
+    formatDate
 } from '../../utils';
 import Image from "./Image";
 import Skeleton from "./Skeleton";
@@ -106,16 +106,16 @@ const ProfileCell = React.memo(({ col, row }) => {
     return (
         <div className="flex items-center gap-12">
             {imgUrl ? (
-                <Image src={imgUrl} alt={name} className="rounded-5 object-contain bg-forth p-2 border-tertiary" style={imgStyle} />
+                <Image src={imgUrl} alt={name} className="rounded-5 object-cover bg-forth" style={imgStyle} />
             ) : (
-                <div style={{ background: favColor, width: "32px", height: "32px", borderRadius: "50%", flexShrink: 0 }} className="center-div">
-                    <p className="mini-text text-white font-600">
+                <div style={{ background: favColor, ...imgStyle }} className="flex items-center justify-center rounded-5">
+                    <p className="headpara-text text-white font-500">
                         {name ? String(name).charAt(0).toUpperCase() : "?"}
                     </p>
                 </div>
             )}
             <div>
-                <h5 className="text-dark headmini-text font-500">{name}</h5>
+                <h5 className="text-dark headmini-text font-500 line-clamp1">{name}</h5>
                 {subText && <p className="text-gray mini-text font-500">{subText}</p>}
             </div>
         </div>
