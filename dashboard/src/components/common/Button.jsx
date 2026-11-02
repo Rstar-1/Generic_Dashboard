@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from "./Icon";
+import { getFirstValue } from "../../utils";
 
 const VERSION_CLASSES = {
   v0: "px-16 py-4 sm-px-12 sm-py-4 mini-text",
@@ -133,7 +134,7 @@ const Button = React.memo(
       [disabled, onClick]
     );
 
-    const defaultStroke = iconStroke || computedStyle.color || style.color || "currentColor";
+    const defaultStroke = getFirstValue([iconStroke, computedStyle.color, style.color], [], "currentColor");
 
     const iconElement = React.useMemo(() => {
       if (!icon) return null;

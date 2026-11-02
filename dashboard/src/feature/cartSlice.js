@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createSlice } from '@reduxjs/toolkit';
+import { getFirstValue } from '../utils/index.js';
 
 const initialState = {
   cartItems: [],
@@ -33,8 +34,8 @@ export const cartSlice = createSlice({
       } else {
         state.cartItems.push({
           id: product.id || Date.now(),
-          name: product.name || product.title || 'Product',
-          category: product.category || 'Standard',
+          name: getFirstValue(product, ['name', 'title'], 'Product'),
+          category: getFirstValue(product, ['category', 'categoryName'], 'Standard'),
           price,
           priceFormatted: product.priceFormatted || `₹${price.toFixed(2)}`,
           quantity,

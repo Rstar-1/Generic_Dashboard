@@ -3,14 +3,15 @@ import Container from "../../common/Container";
 import Breadcrumb from "../../common/Breadcrumb";
 import Skeleton from "../../common/Skeleton";
 import defaultBannerImg from "../../../assets/about-banner.jpg";
+import { getFirstValue } from "../../../utils";
 
 const Banner = ({ title, desc, style, breadcrumbs, productData, loading, bgImage, image, backgroundImage }) => {
     if (loading) {
         return <Skeleton variant="banner" style={style} />;
     }
 
-    const mainHeading = desc || title || "Banner";
-    const bannerImg = bgImage || backgroundImage || image || defaultBannerImg;
+    const mainHeading = getFirstValue([desc, title], [], "Banner");
+    const bannerImg = getFirstValue([bgImage, backgroundImage, image], [], defaultBannerImg);
     const bannerBackground = bannerImg
         ? (bannerImg.includes('gradient') || bannerImg.startsWith('url(')
             ? bannerImg

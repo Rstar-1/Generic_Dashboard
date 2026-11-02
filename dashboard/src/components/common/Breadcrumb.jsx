@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from "react-router-dom";
 import Icon from "./Icon";
+import { getFirstValue } from "../../utils";
 
 const Breadcrumb = React.memo(
   ({
@@ -58,7 +59,7 @@ const Breadcrumb = React.memo(
         {items.map((item, idx) => {
           const isLast = idx === items.length - 1;
           const hasIcon = Boolean(showIcon && item.icon);
-          const targetPath = item.path || item.link || item.href;
+          const targetPath = getFirstValue(item, ["path", "link", "href"]);
 
           const itemContent = (
             <span className="flex items-center gap-6">
@@ -69,7 +70,7 @@ const Breadcrumb = React.memo(
                   item.icon
                 )
               )}
-              <span>{item.label || item.title || item.name}</span>
+              <span>{getFirstValue(item, ["label", "title", "name"])}</span>
             </span>
           );
 

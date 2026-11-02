@@ -3,7 +3,8 @@ import Pagination from "./Pagination";
 import Icon from "./Icon";
 import {
     resolveImagePath,
-    formatDate
+    formatDate,
+    getFirstValue
 } from '../../utils';
 import Image from "./Image";
 import Skeleton from "./Skeleton";
@@ -16,9 +17,9 @@ const getNestedValue = (obj, path) => {
     if (obj[path] !== undefined) return obj[path];
     const val = path.split('.').reduce((curr, p) => (curr && typeof curr === 'object' ? curr[p] : undefined), obj);
     if (val !== undefined) return val;
-    if (path === 'meta.title') return obj.meta_title || obj.title;
-    if (path === 'meta.description') return obj.meta_description || obj.description;
-    if (path === 'analytics.seoScore') return obj.seoScore || obj.score;
+    if (path === 'meta.title') return getFirstValue(obj, ['meta_title', 'title']);
+    if (path === 'meta.description') return getFirstValue(obj, ['meta_description', 'description']);
+    if (path === 'analytics.seoScore') return getFirstValue(obj, ['seoScore', 'score']);
     return undefined;
 };
 
@@ -96,11 +97,11 @@ ActionButtons.displayName = "ActionButtons";
 const ProfileCell = React.memo(({ col, row }) => {
     const rawVal = getNestedValue(row, col.accessor);
     const obj = (rawVal && typeof rawVal === "object") ? rawVal : {};
-    const name = obj.fullname || obj.name || obj.username || (typeof rawVal === "string" ? rawVal : "") || row[col.nameKey || "createdByName"] || row.username || row.name || "";
-    const subText = obj.mobile || obj.phone || obj.email || obj.sub || row[col.subKey || "sub"] || row[col.emailKey || "email"] || row.email || row.sub || "";
-    const rawImg = obj.image ?? obj.avatar ?? row[col.imageKey ?? "image"] ?? row.image ?? (Array.isArray(row.images) ? row.images[0] : "") ?? "";
+    const name = getFirstValue([rawVal, obj, row], ["fullname", "name", "username", col.nameKey, "createdByName", "title"]);
+    const subText = getFirstValue([obj, row], [col.subKey, col.emailKey, "mobile", "phone", "email", "sub"]);
+    const rawImg = getFirstValue([obj, row], [col.imageKey, "image", "avatar"]) || (Array.isArray(row?.images) ? row.images[0] : "");
     const imgUrl = resolveImagePath(rawImg);
-    const favColor = row[col.colorKey || "favoriteColor"] || "#6366f1";
+    const favColor = getFirstValue(row, [col.colorKey, "favoriteColor"], "#6366f1");
     const imgStyle = { width: "40px", height: "40px", flexShrink: 0, ...col.imgStyle, ...col.imageStyle };
 
     return (
@@ -208,9 +209,11 @@ const TableCell = React.memo(({
         col.accessor === "createdDate" ||
         col.accessor === "updatedDate"
     ) {
+        const defaultCreated = getFirstValue(row, ["createdAt", "createdDate", "date"], "2026-08-09");
+        const defaultUpdated = getFirstValue(row, ["updatedAt", "updatedDate", "lastActive"], "2026-08-13");
         const rawDate = cellValue !== undefined && cellValue !== null && cellValue !== ""
             ? cellValue
-            : (col.header === "Created" ? (row.createdAt || row.createdDate || row.date || "2026-08-09") : (row.updatedAt || row.updatedDate || row.lastActive || "2026-08-13"));
+            : (col.header === "Created" ? defaultCreated : defaultUpdated);
         return <p className="text-gray mini-text font-500" style={{ margin: 0 }}>{formatDate(rawDate, col.dateFormat || col.format) || "-"}</p>;
     }
 

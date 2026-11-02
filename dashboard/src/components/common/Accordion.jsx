@@ -1,4 +1,5 @@
 import React from 'react';
+import { getFirstValue } from "../../utils";
 
 export const AccordionItem = React.memo(
   ({
@@ -11,8 +12,8 @@ export const AccordionItem = React.memo(
     itemClassName = "",
     children,
   }) => {
-    const isV2 = String(version || item?.version || "").toLowerCase().includes("2");
-    const title = item?.title || item?.question || "";
+    const isV2 = String(getFirstValue([version, item?.version])).toLowerCase().includes("2");
+    const title = getFirstValue(item, ["title", "question"]);
     const body = children ?? item?.children ?? item?.content ?? item?.answer ?? "";
     const numStr = String(idx + 1).padStart(2, "0");
 

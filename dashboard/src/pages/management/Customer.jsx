@@ -10,6 +10,7 @@ import {
     customersTableColumns,
     customersData as initialCustomersData,
 } from "../../utils/apiData";
+import { getFirstValue } from "../../utils";
 
 const ITEMS_PER_PAGE = 5;
 const TABS = [{ name: "All Customers", value: "all" }];
@@ -59,11 +60,6 @@ const Customer = () => {
     const [statusFilter, setStatusFilter] = React.useState("all");
     const [typeFilter, setTypeFilter] = React.useState("all");
     const [currentPage, setCurrentPage] = React.useState(1);
-
-    // Keep customers state synchronized when initial data updates
-    React.useEffect(() => {
-        setCustomers(initialCustomersData);
-    }, [initialCustomersData]);
 
     const handleSearchChange = React.useCallback((val) => {
         const nextQuery = typeof val === "string" ? val : (val?.target?.value ?? "");
@@ -164,7 +160,7 @@ const Customer = () => {
                 String(item.name || "").toLowerCase().includes(q) ||
                 String(item.email || "").toLowerCase().includes(q) ||
                 String(item.company || "").toLowerCase().includes(q) ||
-                String(item.mobile || item.phone || "").toLowerCase().includes(q) ||
+                String(getFirstValue(item, ["mobile", "phone"])).toLowerCase().includes(q) ||
                 itemType.includes(q);
 
             return matchesTab && matchesType && matchesStatus && matchesSearch;

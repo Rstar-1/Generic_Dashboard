@@ -17,9 +17,8 @@ export const getStickyTop = (config = apiConfigData) => {
 
 export const getItemSlug = (item) => {
   if (!item) return "";
-  return (
-    item.slug || slugify(item.title || item.name || "") || String(item.id || "")
-  );
+  const nameVal = getFirstValue(item, ["title", "name"]);
+  return item.slug || (nameVal ? slugify(nameVal) : "") || String(item.id || "");
 };
 
 export const matchBySlugOrId = (item, target) => {
@@ -36,11 +35,10 @@ export const matchBySlugOrId = (item, target) => {
 
 export const findCategory = (categoriesList = [], target) => {
   if (!target || !Array.isArray(categoriesList)) return null;
-  const q = String(
-    typeof target === "object"
-      ? target.categoryId || target.category || target.id || target.slug || target.name || target.title
-      : target
-  ).trim().toLowerCase();
+  const targetKey = typeof target === "object"
+    ? getFirstValue(target, ["categoryId", "category", "id", "slug", "name", "title"])
+    : target;
+  const q = String(targetKey || "").trim().toLowerCase();
 
   return (
     categoriesList.find(
@@ -106,7 +104,7 @@ export const shareContent = ({ platform, url, title = "", text = "" }) => {
 
 export const navigateToCategory = (navigate, cat) => {
   if (!navigate || !cat) return;
-  const query = typeof cat === "object" ? (cat.categoryParam || cat.name || cat.title || cat.slug || cat.id) : cat;
+  const query = typeof cat === "object" ? getFirstValue(cat, ["categoryParam", "name", "title", "slug", "id"]) : cat;
   const catId = typeof cat === "object" ? cat.id : undefined;
   navigate(`/product?category=${encodeURIComponent(query)}`, {
     state: { categoryId: catId ? String(catId) : undefined, categoryName: query },
@@ -190,6 +188,25 @@ export const getNestedValue = (obj, path, fallback = undefined) => {
   return val !== undefined ? val : fallback;
 };
 
+export const getFirstValue = (sources, keys = [], fallback = "") => {
+  if (typeof sources === "string" && sources.trim()) return sources;
+  if (!sources) return fallback;
+  const list = Array.isArray(sources) ? sources : [sources];
+  for (const src of list) {
+    if (!src) continue;
+    if (typeof src === "string" && src.trim()) return src;
+    if (typeof src !== "object") continue;
+    for (const key of keys) {
+      if (!key) continue;
+      const val = src[key];
+      if (val !== undefined && val !== null && val !== "") {
+        return val;
+      }
+    }
+  }
+  return fallback;
+};
+
 /* ==========================================
    DATA MANIPULATION & SIDEBAR HELPERS
    ========================================== */
@@ -198,7 +215,8 @@ export const calculateSidebarCounts = (sidebarConfig, dataList = [], statusKey =
   if (!sidebarConfig?.items || !Array.isArray(dataList)) return sidebarConfig?.items || [];
   
   const counts = dataList.reduce((acc, item) => {
-    const rawVal = item[statusKey] || (item.inStock !== undefined ? (item.inStock ? "In Stock" : "Out of Stock") : "") || item.type || item.role;
+    const stockStatus = item.inStock !== undefined ? (item.inStock ? "In Stock" : "Out of Stock") : "";
+    const rawVal = getFirstValue(item, [statusKey, "type", "role"], stockStatus);
     const key = String(rawVal || "").toLowerCase().trim();
     if (key) acc[key] = (acc[key] || 0) + 1;
     return acc;

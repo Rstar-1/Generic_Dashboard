@@ -10,6 +10,7 @@ import {
     productsTableColumns,
     productsData as initialProductsData,
 } from "../../utils/apiData";
+import { getFirstValue } from "../../utils";
 
 const ITEMS_PER_PAGE = 5;
 const TABS = [{ name: "All Products", value: "all" }];
@@ -62,10 +63,6 @@ const OverviewProducts = () => {
     const [statusFilter, setStatusFilter] = React.useState("all");
     const [categoryFilter, setCategoryFilter] = React.useState("all");
     const [currentPage, setCurrentPage] = React.useState(1);
-
-    React.useEffect(() => {
-        setProducts(initialProductsData);
-    }, []);
 
     const handleSearchChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.target?.value ?? "");
@@ -125,16 +122,19 @@ const OverviewProducts = () => {
 
     // Action handlers for rows
     const handleViewProduct = React.useCallback((row) => {
-        showToast(`Viewing product specifications for ${row.name || row.title}`, "info");
+        const prodName = getFirstValue(row, ["name", "title"], "Product");
+        showToast(`Viewing product specifications for ${prodName}`, "info");
     }, []);
 
     const handleEditProduct = React.useCallback((row) => {
-        showToast(`Editing product ${row.name || row.sku || row.id}`, "info");
+        const prodLabel = getFirstValue(row, ["name", "sku", "id"], "Product");
+        showToast(`Editing product ${prodLabel}`, "info");
     }, []);
 
     const handleDeleteProduct = React.useCallback((row) => {
         setProducts((prev) => prev.filter((p) => p.id !== row.id));
-        showToast(`Product ${row.name || row.sku || row.id} removed from catalog!`, "danger");
+        const prodLabel = getFirstValue(row, ["name", "sku", "id"], "Product");
+        showToast(`Product ${prodLabel} removed from catalog!`, "danger");
     }, []);
 
     const handleExportProducts = React.useCallback(() => {
@@ -159,9 +159,9 @@ const OverviewProducts = () => {
 
             const matchesSearch =
                 !q ||
-                String(item.name || item.title || "").toLowerCase().includes(q) ||
-                String(item.sku || item.subCategory || item.type || item.vendor || item.brand || "").toLowerCase().includes(q) ||
-                String(item.priceFormatted || item.price || "").toLowerCase().includes(q) ||
+                String(getFirstValue(item, ["name", "title"])).toLowerCase().includes(q) ||
+                String(getFirstValue(item, ["sku", "subCategory", "type", "vendor", "brand"])).toLowerCase().includes(q) ||
+                String(getFirstValue(item, ["priceFormatted", "price"])).toLowerCase().includes(q) ||
                 itemCategory.includes(q) ||
                 itemStatus.includes(q);
 

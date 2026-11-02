@@ -59,10 +59,6 @@ const Seo = () => {
     const [scoreFilter, setScoreFilter] = React.useState("all");
     const [currentPage, setCurrentPage] = React.useState(1);
 
-    React.useEffect(() => {
-        setSeoPages(initialSeoData);
-    }, []);
-
     const handleSearchChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.target?.value ?? "");
         setSearchQuery(next);

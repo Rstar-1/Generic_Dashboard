@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from "./Icon";
+import { getFirstValue } from "../../utils";
 
 export const getBadgeTheme = (val) => {
     switch (String(val || "").trim().toLowerCase()) {
@@ -116,7 +117,7 @@ export const Badge = React.memo(({
     ...props
 }) => {
     const label = (text !== undefined && text !== null && text !== "") ? text : (children ?? "");
-    const resolvedTheme = getBadgeTheme(color || theme || label);
+    const resolvedTheme = getBadgeTheme(getFirstValue([color, theme, label]));
     const effectiveVariant = (dot || variant === "status" || variant === "dot") ? "status" : variant;
     const sizeClass = getSizeClass(size);
     const shapeClass = getShapeClass(shape);
@@ -158,7 +159,7 @@ export const Badge = React.memo(({
             const isOutline = effectiveVariant === "outline";
             const finalBg = bg || (isOutline ? "transparent" : resolvedTheme.bg);
             const finalColor = textColor || resolvedTheme.color;
-            const finalBorder = borderColor || (isOutline ? (resolvedTheme.border || finalColor) : "transparent");
+            const finalBorder = borderColor || (isOutline ? getFirstValue([resolvedTheme.border, finalColor]) : "transparent");
 
             const bgClass = !isColorCode(finalBg) && String(finalBg).startsWith("bg-") ? finalBg : "";
             const textClass = !isColorCode(finalColor) && String(finalColor).startsWith("text-") ? finalColor : "";
@@ -225,7 +226,7 @@ export const BadgeList = React.memo(({
         <div className={`flex items-center gap-${gap} flex-wrap ${className}`} {...props}>
             {list.map((item, idx) => {
                 if (renderItem) return renderItem(item, idx);
-                const label = typeof item === "object" && item !== null ? item.label || item.name || item.text : item;
+                const label = typeof item === "object" && item !== null ? getFirstValue(item, ["label", "name", "text"]) : item;
                 const itemColor = typeof item === "object" && item !== null ? item.color || color : color;
                 const itemShape = typeof item === "object" && item !== null ? item.shape || shape : shape;
                 const itemIcon = typeof item === "object" && item !== null ? item.icon : undefined;

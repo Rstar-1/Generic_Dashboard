@@ -6,6 +6,7 @@ import Modal from "../common/Modal";
 import FormBuilder from "../forms/FormBuilder";
 import Steps from "../common/Steps";
 import Button from "../common/Button";
+import { getFirstValue } from "../../utils";
 
 /* ==========================================================================
    STATIC CONFIGURATIONS & ROUTE TITLES
@@ -714,18 +715,18 @@ const Header = () => {
   const onLoginSuccessAction = React.useCallback((formData) => {
     setUser((prev) => ({
       ...prev,
-      fullname: prev?.fullname || "Admin User",
-      mobile: formData?.mobile || prev?.mobile || "9876543210"
+      fullname: getFirstValue(prev, ["fullname", "name"], "Admin User"),
+      mobile: getFirstValue([formData, prev], ["mobile", "phone"], "9876543210")
     }));
     setIsLoggedIn(true);
   }, []);
 
   const onVerifyOtpSuccessAction = React.useCallback((tempData) => {
     setUser({
-      fullname: tempData?.fullname || "New User",
-      role: tempData?.role || "Vendor",
-      email: tempData?.email || "user@example.com",
-      mobile: tempData?.mobile || "9876543210"
+      fullname: getFirstValue(tempData, ["fullname", "name"], "New User"),
+      role: getFirstValue(tempData, ["role"], "Vendor"),
+      email: getFirstValue(tempData, ["email"], "user@example.com"),
+      mobile: getFirstValue(tempData, ["mobile", "phone"], "9876543210")
     });
     setIsLoggedIn(true);
   }, []);
@@ -761,7 +762,8 @@ const Header = () => {
     }
     return "Dashboard";
   }, [location.pathname]);
-  const userInitial = React.useMemo(() => (user?.fullname ? user.fullname.charAt(0).toUpperCase() : "U"), [user?.fullname]);
+  const userName = getFirstValue(user, ["fullname", "name", "username"], "User");
+  const userInitial = React.useMemo(() => userName.charAt(0).toUpperCase(), [userName]);
 
   return (
     <>
@@ -831,8 +833,8 @@ const Header = () => {
                           {userInitial}
                         </div>
                         <div>
-                          <h4 className="font-600 text-dark headmini-text capitalize">{user?.fullname || "User"}</h4>
-                          <p className="text-gray mini-text">{user?.role || "Customer"}</p>
+                          <h4 className="font-600 text-dark headmini-text capitalize">{userName}</h4>
+                          <p className="text-gray mini-text">{getFirstValue(user, ["role"], "Customer")}</p>
                         </div>
                       </>
                     ) : (

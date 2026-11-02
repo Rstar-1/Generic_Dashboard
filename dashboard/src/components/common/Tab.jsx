@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from "./Icon";
+import { getFirstValue } from "../../utils";
 
 const TabItem = React.memo(
   ({ name, count, icon, active, isV2, isV3, value, onSelect }) => {
@@ -90,10 +91,10 @@ const Tab = React.memo(
         tabs.map((tab) => {
           const isObj = typeof tab === "object" && tab !== null;
           return {
-            name: isObj ? tab.name || tab.label : tab,
+            name: isObj ? getFirstValue(tab, ["name", "label"]) : tab,
             count: isObj ? tab.count : null,
             icon: isObj ? tab.icon : null,
-            value: isObj ? tab.value ?? tab.name ?? tab.label : tab,
+            value: isObj ? getFirstValue(tab, ["value", "name", "label"]) : tab,
           };
         }),
       [tabs]

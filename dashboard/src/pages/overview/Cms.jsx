@@ -60,10 +60,6 @@ const Cms = () => {
     const [areaFilter, setAreaFilter] = React.useState("all");
     const [currentPage, setCurrentPage] = React.useState(1);
 
-    React.useEffect(() => {
-        setCmsSections(initialCmsData);
-    }, []);
-
     const handleSearchChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.target?.value ?? "");
         setSearchQuery(next);

@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from "./Icon";
+import { getFirstValue } from "../../utils";
 
 const Steps = React.memo(
   ({
@@ -101,11 +102,11 @@ const Steps = React.memo(
             const isCompleted = stepNumber < activeStep;
             const isCurrent = stepNumber === activeStep;
             const isClickable = Boolean(onChange || onStepClick);
-            const label = typeof step === "object" ? step.title || step.label : step;
+            const label = typeof step === "object" ? getFirstValue(step, ["title", "label"]) : step;
 
             return (
               <div
-                key={typeof step === "object" ? step.title || index : step}
+                key={typeof step === "object" ? getFirstValue(step, ["title"], index) : step}
                 onClick={() => isClickable && handleStepClick(stepNumber)}
                 className={`relative ${isClickable ? "cursor-pointer" : ""}`}
               >

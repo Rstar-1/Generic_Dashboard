@@ -1,4 +1,5 @@
 import emailjs from "@emailjs/browser";
+import { getFirstValue } from "./utils.js";
 
 export const sendEmail = async (data, subject, message) => {
   const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
@@ -12,10 +13,10 @@ export const sendEmail = async (data, subject, message) => {
     throw new Error(errorMsg);
   }
 
-  const phoneVal = data?.phone || data?.mobile || data?.["Phone Number"] || "";
-  const emailVal = data?.email || data?.["Email"] || "";
-  const nameVal = data?.name || data?.["Name"] || "Website Subscriber";
-  const userMsgVal = data?.message || data?.["Your message"] || "";
+  const phoneVal = getFirstValue(data, ["phone", "mobile", "Phone Number"]);
+  const emailVal = getFirstValue(data, ["email", "Email"]);
+  const nameVal = getFirstValue(data, ["name", "Name"], "Website Subscriber");
+  const userMsgVal = getFirstValue(data, ["message", "Your message"]);
 
   const templateParams = {
     ...data,

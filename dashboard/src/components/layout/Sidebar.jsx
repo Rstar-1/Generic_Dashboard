@@ -7,6 +7,7 @@ import Fields from "../forms/Fields";
 
 import { menuData } from "../../utils/apiData";
 import { resolveImagePath } from "../../utils/imageResolver";
+import { getFirstValue } from "../../utils";
 
 const SidebarLink = React.memo(({ to, label, iconName, shortcut, isCollapsed }) => {
   const [hovered, setHovered] = React.useState(false);
@@ -197,9 +198,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
     }, []);
   }, [searchQuery, isRoleAllowed]);
 
-  const userImage = React.useMemo(() => resolveImagePath(user?.image || user?.avatar || ""), [user]);
-  const userName = user?.fullname || user?.name || user?.username || "User";
-  const userMobile = user?.mobile || user?.phone || user?.email || "";
+  const userImage = React.useMemo(() => resolveImagePath(getFirstValue(user, ["image", "avatar"])), [user]);
+  const userName = getFirstValue(user, ["fullname", "name", "username"], "User");
+  const userMobile = getFirstValue(user, ["mobile", "phone", "email"], "");
   const firstLetter = (userName?.trim()?.charAt(0) || "U").toUpperCase();
 
   return (

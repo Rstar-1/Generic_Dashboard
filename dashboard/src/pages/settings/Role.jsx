@@ -5,6 +5,7 @@ import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
 import { showToast } from "../../components/common/Toast";
 import { rolesTableColumns, rolesData as initialRolesData } from "../../utils/apiData";
+import { getFirstValue } from "../../utils";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -147,7 +148,7 @@ const Role = () => {
         const targetPermission = String(permissionFilter || "all").trim();
 
         return roles.filter((item) => {
-            const itemRole = String(item.role || item.name || "").toLowerCase().trim();
+            const itemRole = String(getFirstValue(item, ["role", "name"])).toLowerCase().trim();
             const rawStatus = item.status;
             const itemStatus = (typeof rawStatus === "boolean" ? (rawStatus ? "active" : "inactive") : String(rawStatus || "")).toLowerCase().trim();
 
