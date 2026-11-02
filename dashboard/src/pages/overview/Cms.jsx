@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
@@ -31,7 +31,7 @@ const AREA_OPTIONS = [
 ];
 
 // Memoized Filter Drawer Content
-const FilterDrawerContent = memo(({ status, onStatusChange, area, onAreaChange }) => (
+const FilterDrawerContent = React.memo(({ status, onStatusChange, area, onAreaChange }) => (
     <div className="grid-cols-4 gap-12">
         <Fields
             type="select"
@@ -52,38 +52,38 @@ const FilterDrawerContent = memo(({ status, onStatusChange, area, onAreaChange }
 FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Cms = () => {
-    const [cmsSections, setCmsSections] = useState(initialCmsData);
-    const [activeTab, setActiveTab] = useState("all");
-    const [selectedCategory, setSelectedCategory] = useState("All Sections");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [areaFilter, setAreaFilter] = useState("all");
-    const [currentPage, setCurrentPage] = useState(1);
+    const [cmsSections, setCmsSections] = React.useState(initialCmsData);
+    const [activeTab, setActiveTab] = React.useState("all");
+    const [selectedCategory, setSelectedCategory] = React.useState("All Sections");
+    const [searchQuery, setSearchQuery] = React.useState("");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+    const [areaFilter, setAreaFilter] = React.useState("all");
+    const [currentPage, setCurrentPage] = React.useState(1);
 
-    useEffect(() => {
+    React.useEffect(() => {
         setCmsSections(initialCmsData);
     }, []);
 
-    const handleSearchChange = useCallback((val) => {
+    const handleSearchChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.target?.value ?? "");
         setSearchQuery(next);
         setCurrentPage(1);
     }, []);
 
-    const handleStatusFilterChange = useCallback((val) => {
+    const handleStatusFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setStatusFilter(next);
         setCurrentPage(1);
     }, []);
 
-    const handleAreaFilterChange = useCallback((val) => {
+    const handleAreaFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setAreaFilter(next);
         setCurrentPage(1);
     }, []);
 
     // Sidebar items with real-time dynamic count calculations
-    const sidebarItems = useMemo(() => {
+    const sidebarItems = React.useMemo(() => {
         const counts = cmsSections.reduce((acc, c) => {
             const s = c.status?.toLowerCase();
             if (s) acc[s] = (acc[s] || 0) + 1;
@@ -98,21 +98,21 @@ const Cms = () => {
     }, [cmsSections]);
 
     // Sidebar & tab navigation handlers
-    const handleSidebarItemClick = useCallback((name) => {
+    const handleSidebarItemClick = React.useCallback((name) => {
         setSelectedCategory(name);
         setCurrentPage(1);
         const item = cmsSidebarData.items.find((i) => i.name === name);
         setActiveTab(item?.status || "all");
     }, []);
 
-    const handleTabChange = useCallback((tabValue) => {
+    const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
         const item = cmsSidebarData.items.find((i) => i.status === tabValue);
         setSelectedCategory(item ? item.name : "All Sections");
     }, []);
 
-    const handleClearFilters = useCallback(() => {
+    const handleClearFilters = React.useCallback(() => {
         setStatusFilter("all");
         setAreaFilter("all");
         setSearchQuery("");
@@ -121,26 +121,26 @@ const Cms = () => {
     }, []);
 
     // Action handlers for rows
-    const handleViewCms = useCallback((row) => {
+    const handleViewCms = React.useCallback((row) => {
         showToast(`Previewing content block "${row.title}"`, "info");
     }, []);
 
-    const handleEditCms = useCallback((row) => {
+    const handleEditCms = React.useCallback((row) => {
         showToast(`Editing content block "${row.title}"`, "info");
     }, []);
 
-    const handleDeleteCms = useCallback((row) => {
+    const handleDeleteCms = React.useCallback((row) => {
         setCmsSections((prev) => prev.filter((c) => c.id !== row.id));
         showToast(`Content block "${row.title}" removed!`, "danger");
     }, []);
 
-    const handleExportCms = useCallback(() => {
+    const handleExportCms = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(cmsSections, null, 2));
         showToast("CMS blocks exported to clipboard!", "success");
     }, [cmsSections]);
 
     // Multi-criteria filtering
-    const filteredCms = useMemo(() => {
+    const filteredCms = React.useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         const targetTab = String(activeTab || "all").toLowerCase().trim();
         const targetStatus = String(statusFilter || "all").toLowerCase().trim();
@@ -166,17 +166,17 @@ const Cms = () => {
         });
     }, [cmsSections, activeTab, statusFilter, areaFilter, searchQuery]);
 
-    const paginatedCms = useMemo(() => {
+    const paginatedCms = React.useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredCms.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredCms, currentPage]);
 
-    const hasActiveFilters = useMemo(
+    const hasActiveFilters = React.useMemo(
         () => statusFilter !== "all" || areaFilter !== "all" || Boolean(searchQuery.trim()),
         [statusFilter, areaFilter, searchQuery]
     );
 
-    const filterInputsNode = useMemo(
+    const filterInputsNode = React.useMemo(
         () => (
             <FilterDrawerContent
                 status={statusFilter}
@@ -188,7 +188,7 @@ const Cms = () => {
         [statusFilter, handleStatusFilterChange, areaFilter, handleAreaFilterChange]
     );
 
-    const quickActionNode = useMemo(
+    const quickActionNode = React.useMemo(
         () => (
             <Button
                 text="Export CMS Data"
@@ -251,4 +251,4 @@ const Cms = () => {
     );
 };
 
-export default memo(Cms);
+export default React.memo(Cms);

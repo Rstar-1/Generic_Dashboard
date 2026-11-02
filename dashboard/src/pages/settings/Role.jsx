@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Icon from "../../components/common/Icon";
@@ -38,7 +38,7 @@ const PERMISSION_OPTIONS = [
 ];
 
 // Memoized Filter Drawer Content
-const FilterDrawerContent = memo(({
+const FilterDrawerContent = React.memo(({
     role,
     onRoleChange,
     status,
@@ -73,52 +73,47 @@ const FilterDrawerContent = memo(({
 FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Role = () => {
-    const [roles, setRoles] = useState(initialRolesData);
-    const [activeTab, setActiveTab] = useState("all");
-    const [roleFilter, setRoleFilter] = useState("all");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [permissionFilter, setPermissionFilter] = useState("all");
-    const [currentPage, setCurrentPage] = useState(1);
+    const [roles, setRoles] = React.useState(initialRolesData);
+    const [activeTab, setActiveTab] = React.useState("all");
+    const [roleFilter, setRoleFilter] = React.useState("all");
+    const [searchQuery, setSearchQuery] = React.useState("");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+    const [permissionFilter, setPermissionFilter] = React.useState("all");
+    const [currentPage, setCurrentPage] = React.useState(1);
 
-    // Keep roles state synchronized when mock data updates
-    useEffect(() => {
-        setRoles(initialRolesData);
-    }, [initialRolesData]);
-
-    const handleTabChange = useCallback((val) => {
+    const handleTabChange = React.useCallback((val) => {
         const nextTab = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setActiveTab(nextTab);
         setRoleFilter(nextTab);
         setCurrentPage(1);
     }, []);
 
-    const handleRoleChange = useCallback((val) => {
+    const handleRoleChange = React.useCallback((val) => {
         const nextRole = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setRoleFilter(nextRole);
         setActiveTab(nextRole);
         setCurrentPage(1);
     }, []);
 
-    const handleStatusChange = useCallback((val) => {
+    const handleStatusChange = React.useCallback((val) => {
         const nextStatus = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setStatusFilter(nextStatus);
         setCurrentPage(1);
     }, []);
 
-    const handlePermissionChange = useCallback((val) => {
+    const handlePermissionChange = React.useCallback((val) => {
         const nextPerm = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setPermissionFilter(nextPerm);
         setCurrentPage(1);
     }, []);
 
-    const handleSearchChange = useCallback((val) => {
+    const handleSearchChange = React.useCallback((val) => {
         const nextQuery = typeof val === "string" ? val : (val?.target?.value ?? "");
         setSearchQuery(nextQuery);
         setCurrentPage(1);
     }, []);
 
-    const handleClearFilters = useCallback(() => {
+    const handleClearFilters = React.useCallback(() => {
         setActiveTab("all");
         setRoleFilter("all");
         setStatusFilter("all");
@@ -129,22 +124,22 @@ const Role = () => {
     }, []);
 
     // Action handlers for table rows
-    const handleViewRole = useCallback((row) => {
+    const handleViewRole = React.useCallback((row) => {
         const perms = Array.isArray(row.permissions) ? row.permissions.join(", ") : "None";
         showToast(`Role: ${row.name} | Permissions: ${perms}`, "info");
     }, []);
 
-    const handleEditRole = useCallback((row) => {
+    const handleEditRole = React.useCallback((row) => {
         showToast(`Editing security policy for ${row.name}`, "info");
     }, []);
 
-    const handleDeleteRole = useCallback((row) => {
+    const handleDeleteRole = React.useCallback((row) => {
         setRoles((prev) => prev.filter((r) => r.id !== row.id));
         showToast(`Role "${row.name}" revoked & archived!`, "danger");
     }, []);
 
     // Multi-criteria filtering with case-insensitive role, tab, status, and permissions
-    const filteredRoles = useMemo(() => {
+    const filteredRoles = React.useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         const targetTab = String(activeTab || "all").toLowerCase().trim();
         const targetRole = String(roleFilter || "all").toLowerCase().trim();
@@ -175,14 +170,14 @@ const Role = () => {
         });
     }, [roles, activeTab, roleFilter, statusFilter, permissionFilter, searchQuery]);
 
-    const paginatedRoles = useMemo(() => {
+    const paginatedRoles = React.useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredRoles.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredRoles, currentPage]);
 
     const hasActiveFilters = activeTab !== "all" || roleFilter !== "all" || statusFilter !== "all" || permissionFilter !== "all" || Boolean(searchQuery);
 
-    const filterInputsNode = useMemo(
+    const filterInputsNode = React.useMemo(
         () => (
             <FilterDrawerContent
                 role={roleFilter}
@@ -241,4 +236,4 @@ const Role = () => {
     );
 };
 
-export default memo(Role);
+export default React.memo(Role);

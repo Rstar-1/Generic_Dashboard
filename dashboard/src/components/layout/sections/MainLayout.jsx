@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, memo } from "react";
+import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Container from "../../common/Container";
 import Button from "../../common/Button";
@@ -16,7 +16,7 @@ const CATEGORY_COLORS = {
 };
 
 // Memoized Category list item
-const CategoryItem = memo(({ cat, selectedItem, onClick, isCollapsed }) => {
+const CategoryItem = React.memo(({ cat, selectedItem, onClick, isCollapsed }) => {
     const isActive = selectedItem === cat.name;
     return (
         <div
@@ -50,7 +50,7 @@ const CategoryItem = memo(({ cat, selectedItem, onClick, isCollapsed }) => {
 CategoryItem.displayName = "CategoryItem";
 
 // Memoized Sidebar section
-const MainLayoutSidebar = memo(({
+const MainLayoutSidebar = React.memo(({
     sidebarTitle,
     items,
     selectedItem,
@@ -96,7 +96,7 @@ const MainLayoutSidebar = memo(({
 MainLayoutSidebar.displayName = "MainLayoutSidebar";
 
 // Memoized Header & Tab Section
-const MainLayoutHeader = memo(({
+const MainLayoutHeader = React.memo(({
     headerIcon,
     headerTitle,
     headerSub,
@@ -183,7 +183,7 @@ const MainLayoutHeader = memo(({
 MainLayoutHeader.displayName = "MainLayoutHeader";
 
 // Main Layout Component
-const MainLayout = memo(({
+const MainLayout = React.memo(({
     sidebarTitle = "Categories",
     sidebarItems = [],
     selectedSidebarItem = "",
@@ -208,20 +208,20 @@ const MainLayout = memo(({
 }) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
-    const [showFilters, setShowFilters] = useState(defaultShowFilters);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(true);
+    const [showFilters, setShowFilters] = React.useState(defaultShowFilters);
 
     // Toggle handlers wrapped in useCallback
-    const handleToggleSidebar = useCallback(() => {
+    const handleToggleSidebar = React.useCallback(() => {
         setIsSidebarCollapsed((prev) => !prev);
     }, []);
 
-    const handleToggleFilters = useCallback(() => {
+    const handleToggleFilters = React.useCallback(() => {
         setShowFilters((prev) => !prev);
     }, []);
 
     // Compute default sidebar items from menuData
-    const defaultSidebarItems = useMemo(() => {
+    const defaultSidebarItems = React.useMemo(() => {
         const items = [];
         const roleLower = String(userRole).toLowerCase();
 
@@ -249,12 +249,12 @@ const MainLayout = memo(({
     const isUsingDefault = !sidebarItems || sidebarItems.length === 0;
     const resolvedItems = isUsingDefault ? defaultSidebarItems : sidebarItems;
 
-    const resolvedSelectedItem = useMemo(() => {
+    const resolvedSelectedItem = React.useMemo(() => {
         if (!isUsingDefault) return selectedSidebarItem;
         return defaultSidebarItems.find((item) => item.route === location.pathname)?.name || "";
     }, [isUsingDefault, selectedSidebarItem, defaultSidebarItems, location.pathname]);
 
-    const handleItemClick = useCallback((item) => {
+    const handleItemClick = React.useCallback((item) => {
         if (isUsingDefault) {
             navigate(item.route);
         } else {

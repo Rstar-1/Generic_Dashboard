@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
@@ -32,7 +32,7 @@ const SOURCE_OPTIONS = [
 ];
 
 // Memoized Filter Drawer Content
-const FilterDrawerContent = memo(({ status, onStatusChange, source, onSourceChange }) => (
+const FilterDrawerContent = React.memo(({ status, onStatusChange, source, onSourceChange }) => (
     <div className="grid-cols-4 gap-12">
         <Fields
             type="select"
@@ -53,38 +53,38 @@ const FilterDrawerContent = memo(({ status, onStatusChange, source, onSourceChan
 FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Leads = () => {
-    const [leads, setLeads] = useState(initialLeadsData);
-    const [activeTab, setActiveTab] = useState("all");
-    const [selectedCategory, setSelectedCategory] = useState("All Leads");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [sourceFilter, setSourceFilter] = useState("all");
-    const [currentPage, setCurrentPage] = useState(1);
+    const [leads, setLeads] = React.useState(initialLeadsData);
+    const [activeTab, setActiveTab] = React.useState("all");
+    const [selectedCategory, setSelectedCategory] = React.useState("All Leads");
+    const [searchQuery, setSearchQuery] = React.useState("");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+    const [sourceFilter, setSourceFilter] = React.useState("all");
+    const [currentPage, setCurrentPage] = React.useState(1);
 
-    useEffect(() => {
+    React.useEffect(() => {
         setLeads(initialLeadsData);
     }, []);
 
-    const handleSearchChange = useCallback((val) => {
+    const handleSearchChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.target?.value ?? "");
         setSearchQuery(next);
         setCurrentPage(1);
     }, []);
 
-    const handleStatusFilterChange = useCallback((val) => {
+    const handleStatusFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setStatusFilter(next);
         setCurrentPage(1);
     }, []);
 
-    const handleSourceFilterChange = useCallback((val) => {
+    const handleSourceFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setSourceFilter(next);
         setCurrentPage(1);
     }, []);
 
     // Sidebar items with real-time dynamic count calculations
-    const sidebarItems = useMemo(() => {
+    const sidebarItems = React.useMemo(() => {
         const counts = leads.reduce((acc, l) => {
             const s = l.status?.toLowerCase();
             if (s) acc[s] = (acc[s] || 0) + 1;
@@ -99,21 +99,21 @@ const Leads = () => {
     }, [leads]);
 
     // Sidebar & tab navigation handlers
-    const handleSidebarItemClick = useCallback((name) => {
+    const handleSidebarItemClick = React.useCallback((name) => {
         setSelectedCategory(name);
         setCurrentPage(1);
         const item = leadsSidebarData.items.find((i) => i.name === name);
         setActiveTab(item?.status || "all");
     }, []);
 
-    const handleTabChange = useCallback((tabValue) => {
+    const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
         const item = leadsSidebarData.items.find((i) => i.status === tabValue);
         setSelectedCategory(item ? item.name : "All Leads");
     }, []);
 
-    const handleClearFilters = useCallback(() => {
+    const handleClearFilters = React.useCallback(() => {
         setStatusFilter("all");
         setSourceFilter("all");
         setSearchQuery("");
@@ -122,26 +122,26 @@ const Leads = () => {
     }, []);
 
     // Action handlers for rows
-    const handleViewLead = useCallback((row) => {
+    const handleViewLead = React.useCallback((row) => {
         showToast(`Viewing lead file for ${row.name} (${row.company})`, "info");
     }, []);
 
-    const handleEditLead = useCallback((row) => {
+    const handleEditLead = React.useCallback((row) => {
         showToast(`Updating pipeline status for ${row.name}`, "info");
     }, []);
 
-    const handleDeleteLead = useCallback((row) => {
+    const handleDeleteLead = React.useCallback((row) => {
         setLeads((prev) => prev.filter((l) => l.id !== row.id));
         showToast(`Lead ${row.name} archived!`, "danger");
     }, []);
 
-    const handleExportLeads = useCallback(() => {
+    const handleExportLeads = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(leads, null, 2));
         showToast("Sales leads pipeline exported to clipboard!", "success");
     }, [leads]);
 
     // Multi-criteria filtering
-    const filteredLeads = useMemo(() => {
+    const filteredLeads = React.useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         const targetTab = String(activeTab || "all").toLowerCase().trim();
         const targetStatus = String(statusFilter || "all").toLowerCase().trim();
@@ -169,17 +169,17 @@ const Leads = () => {
         });
     }, [leads, activeTab, statusFilter, sourceFilter, searchQuery]);
 
-    const paginatedLeads = useMemo(() => {
+    const paginatedLeads = React.useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredLeads.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredLeads, currentPage]);
 
-    const hasActiveFilters = useMemo(
+    const hasActiveFilters = React.useMemo(
         () => statusFilter !== "all" || sourceFilter !== "all" || Boolean(searchQuery.trim()),
         [statusFilter, sourceFilter, searchQuery]
     );
 
-    const filterInputsNode = useMemo(
+    const filterInputsNode = React.useMemo(
         () => (
             <FilterDrawerContent
                 status={statusFilter}
@@ -191,7 +191,7 @@ const Leads = () => {
         [statusFilter, handleStatusFilterChange, sourceFilter, handleSourceFilterChange]
     );
 
-    const quickActionNode = useMemo(
+    const quickActionNode = React.useMemo(
         () => (
             <Button
                 text="Export Pipeline"
@@ -254,4 +254,4 @@ const Leads = () => {
     );
 };
 
-export default memo(Leads);
+export default React.memo(Leads);

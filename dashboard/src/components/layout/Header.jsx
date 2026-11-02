@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
+import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Icon from "../common/Icon";
 import Dropdown from "../common/Dropdown";
@@ -184,9 +184,9 @@ const REGISTER_STEPS = ["Personal", "Contact", "Security", "Complete"];
    CUSTOM REUSABLE HOOKS & SUBCOMPONENTS (MEMOIZED)
    ========================================================================== */
 const useMockMutation = (actionFn, delay = 350) => {
-  const [isPending, setIsPending] = useState(false);
+  const [isPending, setIsPending] = React.useState(false);
 
-  const mutate = useCallback(
+  const mutate = React.useCallback(
     (data, { onSuccess, onError } = {}) => {
       setIsPending(true);
       setTimeout(() => {
@@ -205,7 +205,7 @@ const useMockMutation = (actionFn, delay = 350) => {
   return { isPending, mutate };
 };
 
-const ModalHeader = memo(({ icon, title, subtitle }) => (
+const ModalHeader = React.memo(({ icon, title, subtitle }) => (
   <div className="text-center mt-16">
     <div
       className="rounded-full bg-light-primary text-primary mx-auto flex items-center justify-center"
@@ -219,7 +219,7 @@ const ModalHeader = memo(({ icon, title, subtitle }) => (
 ));
 ModalHeader.displayName = "ModalHeader";
 
-const PasswordRequirements = memo(() => (
+const PasswordRequirements = React.memo(() => (
   <div className="mt-12 mb-20 text-gray mini-text flex flex-column gap-6" style={{ paddingLeft: "4px" }}>
     <div className="flex items-center gap-6">
       <Icon name="Check" width="14" height="14" stroke="#10b981" strokeWidth="2.5" />
@@ -237,7 +237,7 @@ const PasswordRequirements = memo(() => (
 ));
 PasswordRequirements.displayName = "PasswordRequirements";
 
-const Spinner = memo(() => (
+const Spinner = React.memo(() => (
   <svg
     className="animate-spin"
     width="16"
@@ -257,15 +257,15 @@ Spinner.displayName = "Spinner";
 /* ==========================================================================
    LOGIN MODAL (MEMOIZED)
    ========================================================================== */
-const LoginModal = memo(({ isOpen, onClose, onOpenForgot, onOpenRegister, loginMutation }) => {
-  const [error, setError] = useState("");
+const LoginModal = React.memo(({ isOpen, onClose, onOpenForgot, onOpenRegister, loginMutation }) => {
+  const [error, setError] = React.useState("");
 
-  const handleClose = useCallback(() => {
+  const handleClose = React.useCallback(() => {
     setError("");
     onClose();
   }, [onClose]);
 
-  const handleSubmit = useCallback(
+  const handleSubmit = React.useCallback(
     (formData) => {
       setError("");
       loginMutation.mutate(formData, {
@@ -327,20 +327,20 @@ LoginModal.displayName = "LoginModal";
 /* ==========================================================================
    FORGOT PASSWORD MODAL (MEMOIZED)
    ========================================================================== */
-const ForgotPasswordModal = memo(({ isOpen, onClose, onBackToLogin, mutations }) => {
-  const [step, setStep] = useState(1);
-  const [error, setError] = useState("");
-  const [formData, setFormData] = useState({});
+const ForgotPasswordModal = React.memo(({ isOpen, onClose, onBackToLogin, mutations }) => {
+  const [step, setStep] = React.useState(1);
+  const [error, setError] = React.useState("");
+  const [formData, setFormData] = React.useState({});
   const { forgotMutation, verifyOtpMutation, resetPasswordMutation } = mutations;
 
-  const handleClose = useCallback(() => {
+  const handleClose = React.useCallback(() => {
     setError("");
     setStep(1);
     setFormData({});
     onClose();
   }, [onClose]);
 
-  const handleStep1 = useCallback(
+  const handleStep1 = React.useCallback(
     (data) => {
       setError("");
       forgotMutation.mutate(
@@ -357,7 +357,7 @@ const ForgotPasswordModal = memo(({ isOpen, onClose, onBackToLogin, mutations })
     [forgotMutation]
   );
 
-  const handleStep2 = useCallback(
+  const handleStep2 = React.useCallback(
     (data) => {
       setError("");
       verifyOtpMutation.mutate(
@@ -374,7 +374,7 @@ const ForgotPasswordModal = memo(({ isOpen, onClose, onBackToLogin, mutations })
     [verifyOtpMutation, formData.mobile]
   );
 
-  const handleStep3 = useCallback(
+  const handleStep3 = React.useCallback(
     (data) => {
       setError("");
       if (data.password !== data.confirmPassword) {
@@ -452,14 +452,14 @@ ForgotPasswordModal.displayName = "ForgotPasswordModal";
 /* ==========================================================================
    REGISTER MODAL (MEMOIZED)
    ========================================================================== */
-const RegisterModal = memo(({ isOpen, onClose, registerMutation, verifyOtpMutation, loginMutation }) => {
-  const [registerStep, setRegisterStep] = useState("form");
-  const [formStep, setFormStep] = useState(1);
-  const [formData, setFormData] = useState({});
-  const [tempData, setTempData] = useState(null);
-  const [error, setError] = useState("");
+const RegisterModal = React.memo(({ isOpen, onClose, registerMutation, verifyOtpMutation, loginMutation }) => {
+  const [registerStep, setRegisterStep] = React.useState("form");
+  const [formStep, setFormStep] = React.useState(1);
+  const [formData, setFormData] = React.useState({});
+  const [tempData, setTempData] = React.useState(null);
+  const [error, setError] = React.useState("");
 
-  const handleClose = useCallback(() => {
+  const handleClose = React.useCallback(() => {
     setError("");
     setRegisterStep("form");
     setFormStep(1);
@@ -468,19 +468,19 @@ const RegisterModal = memo(({ isOpen, onClose, registerMutation, verifyOtpMutati
     onClose();
   }, [onClose]);
 
-  const handleStep1 = useCallback((data) => {
+  const handleStep1 = React.useCallback((data) => {
     setError("");
     setFormData(data);
     setFormStep(2);
   }, []);
 
-  const handleStep2 = useCallback((data) => {
+  const handleStep2 = React.useCallback((data) => {
     setError("");
     setFormData((prev) => ({ ...prev, email: data.email, mobile: data.mobile }));
     setFormStep(3);
   }, []);
 
-  const handleStep3 = useCallback((data) => {
+  const handleStep3 = React.useCallback((data) => {
     setError("");
     if (data.password !== data.confirmPassword) {
       setError("Passwords do not match.");
@@ -490,7 +490,7 @@ const RegisterModal = memo(({ isOpen, onClose, registerMutation, verifyOtpMutati
     setFormStep(4);
   }, []);
 
-  const handleStep4 = useCallback(() => {
+  const handleStep4 = React.useCallback(() => {
     setError("");
     registerMutation.mutate(formData, {
       onSuccess: () => {
@@ -501,7 +501,7 @@ const RegisterModal = memo(({ isOpen, onClose, registerMutation, verifyOtpMutati
     });
   }, [registerMutation, formData]);
 
-  const handleVerifyOtp = useCallback(
+  const handleVerifyOtp = React.useCallback(
     (otpData) => {
       setError("");
       verifyOtpMutation.mutate(
@@ -523,11 +523,11 @@ const RegisterModal = memo(({ isOpen, onClose, registerMutation, verifyOtpMutati
     [verifyOtpMutation, loginMutation, tempData, handleClose]
   );
 
-  const step1Fields = useMemo(
+  const step1Fields = React.useMemo(
     () => getRegisterStep1Fields(formData.role, formData.fullname),
     [formData.role, formData.fullname]
   );
-  const step2Fields = useMemo(
+  const step2Fields = React.useMemo(
     () => getRegisterStep2Fields(formData.email, formData.mobile),
     [formData.email, formData.mobile]
   );
@@ -657,21 +657,21 @@ const Header = () => {
   const navigate = useNavigate();
 
   // Static user state
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [user, setUser] = useState({
+  const [isLoggedIn, setIsLoggedIn] = React.useState(true);
+  const [user, setUser] = React.useState({
     fullname: "Alex Morgan",
     role: "Administrator",
     email: "alex.morgan@example.com",
     mobile: "9876543210"
   });
 
-  const [isDarkMode, setIsDarkMode] = useState(() => document.body.classList.contains("dark-mode"));
-  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-  const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = React.useState(() => document.body.classList.contains("dark-mode"));
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = React.useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = React.useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = React.useState(false);
+  const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = React.useState(false);
 
-  const toggleDarkMode = useCallback(() => {
+  const toggleDarkMode = React.useCallback(() => {
     setIsDarkMode((prev) => {
       const next = !prev;
       document.body.classList.toggle("dark-mode", next);
@@ -679,39 +679,39 @@ const Header = () => {
     });
   }, []);
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = React.useCallback(() => {
     setIsLoggedIn(false);
     setIsUserDropdownOpen(false);
     navigate("/dashboard");
   }, [navigate]);
 
   // Modal open/close callbacks
-  const handleOpenLogin = useCallback(() => {
+  const handleOpenLogin = React.useCallback(() => {
     setIsUserDropdownOpen(false);
     setIsForgotPasswordModalOpen(false);
     setIsRegisterModalOpen(false);
     setIsLoginModalOpen(true);
   }, []);
 
-  const handleCloseLogin = useCallback(() => setIsLoginModalOpen(false), []);
+  const handleCloseLogin = React.useCallback(() => setIsLoginModalOpen(false), []);
 
-  const handleOpenRegister = useCallback(() => {
+  const handleOpenRegister = React.useCallback(() => {
     setIsUserDropdownOpen(false);
     setIsLoginModalOpen(false);
     setIsRegisterModalOpen(true);
   }, []);
 
-  const handleCloseRegister = useCallback(() => setIsRegisterModalOpen(false), []);
+  const handleCloseRegister = React.useCallback(() => setIsRegisterModalOpen(false), []);
 
-  const handleOpenForgot = useCallback(() => {
+  const handleOpenForgot = React.useCallback(() => {
     setIsLoginModalOpen(false);
     setIsForgotPasswordModalOpen(true);
   }, []);
 
-  const handleCloseForgot = useCallback(() => setIsForgotPasswordModalOpen(false), []);
+  const handleCloseForgot = React.useCallback(() => setIsForgotPasswordModalOpen(false), []);
 
   // Mock mutation actions
-  const onLoginSuccessAction = useCallback((formData) => {
+  const onLoginSuccessAction = React.useCallback((formData) => {
     setUser((prev) => ({
       ...prev,
       fullname: prev?.fullname || "Admin User",
@@ -720,7 +720,7 @@ const Header = () => {
     setIsLoggedIn(true);
   }, []);
 
-  const onVerifyOtpSuccessAction = useCallback((tempData) => {
+  const onVerifyOtpSuccessAction = React.useCallback((tempData) => {
     setUser({
       fullname: tempData?.fullname || "New User",
       role: tempData?.role || "Vendor",
@@ -737,12 +737,12 @@ const Header = () => {
   const verifyForgotOtpMutation = useMockMutation();
   const resetPasswordMutation = useMockMutation();
 
-  const forgotMutations = useMemo(
+  const forgotMutations = React.useMemo(
     () => ({ forgotMutation, verifyOtpMutation: verifyForgotOtpMutation, resetPasswordMutation }),
     [forgotMutation, verifyForgotOtpMutation, resetPasswordMutation]
   );
 
-  const userMenuItems = useMemo(
+  const userMenuItems = React.useMemo(
     () => [
       { label: "My Profile", icon: "Users", path: "/profile", show: true },
       { label: "Logout", icon: "Logout", action: handleLogout, show: true, className: "text-danger" }
@@ -750,7 +750,7 @@ const Header = () => {
     [handleLogout]
   );
 
-  const pageTitle = useMemo(() => {
+  const pageTitle = React.useMemo(() => {
     if (ROUTE_TITLES[location.pathname]) {
       return ROUTE_TITLES[location.pathname];
     }
@@ -761,7 +761,7 @@ const Header = () => {
     }
     return "Dashboard";
   }, [location.pathname]);
-  const userInitial = useMemo(() => (user?.fullname ? user.fullname.charAt(0).toUpperCase() : "U"), [user?.fullname]);
+  const userInitial = React.useMemo(() => (user?.fullname ? user.fullname.charAt(0).toUpperCase() : "U"), [user?.fullname]);
 
   return (
     <>
@@ -914,4 +914,4 @@ const Header = () => {
   );
 };
 
-export default memo(Header);
+export default React.memo(Header);

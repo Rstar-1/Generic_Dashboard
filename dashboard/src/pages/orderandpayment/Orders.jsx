@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
@@ -32,7 +32,7 @@ const METHOD_OPTIONS = [
 ];
 
 // Memoized Filter Drawer Content
-const FilterDrawerContent = memo(({ status, onStatusChange, method, onMethodChange }) => (
+const FilterDrawerContent = React.memo(({ status, onStatusChange, method, onMethodChange }) => (
     <div className="grid-cols-4 gap-12">
         <Fields
             type="select"
@@ -53,38 +53,38 @@ const FilterDrawerContent = memo(({ status, onStatusChange, method, onMethodChan
 FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Orders = () => {
-    const [orders, setOrders] = useState(initialOrdersData);
-    const [activeTab, setActiveTab] = useState("all");
-    const [selectedCategory, setSelectedCategory] = useState("All Orders");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [methodFilter, setMethodFilter] = useState("all");
-    const [currentPage, setCurrentPage] = useState(1);
+    const [orders, setOrders] = React.useState(initialOrdersData);
+    const [activeTab, setActiveTab] = React.useState("all");
+    const [selectedCategory, setSelectedCategory] = React.useState("All Orders");
+    const [searchQuery, setSearchQuery] = React.useState("");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+    const [methodFilter, setMethodFilter] = React.useState("all");
+    const [currentPage, setCurrentPage] = React.useState(1);
 
-    useEffect(() => {
+    React.useEffect(() => {
         setOrders(initialOrdersData);
     }, []);
 
-    const handleSearchChange = useCallback((val) => {
+    const handleSearchChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.target?.value ?? "");
         setSearchQuery(next);
         setCurrentPage(1);
     }, []);
 
-    const handleStatusFilterChange = useCallback((val) => {
+    const handleStatusFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setStatusFilter(next);
         setCurrentPage(1);
     }, []);
 
-    const handleMethodFilterChange = useCallback((val) => {
+    const handleMethodFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setMethodFilter(next);
         setCurrentPage(1);
     }, []);
 
     // Sidebar items with real-time dynamic count calculations
-    const sidebarItems = useMemo(() => {
+    const sidebarItems = React.useMemo(() => {
         const counts = orders.reduce((acc, o) => {
             const s = o.status?.toLowerCase();
             if (s) acc[s] = (acc[s] || 0) + 1;
@@ -99,21 +99,21 @@ const Orders = () => {
     }, [orders]);
 
     // Sidebar & tab navigation handlers
-    const handleSidebarItemClick = useCallback((name) => {
+    const handleSidebarItemClick = React.useCallback((name) => {
         setSelectedCategory(name);
         setCurrentPage(1);
         const item = ordersSidebarData.items.find((i) => i.name === name);
         setActiveTab(item?.status || "all");
     }, []);
 
-    const handleTabChange = useCallback((tabValue) => {
+    const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
         const item = ordersSidebarData.items.find((i) => i.status === tabValue);
         setSelectedCategory(item ? item.name : "All Orders");
     }, []);
 
-    const handleClearFilters = useCallback(() => {
+    const handleClearFilters = React.useCallback(() => {
         setStatusFilter("all");
         setMethodFilter("all");
         setSearchQuery("");
@@ -122,26 +122,26 @@ const Orders = () => {
     }, []);
 
     // Action handlers for rows
-    const handleViewOrder = useCallback((row) => {
+    const handleViewOrder = React.useCallback((row) => {
         showToast(`Viewing order details for #${row.orderId} (${row.totalAmount})`, "info");
     }, []);
 
-    const handleEditOrder = useCallback((row) => {
+    const handleEditOrder = React.useCallback((row) => {
         showToast(`Adjusting fulfillment for order #${row.orderId}`, "info");
     }, []);
 
-    const handleDeleteOrder = useCallback((row) => {
+    const handleDeleteOrder = React.useCallback((row) => {
         setOrders((prev) => prev.filter((o) => o.id !== row.id));
         showToast(`Order #${row.orderId} cancelled & archived!`, "danger");
     }, []);
 
-    const handleExportOrders = useCallback(() => {
+    const handleExportOrders = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(orders, null, 2));
         showToast("Orders register exported to clipboard!", "success");
     }, [orders]);
 
     // Multi-criteria filtering
-    const filteredOrders = useMemo(() => {
+    const filteredOrders = React.useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         const targetTab = String(activeTab || "all").toLowerCase().trim();
         const targetStatus = String(statusFilter || "all").toLowerCase().trim();
@@ -168,17 +168,17 @@ const Orders = () => {
         });
     }, [orders, activeTab, statusFilter, methodFilter, searchQuery]);
 
-    const paginatedOrders = useMemo(() => {
+    const paginatedOrders = React.useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredOrders.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredOrders, currentPage]);
 
-    const hasActiveFilters = useMemo(
+    const hasActiveFilters = React.useMemo(
         () => statusFilter !== "all" || methodFilter !== "all" || Boolean(searchQuery.trim()),
         [statusFilter, methodFilter, searchQuery]
     );
 
-    const filterInputsNode = useMemo(
+    const filterInputsNode = React.useMemo(
         () => (
             <FilterDrawerContent
                 status={statusFilter}
@@ -190,7 +190,7 @@ const Orders = () => {
         [statusFilter, handleStatusFilterChange, methodFilter, handleMethodFilterChange]
     );
 
-    const quickActionNode = useMemo(
+    const quickActionNode = React.useMemo(
         () => (
             <Button
                 text="Export Orders"
@@ -253,4 +253,4 @@ const Orders = () => {
     );
 };
 
-export default memo(Orders);
+export default React.memo(Orders);

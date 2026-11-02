@@ -1,11 +1,11 @@
-import React, { useState, Suspense } from "react";
+import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import Loader from "../common/generic/Loader";
 
 const Layout = () => {
-    const [isCollapsed, setIsCollapsed] = useState(true);
+    const [isCollapsed, setIsCollapsed] = React.useState(true);
     const location = useLocation();
 
     return (
@@ -23,9 +23,9 @@ const Layout = () => {
                 >
                     <Header />
                     <div key={location.key} className="">
-                        <Suspense fallback={<Loader />}>
+                        <React.Suspense fallback={<Loader />}>
                             <Outlet />
-                        </Suspense>
+                        </React.Suspense>
                     </div>
                 </div>
             </div>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React from "react";
 import Fields from "./Fields";
 import Button from "../common/Button";
 
@@ -78,7 +78,7 @@ const FormBuilder = React.memo(
   }) => {
     const activeVersion = fieldVersion || version;
 
-    const initialValues = useMemo(
+    const initialValues = React.useMemo(
       () =>
         fields.reduce((acc, field) => {
           acc[field.name] = getDefaultValue(field);
@@ -87,10 +87,10 @@ const FormBuilder = React.memo(
       [fields]
     );
 
-    const [form, setForm] = useState(initialValues);
-    const [errors, setErrors] = useState({});
+    const [form, setForm] = React.useState(initialValues);
+    const [errors, setErrors] = React.useState({});
 
-    useEffect(() => {
+    React.useEffect(() => {
       setForm((prev) => {
         let changed = false;
         const next = { ...prev };
@@ -112,7 +112,7 @@ const FormBuilder = React.memo(
       });
     }, [fields, values]);
 
-    const handleChange = useCallback(
+    const handleChange = React.useCallback(
       (name, value) => {
         setForm((prev) => {
           const updated = { ...prev, [name]: value };
@@ -136,7 +136,7 @@ const FormBuilder = React.memo(
       [fields, onChange]
     );
 
-    const handleSubmit = useCallback(
+    const handleSubmit = React.useCallback(
       (e) => {
         e?.preventDefault?.();
         const newErrors = {};

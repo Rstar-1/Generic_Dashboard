@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import React from "react";
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 // 🧩 Layout
@@ -6,35 +6,35 @@ import Layout from '../components/layout/Layout';
 import Loader from '../components/common/generic/Loader';
 
 // 📦 Lazy Pages
-const Dashboard = lazy(() => import('../pages/dashboard/Dashboard'));
-const Analytics = lazy(() => import('../pages/analytics/Analytics'));
+const Dashboard = React.lazy(() => import('../pages/dashboard/Dashboard'));
+const Analytics = React.lazy(() => import('../pages/analytics/Analytics'));
 
 // Category Pages
-const CategoryProducts = lazy(() => import('../pages/category/Products'));
-const CategoryBlogs = lazy(() => import('../pages/category/Blogs'));
+const CategoryProducts = React.lazy(() => import('../pages/category/Products'));
+const CategoryBlogs = React.lazy(() => import('../pages/category/Blogs'));
 
 // Overview Pages
-const OverviewProducts = lazy(() => import('../pages/overview/Products'));
-const OverviewBlogs = lazy(() => import('../pages/overview/Blogs'));
-const OverviewCms = lazy(() => import('../pages/overview/Cms'));
-const OverviewSeo = lazy(() => import('../pages/overview/Seo'));
+const OverviewProducts = React.lazy(() => import('../pages/overview/Products'));
+const OverviewBlogs = React.lazy(() => import('../pages/overview/Blogs'));
+const OverviewCms = React.lazy(() => import('../pages/overview/Cms'));
+const OverviewSeo = React.lazy(() => import('../pages/overview/Seo'));
 
 // Management Pages
-const Customer = lazy(() => import('../pages/management/Customer'));
-const Tasks = lazy(() => import('../pages/management/Tasks'));
-const Leads = lazy(() => import('../pages/management/Leads'));
+const Customer = React.lazy(() => import('../pages/management/Customer'));
+const Tasks = React.lazy(() => import('../pages/management/Tasks'));
+const Leads = React.lazy(() => import('../pages/management/Leads'));
 
 // Order & Payment Pages
-const Orders = lazy(() => import('../pages/orderandpayment/Orders'));
-const Transaction = lazy(() => import('../pages/orderandpayment/Transaction'));
+const Orders = React.lazy(() => import('../pages/orderandpayment/Orders'));
+const Transaction = React.lazy(() => import('../pages/orderandpayment/Transaction'));
 
 // Settings Pages
-const User = lazy(() => import('../pages/settings/User'));
-const Role = lazy(() => import('../pages/settings/Role'));
+const User = React.lazy(() => import('../pages/settings/User'));
+const Role = React.lazy(() => import('../pages/settings/Role'));
 
 function AppRoutes() {
     return (
-        <Suspense fallback={<Loader />}>
+        <React.Suspense fallback={<Loader />}>
             <Routes>
                 <Route path="/" element={<Layout />}>
                     <Route index element={<Navigate to="/dashboard" replace />} />
@@ -75,7 +75,7 @@ function AppRoutes() {
                 </Route>
                 <Route path="*" element={<h2 style={{ textAlign: 'center', padding: '100px 20px' }}>404 - Page Not Found</h2>} />
             </Routes>
-        </Suspense>
+        </React.Suspense>
     );
 }
 

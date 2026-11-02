@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 import { setIsListening, setTranscript } from "../store/slices/botSlice";
@@ -20,21 +20,21 @@ export const useVoiceRecognition = () => {
   } = useSpeechRecognition();
 
   // Keep Redux in sync with speech recognition listening state
-  useEffect(() => {
+  React.useEffect(() => {
     dispatch(setIsListening(listening));
   }, [listening, dispatch]);
 
   // Keep Redux transcript in sync
-  useEffect(() => {
+  React.useEffect(() => {
     dispatch(setTranscript(transcript));
   }, [transcript, dispatch]);
 
-  const handleResetTranscript = useCallback(() => {
+  const handleResetTranscript = React.useCallback(() => {
     resetTranscript();
     dispatch(setTranscript(""));
   }, [resetTranscript, dispatch]);
 
-  const startListening = useCallback(
+  const startListening = React.useCallback(
     (options = {}) => {
       if (!browserSupportsSpeechRecognition) {
         console.warn("Speech recognition is not supported in this browser.");
@@ -51,7 +51,7 @@ export const useVoiceRecognition = () => {
     [browserSupportsSpeechRecognition, handleResetTranscript, dispatch]
   );
 
-  const abortListening = useCallback(() => {
+  const abortListening = React.useCallback(() => {
     try {
       SpeechRecognition.abortListening();
     } catch (e) {
@@ -61,7 +61,7 @@ export const useVoiceRecognition = () => {
     dispatch(setIsListening(false));
   }, [handleResetTranscript, dispatch]);
 
-  const stopListening = useCallback(() => {
+  const stopListening = React.useCallback(() => {
     try {
       SpeechRecognition.stopListening();
     } catch (e) {
@@ -70,7 +70,7 @@ export const useVoiceRecognition = () => {
     dispatch(setIsListening(false));
   }, [dispatch]);
 
-  const toggleListening = useCallback(() => {
+  const toggleListening = React.useCallback(() => {
     if (listening || reduxListening) {
       abortListening();
     } else {

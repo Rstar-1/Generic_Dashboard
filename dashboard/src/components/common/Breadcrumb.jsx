@@ -12,8 +12,6 @@ const Breadcrumb = React.memo(
     className = "",
     onItemClick,
   }) => {
-    if (!items?.length) return null;
-
     const isDark = color === "dark" || className.includes("text-dark");
     const linkCls = isDark
       ? "text-gray hover:text-dark transition-colors cursor-pointer"
@@ -49,6 +47,8 @@ const Breadcrumb = React.memo(
       },
       [separator, separatorIcon, sepCls]
     );
+
+    if (!items?.length) return null;
 
     return (
       <nav

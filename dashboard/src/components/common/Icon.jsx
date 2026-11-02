@@ -880,13 +880,6 @@ const Icon = React.memo(({ name, icon, className = "", width, height, strokeWidt
                     <polygon points="5 3 19 12 5 21 5 3" />
                 </svg>
             );
-        case "Video":
-            return (
-                <svg viewBox="0 0 24 24" width={defaultWidth} height={defaultHeight} stroke={stroke || "currentColor"} strokeWidth={defaultStrokeWidth} fill={fill || "none"} strokeLinecap="round" strokeLinejoin="round" className={`flex ${className}`} {...props}>
-                    <polygon points="23 7 16 12 23 17 23 7" />
-                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-                </svg>
-            );
         default:
             return null;
     }

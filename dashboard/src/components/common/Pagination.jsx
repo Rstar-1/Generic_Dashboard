@@ -26,8 +26,6 @@ const Pagination = React.memo(
     const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
     const currentPage = Math.min(Math.max(1, Number(page) || 1), totalPages);
 
-    if (totalItems === 0) return null;
-
     const startItem = (currentPage - 1) * itemsPerPage + 1;
     const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
@@ -52,6 +50,8 @@ const Pagination = React.memo(
       }
       return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
     }, [currentPage, totalPages]);
+
+    if (totalItems === 0) return null;
 
     return (
       <div className={`bg-white border-tertiary mt-4 w-full rounded-5 ${className}`} style={style}>

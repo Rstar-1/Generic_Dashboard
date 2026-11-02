@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
@@ -31,7 +31,7 @@ const METHOD_OPTIONS = [
 ];
 
 // Memoized Filter Drawer Content
-const FilterDrawerContent = memo(({ status, onStatusChange, method, onMethodChange }) => (
+const FilterDrawerContent = React.memo(({ status, onStatusChange, method, onMethodChange }) => (
     <div className="grid-cols-4 gap-12">
         <Fields
             type="select"
@@ -52,39 +52,39 @@ const FilterDrawerContent = memo(({ status, onStatusChange, method, onMethodChan
 FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Transaction = () => {
-    const [transactions, setTransactions] = useState(initialTransactionsData);
-    const [activeTab, setActiveTab] = useState("all");
-    const [selectedCategory, setSelectedCategory] = useState("All Transactions");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [methodFilter, setMethodFilter] = useState("all");
-    const [currentPage, setCurrentPage] = useState(1);
+    const [transactions, setTransactions] = React.useState(initialTransactionsData);
+    const [activeTab, setActiveTab] = React.useState("all");
+    const [selectedCategory, setSelectedCategory] = React.useState("All Transactions");
+    const [searchQuery, setSearchQuery] = React.useState("");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+    const [methodFilter, setMethodFilter] = React.useState("all");
+    const [currentPage, setCurrentPage] = React.useState(1);
 
     // Synchronize state when mock dataset updates
-    useEffect(() => {
+    React.useEffect(() => {
         setTransactions(initialTransactionsData);
     }, [initialTransactionsData]);
 
-    const handleSearchChange = useCallback((val) => {
+    const handleSearchChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.target?.value ?? "");
         setSearchQuery(next);
         setCurrentPage(1);
     }, []);
 
-    const handleStatusFilterChange = useCallback((val) => {
+    const handleStatusFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setStatusFilter(next);
         setCurrentPage(1);
     }, []);
 
-    const handleMethodFilterChange = useCallback((val) => {
+    const handleMethodFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setMethodFilter(next);
         setCurrentPage(1);
     }, []);
 
     // Sidebar items with real-time dynamic count calculations
-    const sidebarItems = useMemo(() => {
+    const sidebarItems = React.useMemo(() => {
         const counts = transactions.reduce((acc, t) => {
             const s = t.status?.toLowerCase();
             if (s) acc[s] = (acc[s] || 0) + 1;
@@ -99,21 +99,21 @@ const Transaction = () => {
     }, [transactions]);
 
     // Sidebar & tab navigation handlers
-    const handleSidebarItemClick = useCallback((name) => {
+    const handleSidebarItemClick = React.useCallback((name) => {
         setSelectedCategory(name);
         setCurrentPage(1);
         const item = transactionsSidebarData.items.find((i) => i.name === name);
         setActiveTab(item?.status || "all");
     }, []);
 
-    const handleTabChange = useCallback((tabValue) => {
+    const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
         const item = transactionsSidebarData.items.find((i) => i.status === tabValue);
         setSelectedCategory(item ? item.name : "All Transactions");
     }, []);
 
-    const handleClearFilters = useCallback(() => {
+    const handleClearFilters = React.useCallback(() => {
         setStatusFilter("all");
         setMethodFilter("all");
         setSearchQuery("");
@@ -122,26 +122,26 @@ const Transaction = () => {
     }, []);
 
     // Action handlers for rows
-    const handleViewTransaction = useCallback((row) => {
+    const handleViewTransaction = React.useCallback((row) => {
         showToast(`Viewing receipt for ${row.transactionId} (${row.amount})`, "info");
     }, []);
 
-    const handleEditTransaction = useCallback((row) => {
+    const handleEditTransaction = React.useCallback((row) => {
         showToast(`Adjusting transaction entry ${row.transactionId}`, "info");
     }, []);
 
-    const handleDeleteTransaction = useCallback((row) => {
+    const handleDeleteTransaction = React.useCallback((row) => {
         setTransactions((prev) => prev.filter((t) => t.id !== row.id));
         showToast(`Transaction ${row.transactionId} cancelled & archived!`, "danger");
     }, []);
 
-    const handleExportStatement = useCallback(() => {
+    const handleExportStatement = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(transactions, null, 2));
         showToast("Financial statement exported to clipboard!", "success");
     }, [transactions]);
 
     // Multi-criteria filtering: sidebar status, drawer status, payment method & search
-    const filteredTransactions = useMemo(() => {
+    const filteredTransactions = React.useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         const targetTab = String(activeTab || "all").toLowerCase().trim();
         const targetStatus = String(statusFilter || "all").toLowerCase().trim();
@@ -169,17 +169,17 @@ const Transaction = () => {
         });
     }, [transactions, activeTab, statusFilter, methodFilter, searchQuery]);
 
-    const paginatedTransactions = useMemo(() => {
+    const paginatedTransactions = React.useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredTransactions.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredTransactions, currentPage]);
 
-    const hasActiveFilters = useMemo(
+    const hasActiveFilters = React.useMemo(
         () => statusFilter !== "all" || methodFilter !== "all" || Boolean(searchQuery.trim()),
         [statusFilter, methodFilter, searchQuery]
     );
 
-    const filterInputsNode = useMemo(
+    const filterInputsNode = React.useMemo(
         () => (
             <FilterDrawerContent
                 status={statusFilter}
@@ -191,7 +191,7 @@ const Transaction = () => {
         [statusFilter, handleStatusFilterChange, methodFilter, handleMethodFilterChange]
     );
 
-    const quickActionNode = useMemo(
+    const quickActionNode = React.useMemo(
         () => (
             <Button
                 text="Export Statement"
@@ -254,4 +254,4 @@ const Transaction = () => {
     );
 };
 
-export default memo(Transaction);
+export default React.memo(Transaction);

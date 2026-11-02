@@ -13,9 +13,7 @@ const Steps = React.memo(
     onChange,
     onStepClick,
   }) => {
-    if (!steps?.length) return null;
-
-    const numSteps = steps.length;
+    const numSteps = steps?.length || 0;
     const activeStep = Math.min(numSteps, Math.max(1, Number(currentStep) || 1));
     const isV2 = version === "v2" || version === 2 || version === "2";
     const shouldShowPercent = showPercentage ?? showPercent;
@@ -23,7 +21,7 @@ const Steps = React.memo(
     const percent =
       typeof percentage === "number"
         ? Math.min(100, Math.max(0, Math.round(percentage)))
-        : Math.round((activeStep / numSteps) * 100);
+        : numSteps ? Math.round((activeStep / numSteps) * 100) : 0;
 
     const handleStepClick = React.useCallback(
       (stepNumber) => {
@@ -32,6 +30,8 @@ const Steps = React.memo(
       },
       [onChange, onStepClick]
     );
+
+    if (!steps?.length) return null;
 
     // Version 2: Only visual percentage line (not steps UI)
     if (isV2) {

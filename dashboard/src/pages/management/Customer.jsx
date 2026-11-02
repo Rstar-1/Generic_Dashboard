@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
@@ -31,7 +31,7 @@ const TYPE_OPTIONS = [
 ];
 
 // Memoized Filter Drawer Content
-const FilterDrawerContent = memo(({ status, onStatusChange, type, onTypeChange }) => (
+const FilterDrawerContent = React.memo(({ status, onStatusChange, type, onTypeChange }) => (
     <div className="grid-cols-4 gap-12">
         <Fields
             type="select"
@@ -52,39 +52,39 @@ const FilterDrawerContent = memo(({ status, onStatusChange, type, onTypeChange }
 FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Customer = () => {
-    const [customers, setCustomers] = useState(initialCustomersData);
-    const [activeTab, setActiveTab] = useState("all");
-    const [selectedCategory, setSelectedCategory] = useState("All Type");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [typeFilter, setTypeFilter] = useState("all");
-    const [currentPage, setCurrentPage] = useState(1);
+    const [customers, setCustomers] = React.useState(initialCustomersData);
+    const [activeTab, setActiveTab] = React.useState("all");
+    const [selectedCategory, setSelectedCategory] = React.useState("All Type");
+    const [searchQuery, setSearchQuery] = React.useState("");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+    const [typeFilter, setTypeFilter] = React.useState("all");
+    const [currentPage, setCurrentPage] = React.useState(1);
 
     // Keep customers state synchronized when initial data updates
-    useEffect(() => {
+    React.useEffect(() => {
         setCustomers(initialCustomersData);
     }, [initialCustomersData]);
 
-    const handleSearchChange = useCallback((val) => {
+    const handleSearchChange = React.useCallback((val) => {
         const nextQuery = typeof val === "string" ? val : (val?.target?.value ?? "");
         setSearchQuery(nextQuery);
         setCurrentPage(1);
     }, []);
 
-    const handleStatusFilterChange = useCallback((val) => {
+    const handleStatusFilterChange = React.useCallback((val) => {
         const nextStatus = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setStatusFilter(nextStatus);
         setCurrentPage(1);
     }, []);
 
-    const handleTypeFilterChange = useCallback((val) => {
+    const handleTypeFilterChange = React.useCallback((val) => {
         const nextType = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setTypeFilter(nextType);
         setCurrentPage(1);
     }, []);
 
     // Sidebar items with real-time dynamic count calculations
-    const sidebarItems = useMemo(() => {
+    const sidebarItems = React.useMemo(() => {
         const counts = customers.reduce((acc, c) => {
             const typeKey = c.type?.toLowerCase();
             if (typeKey) acc[typeKey] = (acc[typeKey] || 0) + 1;
@@ -99,21 +99,21 @@ const Customer = () => {
     }, [customers]);
 
     // Sidebar & tab navigation handlers
-    const handleSidebarItemClick = useCallback((name) => {
+    const handleSidebarItemClick = React.useCallback((name) => {
         setSelectedCategory(name);
         setCurrentPage(1);
         const item = customersSidebarData.items.find((i) => i.name === name);
         setActiveTab(item?.status || "all");
     }, []);
 
-    const handleTabChange = useCallback((tabValue) => {
+    const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
         const item = customersSidebarData.items.find((i) => i.status === tabValue);
         setSelectedCategory(item ? item.name : "All Type");
     }, []);
 
-    const handleClearFilters = useCallback(() => {
+    const handleClearFilters = React.useCallback(() => {
         setStatusFilter("all");
         setTypeFilter("all");
         setSearchQuery("");
@@ -122,30 +122,30 @@ const Customer = () => {
     }, []);
 
     // Action handlers for table rows
-    const handleViewCustomer = useCallback((row) => {
+    const handleViewCustomer = React.useCallback((row) => {
         showToast(`Viewing customer profile: ${row.name} (${row.company})`, "info");
     }, []);
 
-    const handleEditCustomer = useCallback((row) => {
+    const handleEditCustomer = React.useCallback((row) => {
         showToast(`Opening editor for ${row.name}`, "info");
     }, []);
 
-    const handleDeleteCustomer = useCallback((row) => {
+    const handleDeleteCustomer = React.useCallback((row) => {
         setCustomers((prev) => prev.filter((c) => c.id !== row.id));
         showToast(`Customer ${row.name} removed successfully!`, "danger");
     }, []);
 
-    const handleAddCustomer = useCallback(() => {
+    const handleAddCustomer = React.useCallback(() => {
         showToast("Add Customer modal trigger activated!", "success");
     }, []);
 
-    const handleExportData = useCallback(() => {
+    const handleExportData = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(customers, null, 2));
         showToast("Customer database exported to clipboard!", "success");
     }, [customers]);
 
     // Multi-criteria filtering: role/tab, seller type, status, and search
-    const filteredCustomers = useMemo(() => {
+    const filteredCustomers = React.useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         const targetStatus = String(statusFilter || "all").toLowerCase().trim();
         const targetType = String(typeFilter || "all").toLowerCase().trim();
@@ -171,14 +171,14 @@ const Customer = () => {
         });
     }, [customers, activeTab, statusFilter, typeFilter, searchQuery]);
 
-    const paginatedCustomers = useMemo(() => {
+    const paginatedCustomers = React.useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredCustomers.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredCustomers, currentPage]);
 
     const hasActiveFilters = statusFilter !== "all" || typeFilter !== "all" || Boolean(searchQuery);
 
-    const filterInputsNode = useMemo(
+    const filterInputsNode = React.useMemo(
         () => (
             <FilterDrawerContent
                 status={statusFilter}
@@ -190,7 +190,7 @@ const Customer = () => {
         [statusFilter, handleStatusFilterChange, typeFilter, handleTypeFilterChange]
     );
 
-    const quickActionNode = useMemo(
+    const quickActionNode = React.useMemo(
         () => (
             <div className="flex items-center gap-8">
                 <Button
@@ -257,4 +257,4 @@ const Customer = () => {
     );
 };
 
-export default memo(Customer);
+export default React.memo(Customer);

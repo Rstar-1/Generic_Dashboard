@@ -16,7 +16,7 @@ const TabItem = React.memo(
       );
     };
 
-    let itemCls = "";
+    let itemCls;
     let itemStyle = {};
 
     if (isV2) {

@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React from "react";
 import { configData as apiConfigData, cmsData } from "./apiData";
 import { slugify } from "./slugify";
-import { resolveImagePath } from "./imageResolver";
-import { formatDate } from "./formatDate";
 
 /* ==========================================
    CONFIG & NAVIGATION UTILITIES
@@ -321,17 +319,17 @@ export const sortBy = (array = [], key, order = "asc") => {
    ========================================== */
 
 export const useToggle = (initialState = false) => {
-  const [value, setValue] = useState(Boolean(initialState));
-  const toggle = useCallback(() => setValue((prev) => !prev), []);
-  const setTrue = useCallback(() => setValue(true), []);
-  const setFalse = useCallback(() => setValue(false), []);
+  const [value, setValue] = React.useState(Boolean(initialState));
+  const toggle = React.useCallback(() => setValue((prev) => !prev), []);
+  const setTrue = React.useCallback(() => setValue(true), []);
+  const setFalse = React.useCallback(() => setValue(false), []);
   return [value, toggle, setValue, setTrue, setFalse];
 };
 
 export const useDebounce = (value, delay = 300) => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
+  const [debouncedValue, setDebouncedValue] = React.useState(value);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
@@ -345,24 +343,24 @@ export const useDebounce = (value, delay = 300) => {
 };
 
 export const usePagination = (items = [], itemsPerPage = 5) => {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = React.useState(1);
 
   const totalPages = Math.ceil((items?.length || 0) / itemsPerPage) || 1;
 
-  const paginatedItems = useMemo(() => {
+  const paginatedItems = React.useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return (items || []).slice(start, start + itemsPerPage);
   }, [items, currentPage, itemsPerPage]);
 
-  const goToPage = useCallback((page) => {
+  const goToPage = React.useCallback((page) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   }, [totalPages]);
 
-  const nextPage = useCallback(() => {
+  const nextPage = React.useCallback(() => {
     setCurrentPage((p) => Math.min(p + 1, totalPages));
   }, [totalPages]);
 
-  const prevPage = useCallback(() => {
+  const prevPage = React.useCallback(() => {
     setCurrentPage((p) => Math.max(p - 1, 1));
   }, []);
 
@@ -379,13 +377,13 @@ export const usePagination = (items = [], itemsPerPage = 5) => {
 };
 
 export const useFilterState = (initialFilters = {}) => {
-  const [filters, setFilters] = useState(initialFilters);
+  const [filters, setFilters] = React.useState(initialFilters);
 
-  const setFilter = useCallback((key, value) => {
+  const setFilter = React.useCallback((key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  const resetFilters = useCallback(() => {
+  const resetFilters = React.useCallback(() => {
     setFilters(initialFilters);
   }, [initialFilters]);
 
@@ -393,9 +391,9 @@ export const useFilterState = (initialFilters = {}) => {
 };
 
 export const useCopyToClipboard = (duration = 2000) => {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = React.useState(false);
 
-  const copy = useCallback(async (text) => {
+  const copy = React.useCallback(async (text) => {
     if (!text) return false;
     const res = await copyToClipboard(text);
     if (res) {
@@ -412,33 +410,26 @@ export const useCopyToClipboard = (duration = 2000) => {
    REACT MEMO COMPONENTS
    ========================================== */
 
-export const SectionFallback = memo(({ minHeight = "100px", className = "w-full" }) =>
+export const SectionFallback = React.memo(({ minHeight = "100px", className = "w-full" }) =>
   React.createElement("div", { className, style: { minHeight } })
 );
 SectionFallback.displayName = "SectionFallback";
 export const Fallback = SectionFallback;
 
-export const RenderIf = memo(({ isTrue, children, fallback = null }) => {
+export const RenderIf = React.memo(({ isTrue, children, fallback = null }) => {
   return isTrue ? children : fallback;
 });
 RenderIf.displayName = "RenderIf";
 
-export const AsyncContent = memo(({ loading, fallback, children }) => {
-  const [isLoading, setIsLoading] = useState(Boolean(loading));
-
-  useEffect(() => {
-    setIsLoading(Boolean(loading));
-  }, [loading]);
-
-  if (isLoading) {
+export const AsyncContent = React.memo(({ loading, fallback, children }) => {
+  if (loading) {
     return fallback || React.createElement(SectionFallback, null);
   }
-
   return children;
 });
 AsyncContent.displayName = "AsyncContent";
 
-export const HighlightText = memo(({ text = "", query = "" }) => {
+export const HighlightText = React.memo(({ text = "", query = "" }) => {
   if (!query || typeof text !== "string") return text;
   const parts = text.split(new RegExp(`(${query.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")})`, "gi"));
   return React.createElement(
@@ -467,16 +458,14 @@ export const getCmsData = (sectionName, data = cmsData) => {
     return cmsCache.get(cacheKey);
   }
 
-  let section = null;
-  if (data && Array.isArray(data.cms)) {
-    section = data;
-  } else {
-    const list = Array.isArray(data) ? data : Object.values(data || {});
-    section = list.find((item) =>
-      item?.section?.toLowerCase() === sectionName?.toLowerCase() ||
-      item?._id?.toLowerCase() === sectionName?.toLowerCase()
-    ) || null;
-  }
+  const section =
+    data && Array.isArray(data.cms)
+      ? data
+      : (Array.isArray(data) ? data : Object.values(data || {})).find(
+          (item) =>
+            item?.section?.toLowerCase() === sectionName?.toLowerCase() ||
+            item?._id?.toLowerCase() === sectionName?.toLowerCase()
+        ) || null;
   const items = section?.cms || [];
 
   const getText = (idOrLabel, fallback = "") =>

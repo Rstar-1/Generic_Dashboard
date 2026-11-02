@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
@@ -30,7 +30,7 @@ const SCORE_OPTIONS = [
 ];
 
 // Memoized Filter Drawer Content
-const FilterDrawerContent = memo(({ status, onStatusChange, score, onScoreChange }) => (
+const FilterDrawerContent = React.memo(({ status, onStatusChange, score, onScoreChange }) => (
     <div className="grid-cols-4 gap-12">
         <Fields
             type="select"
@@ -51,38 +51,38 @@ const FilterDrawerContent = memo(({ status, onStatusChange, score, onScoreChange
 FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Seo = () => {
-    const [seoPages, setSeoPages] = useState(initialSeoData);
-    const [activeTab, setActiveTab] = useState("all");
-    const [selectedCategory, setSelectedCategory] = useState("All Pages");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [scoreFilter, setScoreFilter] = useState("all");
-    const [currentPage, setCurrentPage] = useState(1);
+    const [seoPages, setSeoPages] = React.useState(initialSeoData);
+    const [activeTab, setActiveTab] = React.useState("all");
+    const [selectedCategory, setSelectedCategory] = React.useState("All Pages");
+    const [searchQuery, setSearchQuery] = React.useState("");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+    const [scoreFilter, setScoreFilter] = React.useState("all");
+    const [currentPage, setCurrentPage] = React.useState(1);
 
-    useEffect(() => {
+    React.useEffect(() => {
         setSeoPages(initialSeoData);
     }, []);
 
-    const handleSearchChange = useCallback((val) => {
+    const handleSearchChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.target?.value ?? "");
         setSearchQuery(next);
         setCurrentPage(1);
     }, []);
 
-    const handleStatusFilterChange = useCallback((val) => {
+    const handleStatusFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setStatusFilter(next);
         setCurrentPage(1);
     }, []);
 
-    const handleScoreFilterChange = useCallback((val) => {
+    const handleScoreFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setScoreFilter(next);
         setCurrentPage(1);
     }, []);
 
     // Sidebar items with real-time dynamic count calculations
-    const sidebarItems = useMemo(() => {
+    const sidebarItems = React.useMemo(() => {
         const counts = seoPages.reduce((acc, p) => {
             const s = p.status?.toLowerCase();
             if (s) acc[s] = (acc[s] || 0) + 1;
@@ -97,21 +97,21 @@ const Seo = () => {
     }, [seoPages]);
 
     // Sidebar & tab navigation handlers
-    const handleSidebarItemClick = useCallback((name) => {
+    const handleSidebarItemClick = React.useCallback((name) => {
         setSelectedCategory(name);
         setCurrentPage(1);
         const item = seoSidebarData.items.find((i) => i.name === name);
         setActiveTab(item?.status || "all");
     }, []);
 
-    const handleTabChange = useCallback((tabValue) => {
+    const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
         const item = seoSidebarData.items.find((i) => i.status === tabValue);
         setSelectedCategory(item ? item.name : "All Pages");
     }, []);
 
-    const handleClearFilters = useCallback(() => {
+    const handleClearFilters = React.useCallback(() => {
         setStatusFilter("all");
         setScoreFilter("all");
         setSearchQuery("");
@@ -120,26 +120,26 @@ const Seo = () => {
     }, []);
 
     // Action handlers for rows
-    const handleViewSeo = useCallback((row) => {
+    const handleViewSeo = React.useCallback((row) => {
         showToast(`Auditing meta tags for ${row.pageName} (${row.route})`, "info");
     }, []);
 
-    const handleEditSeo = useCallback((row) => {
+    const handleEditSeo = React.useCallback((row) => {
         showToast(`Editing meta configuration for ${row.pageName}`, "info");
     }, []);
 
-    const handleDeleteSeo = useCallback((row) => {
+    const handleDeleteSeo = React.useCallback((row) => {
         setSeoPages((prev) => prev.filter((p) => p.id !== row.id));
         showToast(`SEO entry for ${row.pageName} purged!`, "danger");
     }, []);
 
-    const handleExportSeo = useCallback(() => {
+    const handleExportSeo = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(seoPages, null, 2));
         showToast("XML Sitemap & SEO audit exported to clipboard!", "success");
     }, [seoPages]);
 
     // Multi-criteria filtering
-    const filteredSeoPages = useMemo(() => {
+    const filteredSeoPages = React.useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         const targetTab = String(activeTab || "all").toLowerCase().trim();
         const targetStatus = String(statusFilter || "all").toLowerCase().trim();
@@ -174,17 +174,17 @@ const Seo = () => {
         });
     }, [seoPages, activeTab, statusFilter, scoreFilter, searchQuery]);
 
-    const paginatedSeoPages = useMemo(() => {
+    const paginatedSeoPages = React.useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredSeoPages.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredSeoPages, currentPage]);
 
-    const hasActiveFilters = useMemo(
+    const hasActiveFilters = React.useMemo(
         () => statusFilter !== "all" || scoreFilter !== "all" || Boolean(searchQuery.trim()),
         [statusFilter, scoreFilter, searchQuery]
     );
 
-    const filterInputsNode = useMemo(
+    const filterInputsNode = React.useMemo(
         () => (
             <FilterDrawerContent
                 status={statusFilter}
@@ -196,7 +196,7 @@ const Seo = () => {
         [statusFilter, handleStatusFilterChange, scoreFilter, handleScoreFilterChange]
     );
 
-    const quickActionNode = useMemo(
+    const quickActionNode = React.useMemo(
         () => (
             <Button
                 text="Export SEO Audit"
@@ -291,4 +291,4 @@ const Seo = () => {
     );
 };
 
-export default memo(Seo);
+export default React.memo(Seo);

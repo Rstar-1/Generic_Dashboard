@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, memo } from "react";
+import React from "react";
 import Chart from "react-apexcharts";
 import Container from "../../components/common/Container";
 import Image from "../../components/common/Image";
@@ -228,14 +228,14 @@ const STATIC_DATA = {
 /* ==========================================================================
    MEMOIZED SECTIONS
    ========================================================================== */
-const CardHeader = memo(({ title }) => (
+const CardHeader = React.memo(({ title }) => (
     <div className="px-14 py-12 bordb" style={{ borderColor: "var(--tertiary)" }}>
         <p className="para-text capitalize text-dark font-500">{title}</p>
     </div>
 ));
 CardHeader.displayName = "CardHeader";
 
-const BestSellerCard = memo(({ role, formattedSales, onViewSales }) => (
+const BestSellerCard = React.memo(({ role, formattedSales, onViewSales }) => (
     <div className="bg-secondary px-20 py-10 rounded-5">
         <div className="flex items-center">
             <div className="w-65">
@@ -258,7 +258,7 @@ const BestSellerCard = memo(({ role, formattedSales, onViewSales }) => (
 ));
 BestSellerCard.displayName = "BestSellerCard";
 
-const OrderManagementCard = memo(({ totalOrders, totalRevenue, series, options }) => (
+const OrderManagementCard = React.memo(({ totalOrders, totalRevenue, series, options }) => (
     <div className="bg-white rounded-5 h-350">
         <CardHeader title="Order Management" />
         {totalOrders > 0 ? (
@@ -279,7 +279,7 @@ const OrderManagementCard = memo(({ totalOrders, totalRevenue, series, options }
 ));
 OrderManagementCard.displayName = "OrderManagementCard";
 
-const TopProductsCard = memo(({ products }) => (
+const TopProductsCard = React.memo(({ products }) => (
     <div className="bg-white rounded-5">
         <CardHeader title="Top Products" />
         <div className="py-14 px-16 grid-cols-1 gap-10">
@@ -312,7 +312,7 @@ const TopProductsCard = memo(({ products }) => (
 ));
 TopProductsCard.displayName = "TopProductsCard";
 
-const StatCards = memo(({ stats }) => (
+const StatCards = React.memo(({ stats }) => (
     <div className="grid-cols-3 gap-12">
         {stats.map((item, index) => (
             <div key={index} className="px-15 py-10 rounded-5 bg-white">
@@ -339,7 +339,7 @@ const StatCards = memo(({ stats }) => (
 ));
 StatCards.displayName = "StatCards";
 
-const EarningsReportCard = memo(({ formattedWeeklyTotal, weeklyEarningsData, breakdown }) => (
+const EarningsReportCard = React.memo(({ formattedWeeklyTotal, weeklyEarningsData, breakdown }) => (
     <div className="bg-white rounded-5 p-14">
         <h3 className="mid-text text-dark font-600">Earning Reports</h3>
         <p className="mini-text text-gray font-400">Weekly Earnings Overview</p>
@@ -367,7 +367,7 @@ const EarningsReportCard = memo(({ formattedWeeklyTotal, weeklyEarningsData, bre
 ));
 EarningsReportCard.displayName = "EarningsReportCard";
 
-const TotalLeadsCard = memo(({ leadsWeeklyData, formattedLeadsCount }) => (
+const TotalLeadsCard = React.memo(({ leadsWeeklyData, formattedLeadsCount }) => (
     <div className="bg-white rounded-5 p-12 h-full justify-between">
         <div>
             <h4 className="text-dark mid-text font-600">Total Leads</h4>
@@ -387,7 +387,7 @@ const TotalLeadsCard = memo(({ leadsWeeklyData, formattedLeadsCount }) => (
 ));
 TotalLeadsCard.displayName = "TotalLeadsCard";
 
-const YearlyRevenueCard = memo(({ series, options }) => (
+const YearlyRevenueCard = React.memo(({ series, options }) => (
     <div className="bg-white rounded-5">
         <CardHeader title="Yearly Revenue Insights" />
         <div className="px-15 pb-10">
@@ -403,11 +403,11 @@ YearlyRevenueCard.displayName = "YearlyRevenueCard";
 const Dashboard = () => {
     const data = STATIC_DATA;
 
-    const handleViewSales = useCallback(() => {
+    const handleViewSales = React.useCallback(() => {
         alert("Viewing sales reports for Administrator");
     }, []);
 
-    const donutOptions = useMemo(() => ({
+    const donutOptions = React.useMemo(() => ({
         ...DONUT_CHART_OPTIONS,
         plotOptions: {
             ...DONUT_CHART_OPTIONS.plotOptions,
@@ -431,7 +431,7 @@ const Dashboard = () => {
         }
     }), [data.totalRevenue]);
 
-    const yearlyRevenueSeries = useMemo(() => [{ name: "Revenue", data: data.yearlyRevenueData }], [data.yearlyRevenueData]);
+    const yearlyRevenueSeries = React.useMemo(() => [{ name: "Revenue", data: data.yearlyRevenueData }], [data.yearlyRevenueData]);
 
     return (
         <Container version="v4" style={{ background: "var(--forth)" }}>
@@ -483,4 +483,4 @@ const Dashboard = () => {
     );
 };
 
-export default memo(Dashboard);
+export default React.memo(Dashboard);

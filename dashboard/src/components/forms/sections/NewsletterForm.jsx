@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React from "react";
 import Icon from '../../common/Icon';
 import FormBuilder from '../FormBuilder';
 import { sendEmail } from '../../../utils/emailsend';
@@ -11,7 +11,7 @@ const NewsletterForm = ({
   subtitle = 'Get the latest marketing insights and strategies straight to your inbox.',
   onSubscribe
 }) => {
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubscribed, setIsSubscribed] = React.useState(false);
 
   const fields = [
     {

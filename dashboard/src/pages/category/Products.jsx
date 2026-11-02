@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
@@ -29,7 +29,7 @@ const CODE_OPTIONS = [
 ];
 
 // Memoized Filter Drawer Content
-const FilterDrawerContent = memo(({ status, onStatusChange, code, onCodeChange }) => (
+const FilterDrawerContent = React.memo(({ status, onStatusChange, code, onCodeChange }) => (
     <div className="grid-cols-4 gap-12">
         <Fields
             type="select"
@@ -50,38 +50,38 @@ const FilterDrawerContent = memo(({ status, onStatusChange, code, onCodeChange }
 FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const CategoryProducts = () => {
-    const [categories, setCategories] = useState(initialCategoriesData);
-    const [activeTab, setActiveTab] = useState("all");
-    const [selectedCategory, setSelectedCategory] = useState("All Categories");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [codeFilter, setCodeFilter] = useState("all");
-    const [currentPage, setCurrentPage] = useState(1);
+    const [categories, setCategories] = React.useState(initialCategoriesData);
+    const [activeTab, setActiveTab] = React.useState("all");
+    const [selectedCategory, setSelectedCategory] = React.useState("All Categories");
+    const [searchQuery, setSearchQuery] = React.useState("");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+    const [codeFilter, setCodeFilter] = React.useState("all");
+    const [currentPage, setCurrentPage] = React.useState(1);
 
-    useEffect(() => {
+    React.useEffect(() => {
         setCategories(initialCategoriesData);
     }, []);
 
-    const handleSearchChange = useCallback((val) => {
+    const handleSearchChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.target?.value ?? "");
         setSearchQuery(next);
         setCurrentPage(1);
     }, []);
 
-    const handleStatusFilterChange = useCallback((val) => {
+    const handleStatusFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setStatusFilter(next);
         setCurrentPage(1);
     }, []);
 
-    const handleCodeFilterChange = useCallback((val) => {
+    const handleCodeFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setCodeFilter(next);
         setCurrentPage(1);
     }, []);
 
     // Sidebar items with real-time dynamic count calculations
-    const sidebarItems = useMemo(() => {
+    const sidebarItems = React.useMemo(() => {
         const counts = categories.reduce((acc, cat) => {
             const s = cat.status?.toLowerCase();
             if (s) acc[s] = (acc[s] || 0) + 1;
@@ -96,21 +96,21 @@ const CategoryProducts = () => {
     }, [categories]);
 
     // Sidebar & tab navigation handlers
-    const handleSidebarItemClick = useCallback((name) => {
+    const handleSidebarItemClick = React.useCallback((name) => {
         setSelectedCategory(name);
         setCurrentPage(1);
         const item = productCategoriesSidebarData.items.find((i) => i.name === name);
         setActiveTab(item?.status || "all");
     }, []);
 
-    const handleTabChange = useCallback((tabValue) => {
+    const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
         const item = productCategoriesSidebarData.items.find((i) => i.status === tabValue);
         setSelectedCategory(item ? item.name : "All Categories");
     }, []);
 
-    const handleClearFilters = useCallback(() => {
+    const handleClearFilters = React.useCallback(() => {
         setStatusFilter("all");
         setCodeFilter("all");
         setSearchQuery("");
@@ -119,26 +119,26 @@ const CategoryProducts = () => {
     }, []);
 
     // Action handlers for rows
-    const handleViewCategory = useCallback((row) => {
+    const handleViewCategory = React.useCallback((row) => {
         showToast(`Viewing category details for ${row.name}`, "info");
     }, []);
 
-    const handleEditCategory = useCallback((row) => {
+    const handleEditCategory = React.useCallback((row) => {
         showToast(`Editing category ${row.name}`, "info");
     }, []);
 
-    const handleDeleteCategory = useCallback((row) => {
+    const handleDeleteCategory = React.useCallback((row) => {
         setCategories((prev) => prev.filter((c) => c.id !== row.id));
         showToast(`Category ${row.name} removed!`, "danger");
     }, []);
 
-    const handleExportCategories = useCallback(() => {
+    const handleExportCategories = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(categories, null, 2));
         showToast("Product categories exported to clipboard!", "success");
     }, [categories]);
 
     // Multi-criteria filtering
-    const filteredCategories = useMemo(() => {
+    const filteredCategories = React.useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         const targetTab = String(activeTab || "all").toLowerCase().trim();
         const targetStatus = String(statusFilter || "all").toLowerCase().trim();
@@ -163,17 +163,17 @@ const CategoryProducts = () => {
         });
     }, [categories, activeTab, statusFilter, codeFilter, searchQuery]);
 
-    const paginatedCategories = useMemo(() => {
+    const paginatedCategories = React.useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredCategories.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredCategories, currentPage]);
 
-    const hasActiveFilters = useMemo(
+    const hasActiveFilters = React.useMemo(
         () => statusFilter !== "all" || codeFilter !== "all" || Boolean(searchQuery.trim()),
         [statusFilter, codeFilter, searchQuery]
     );
 
-    const filterInputsNode = useMemo(
+    const filterInputsNode = React.useMemo(
         () => (
             <FilterDrawerContent
                 status={statusFilter}
@@ -185,7 +185,7 @@ const CategoryProducts = () => {
         [statusFilter, handleStatusFilterChange, codeFilter, handleCodeFilterChange]
     );
 
-    const quickActionNode = useMemo(
+    const quickActionNode = React.useMemo(
         () => (
             <Button
                 text="Export Categories"
@@ -248,4 +248,4 @@ const CategoryProducts = () => {
     );
 };
 
-export default memo(CategoryProducts);
+export default React.memo(CategoryProducts);

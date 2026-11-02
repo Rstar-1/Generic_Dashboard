@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from "react";
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../common/Icon';
 
@@ -29,7 +29,7 @@ const Heading = ({
         </p>
     ) : null;
 
-    const renderedHeading = useMemo(() => {
+    const renderedHeading = React.useMemo(() => {
         switch (version) {
             case "v2":
                 return (

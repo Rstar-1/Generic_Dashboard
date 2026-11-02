@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
@@ -21,7 +21,7 @@ const STATUS_OPTIONS = [
 ];
 
 // Memoized Filter Drawer Content
-const FilterDrawerContent = memo(({ status, onStatusChange }) => (
+const FilterDrawerContent = React.memo(({ status, onStatusChange }) => (
     <div className="grid-cols-4 gap-12">
         <Fields
             type="select"
@@ -35,32 +35,27 @@ const FilterDrawerContent = memo(({ status, onStatusChange }) => (
 FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const User = () => {
-    const [users, setUsers] = useState(initialUsersData);
-    const [activeTab, setActiveTab] = useState("all");
-    const [selectedCategory, setSelectedCategory] = useState("All Users");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [currentPage, setCurrentPage] = useState(1);
+    const [users, setUsers] = React.useState(initialUsersData);
+    const [activeTab, setActiveTab] = React.useState("all");
+    const [selectedCategory, setSelectedCategory] = React.useState("All Users");
+    const [searchQuery, setSearchQuery] = React.useState("");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+    const [currentPage, setCurrentPage] = React.useState(1);
 
-    // Keep users state synced when mock data updates
-    useEffect(() => {
-        setUsers(initialUsersData);
-    }, [initialUsersData]);
-
-    const handleSearchChange = useCallback((val) => {
+    const handleSearchChange = React.useCallback((val) => {
         const nextQuery = typeof val === "string" ? val : (val?.target?.value ?? "");
         setSearchQuery(nextQuery);
         setCurrentPage(1);
     }, []);
 
-    const handleStatusFilterChange = useCallback((val) => {
+    const handleStatusFilterChange = React.useCallback((val) => {
         const nextStatus = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setStatusFilter(nextStatus);
         setCurrentPage(1);
     }, []);
 
     // Sidebar items with dynamic role count in a single O(N) pass
-    const sidebarItems = useMemo(() => {
+    const sidebarItems = React.useMemo(() => {
         const counts = users.reduce((acc, u) => {
             const roleKey = u.role?.toLowerCase();
             if (roleKey) acc[roleKey] = (acc[roleKey] || 0) + 1;
@@ -75,21 +70,21 @@ const User = () => {
     }, [users]);
 
     // Sidebar & tab navigation handlers
-    const handleSidebarItemClick = useCallback((name) => {
+    const handleSidebarItemClick = React.useCallback((name) => {
         setSelectedCategory(name);
         setCurrentPage(1);
         const item = usersSidebarData.items.find((i) => i.name === name);
         setActiveTab(item?.role || "all");
     }, []);
 
-    const handleTabChange = useCallback((tabValue) => {
+    const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
         const item = usersSidebarData.items.find((i) => i.role === tabValue);
         setSelectedCategory(item ? item.name : "All Users");
     }, []);
 
-    const handleClearFilters = useCallback(() => {
+    const handleClearFilters = React.useCallback(() => {
         setStatusFilter("all");
         setSearchQuery("");
         setCurrentPage(1);
@@ -97,26 +92,26 @@ const User = () => {
     }, []);
 
     // Action handlers for table rows
-    const handleViewUser = useCallback((row) => {
+    const handleViewUser = React.useCallback((row) => {
         showToast(`Viewing operator profile: ${row.name} (${row.role})`, "info");
     }, []);
 
-    const handleEditUser = useCallback((row) => {
+    const handleEditUser = React.useCallback((row) => {
         showToast(`Editing security credentials for ${row.name}`, "info");
     }, []);
 
-    const handleDeleteUser = useCallback((row) => {
+    const handleDeleteUser = React.useCallback((row) => {
         setUsers((prev) => prev.filter((u) => u.id !== row.id));
         showToast(`User ${row.name} deactivated & removed!`, "danger");
     }, []);
 
-    const handleExportUsers = useCallback(() => {
+    const handleExportUsers = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(users, null, 2));
         showToast("System user directory exported to clipboard!", "success");
     }, [users]);
 
     // Multi-criteria filtering with case-insensitive role & status matching
-    const filteredUsers = useMemo(() => {
+    const filteredUsers = React.useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         const targetStatus = String(statusFilter || "all").toLowerCase().trim();
         const targetRole = String(activeTab || "all").toLowerCase().trim();
@@ -139,19 +134,19 @@ const User = () => {
         });
     }, [users, activeTab, statusFilter, searchQuery]);
 
-    const paginatedUsers = useMemo(() => {
+    const paginatedUsers = React.useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredUsers.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredUsers, currentPage]);
 
     const hasActiveFilters = statusFilter !== "all" || Boolean(searchQuery);
 
-    const filterInputsNode = useMemo(
+    const filterInputsNode = React.useMemo(
         () => <FilterDrawerContent status={statusFilter} onStatusChange={handleStatusFilterChange} />,
         [statusFilter, handleStatusFilterChange]
     );
 
-    const quickActionNode = useMemo(
+    const quickActionNode = React.useMemo(
         () => (
             <div className="flex items-center gap-8">
                 <Button
@@ -218,4 +213,4 @@ const User = () => {
     );
 };
 
-export default memo(User);
+export default React.memo(User);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
@@ -29,7 +29,7 @@ const STATUS_OPTIONS = [
 ];
 
 // Memoized Filter Drawer Content
-const FilterDrawerContent = memo(({ priority, onPriorityChange, status, onStatusChange }) => (
+const FilterDrawerContent = React.memo(({ priority, onPriorityChange, status, onStatusChange }) => (
     <div className="grid-cols-4 gap-12">
         <Fields
             type="select"
@@ -50,39 +50,39 @@ const FilterDrawerContent = memo(({ priority, onPriorityChange, status, onStatus
 FilterDrawerContent.displayName = "FilterDrawerContent";
 
 const Tasks = () => {
-    const [tasks, setTasks] = useState(initialTasksData);
-    const [activeTab, setActiveTab] = useState("all");
-    const [selectedCategory, setSelectedCategory] = useState("All Tasks");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [priorityFilter, setPriorityFilter] = useState("all");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [currentPage, setCurrentPage] = useState(1);
+    const [tasks, setTasks] = React.useState(initialTasksData);
+    const [activeTab, setActiveTab] = React.useState("all");
+    const [selectedCategory, setSelectedCategory] = React.useState("All Tasks");
+    const [searchQuery, setSearchQuery] = React.useState("");
+    const [priorityFilter, setPriorityFilter] = React.useState("all");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+    const [currentPage, setCurrentPage] = React.useState(1);
 
     // Keep tasks state synchronized when initial dataset updates
-    useEffect(() => {
+    React.useEffect(() => {
         setTasks(initialTasksData);
     }, [initialTasksData]);
 
-    const handleSearchChange = useCallback((val) => {
+    const handleSearchChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.target?.value ?? "");
         setSearchQuery(next);
         setCurrentPage(1);
     }, []);
 
-    const handlePriorityFilterChange = useCallback((val) => {
+    const handlePriorityFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setPriorityFilter(next);
         setCurrentPage(1);
     }, []);
 
-    const handleStatusFilterChange = useCallback((val) => {
+    const handleStatusFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setStatusFilter(next);
         setCurrentPage(1);
     }, []);
 
     // Sidebar items with real-time dynamic count calculations
-    const sidebarItems = useMemo(() => {
+    const sidebarItems = React.useMemo(() => {
         const counts = tasks.reduce((acc, t) => {
             const p = t.priority?.toLowerCase();
             if (p) acc[p] = (acc[p] || 0) + 1;
@@ -97,21 +97,21 @@ const Tasks = () => {
     }, [tasks]);
 
     // Sidebar & tab navigation handlers
-    const handleSidebarItemClick = useCallback((name) => {
+    const handleSidebarItemClick = React.useCallback((name) => {
         setSelectedCategory(name);
         setCurrentPage(1);
         const item = tasksSidebarData.items.find((i) => i.name === name);
         setActiveTab(item?.priority || "all");
     }, []);
 
-    const handleTabChange = useCallback((tabValue) => {
+    const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
         const item = tasksSidebarData.items.find((i) => i.priority === tabValue);
         setSelectedCategory(item ? item.name : "All Tasks");
     }, []);
 
-    const handleClearFilters = useCallback(() => {
+    const handleClearFilters = React.useCallback(() => {
         setPriorityFilter("all");
         setStatusFilter("all");
         setSearchQuery("");
@@ -120,26 +120,26 @@ const Tasks = () => {
     }, []);
 
     // Action handlers for rows
-    const handleViewTask = useCallback((row) => {
+    const handleViewTask = React.useCallback((row) => {
         showToast(`Viewing details for: ${row.title}`, "info");
     }, []);
 
-    const handleEditTask = useCallback((row) => {
+    const handleEditTask = React.useCallback((row) => {
         showToast(`Editing task ${row.id}`, "info");
     }, []);
 
-    const handleDeleteTask = useCallback((row) => {
+    const handleDeleteTask = React.useCallback((row) => {
         setTasks((prev) => prev.filter((t) => t.id !== row.id));
         showToast(`Task ${row.id} completed & archived!`, "success");
     }, []);
 
-    const handleExportTasks = useCallback(() => {
+    const handleExportTasks = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(tasks, null, 2));
         showToast("Task backlog exported to clipboard!", "success");
     }, [tasks]);
 
     // Multi-criteria filtering: sidebar priority, drawer priority, status & search
-    const filteredTasks = useMemo(() => {
+    const filteredTasks = React.useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         const targetTab = String(activeTab || "all").toLowerCase().trim();
         const targetPriority = String(priorityFilter || "all").toLowerCase().trim();
@@ -166,17 +166,17 @@ const Tasks = () => {
         });
     }, [tasks, activeTab, priorityFilter, statusFilter, searchQuery]);
 
-    const paginatedTasks = useMemo(() => {
+    const paginatedTasks = React.useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredTasks.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredTasks, currentPage]);
 
-    const hasActiveFilters = useMemo(
+    const hasActiveFilters = React.useMemo(
         () => priorityFilter !== "all" || statusFilter !== "all" || Boolean(searchQuery.trim()),
         [priorityFilter, statusFilter, searchQuery]
     );
 
-    const filterInputsNode = useMemo(
+    const filterInputsNode = React.useMemo(
         () => (
             <FilterDrawerContent
                 priority={priorityFilter}
@@ -188,7 +188,7 @@ const Tasks = () => {
         [priorityFilter, handlePriorityFilterChange, statusFilter, handleStatusFilterChange]
     );
 
-    const quickActionNode = useMemo(
+    const quickActionNode = React.useMemo(
         () => (
             <Button
                 text="Export CSV"
@@ -251,4 +251,4 @@ const Tasks = () => {
     );
 };
 
-export default memo(Tasks);
+export default React.memo(Tasks);

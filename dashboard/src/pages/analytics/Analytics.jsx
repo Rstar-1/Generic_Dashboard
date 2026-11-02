@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect, memo } from "react";
+import React from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Fields from "../../components/forms/Fields";
 import Button from "../../components/common/Button";
@@ -161,14 +161,14 @@ const getColumnFieldConfig = (col, category) => {
 };
 
 const Analytics = () => {
-    const [activeCategory, setActiveCategory] = useState("Customers");
-    const [formData, setFormData] = useState(analyticsData);
-    const [jsonText, setJsonText] = useState("");
-    const [jsonError, setJsonError] = useState(null);
-    const [isEditingJson, setIsEditingJson] = useState(false);
+    const [activeCategory, setActiveCategory] = React.useState("Customers");
+    const [formData, setFormData] = React.useState(analyticsData);
+    const [jsonText, setJsonText] = React.useState("");
+    const [jsonError, setJsonError] = React.useState(null);
+    const [isEditingJson, setIsEditingJson] = React.useState(false);
 
     // Sidebar items with dynamic counts derived from apiData
-    const sidebarItems = useMemo(() => {
+    const sidebarItems = React.useMemo(() => {
         const counts = {
             Customers: customersData.length,
             Tasks: tasksData.length,
@@ -183,23 +183,23 @@ const Analytics = () => {
     }, []);
 
     // Active table columns for selected category
-    const activeColumns = useMemo(() => {
+    const activeColumns = React.useMemo(() => {
         return analyticsTableColumns[activeCategory] || customersTableColumns;
     }, [activeCategory]);
 
     // Form fields mapped directly from TABLE COLUMNS DATA
-    const fieldConfigs = useMemo(() => {
+    const fieldConfigs = React.useMemo(() => {
         return activeColumns
             .map((col) => getColumnFieldConfig(col, activeCategory))
             .filter(Boolean);
     }, [activeColumns, activeCategory]);
 
-    const activeFormData = useMemo(() => {
+    const activeFormData = React.useMemo(() => {
         return formData[activeCategory] || {};
     }, [formData, activeCategory]);
 
     // Synchronize JSON editor text when in JSON mode
-    useEffect(() => {
+    React.useEffect(() => {
         if (!isEditingJson) {
             setJsonText(JSON.stringify(formData[activeCategory] || {}, null, 2));
             setJsonError(null);
@@ -207,13 +207,13 @@ const Analytics = () => {
     }, [formData, activeCategory, isEditingJson]);
 
     // Reset editing state upon category switch
-    useEffect(() => {
+    React.useEffect(() => {
         setIsEditingJson(false);
         setJsonText(JSON.stringify(formData[activeCategory] || {}, null, 2));
         setJsonError(null);
     }, [activeCategory]);
 
-    const handleFieldChange = useCallback((fieldName, val) => {
+    const handleFieldChange = React.useCallback((fieldName, val) => {
         const nextValue = typeof val === "object" && val !== null && "value" in val ? val.value : val;
         setFormData((prev) => ({
             ...prev,
@@ -225,7 +225,7 @@ const Analytics = () => {
     }, [activeCategory]);
 
     // JSON Editor handlers
-    const handleJsonChange = useCallback((e) => {
+    const handleJsonChange = React.useCallback((e) => {
         const raw = e.target.value;
         setJsonText(raw);
         setIsEditingJson(true);
@@ -241,7 +241,7 @@ const Analytics = () => {
         }
     }, [activeCategory]);
 
-    const handleJsonBlur = useCallback(() => {
+    const handleJsonBlur = React.useCallback(() => {
         setIsEditingJson(false);
         try {
             const parsed = JSON.parse(jsonText);
@@ -252,7 +252,7 @@ const Analytics = () => {
         }
     }, [jsonText]);
 
-    const handleReset = useCallback(() => {
+    const handleReset = React.useCallback(() => {
         setIsEditingJson(false);
         const defaultData = analyticsData[activeCategory] || {};
         setFormData((prev) => ({
@@ -264,12 +264,12 @@ const Analytics = () => {
         showToast(`${activeCategory} form reset to default`, "info");
     }, [activeCategory]);
 
-    const handleCopy = useCallback(() => {
+    const handleCopy = React.useCallback(() => {
         navigator.clipboard?.writeText(jsonText);
         showToast(`${activeCategory} JSON copied to clipboard!`, "success");
     }, [jsonText, activeCategory]);
 
-    const quickActionNode = useMemo(() => (
+    const quickActionNode = React.useMemo(() => (
         <div className="flex items-center gap-8">
             <Button
                 text="Reset to Initial"
@@ -375,4 +375,4 @@ const Analytics = () => {
     );
 };
 
-export default memo(Analytics);
+export default React.memo(Analytics);

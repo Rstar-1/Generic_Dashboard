@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef, useId } from "react";
+import React from "react";
 import Icon from "./../common/Icon";
 import {
   MONTH_NAMES,
@@ -31,10 +31,10 @@ const SelectDropdown = React.memo(
     style = {},
     maxHeight = 138,
   }) => {
-    const ref = useRef(null);
-    const activeItemRef = useRef(null);
+    const ref = React.useRef(null);
+    const activeItemRef = React.useRef(null);
 
-    useEffect(() => {
+    React.useEffect(() => {
       if (!isOpen) return;
       const handleOutside = (e) => {
         if (ref.current && !ref.current.contains(e.target)) {
@@ -49,7 +49,7 @@ const SelectDropdown = React.memo(
       };
     }, [isOpen, onClose]);
 
-    useEffect(() => {
+    React.useEffect(() => {
       if (isOpen && activeItemRef.current) {
         activeItemRef.current.scrollIntoView({ block: "nearest" });
       }
@@ -160,13 +160,13 @@ const CalendarDropdown = React.memo(
     onChange,
     onClose,
   }) => {
-    const [openSelect, setOpenSelect] = useState(null);
+    const [openSelect, setOpenSelect] = React.useState(null);
 
-    const monthOptions = useMemo(
+    const monthOptions = React.useMemo(
       () => MONTH_NAMES.map((m, i) => ({ label: m, value: i })),
       []
     );
-    const yearOptions = useMemo(
+    const yearOptions = React.useMemo(
       () => YEARS.map((y) => ({ label: String(y), value: y })),
       []
     );
@@ -180,7 +180,7 @@ const CalendarDropdown = React.memo(
       : firstDayIndex;
     const totalDays = new Date(datepickerY, datepickerM + 1, 0).getDate();
 
-    const days = useMemo(
+    const days = React.useMemo(
       () => [
         ...Array(adjustedIndex).fill(""),
         ...Array.from({ length: totalDays }, (_, i) => i + 1),
@@ -188,7 +188,7 @@ const CalendarDropdown = React.memo(
       [adjustedIndex, totalDays]
     );
 
-    const changeMonth = useCallback(
+    const changeMonth = React.useCallback(
       (offset) => {
         const d = new Date(datepickerY, datepickerM + offset, 1);
         setDatepickerM(d.getMonth());
@@ -197,7 +197,7 @@ const CalendarDropdown = React.memo(
       [datepickerY, datepickerM, setDatepickerM, setDatepickerY]
     );
 
-    const handleDayClick = useCallback(
+    const handleDayClick = React.useCallback(
       (day) => {
         if (!day) return;
         const cellDate = `${datepickerY}-${pad(datepickerM + 1)}-${pad(day)}`;
@@ -290,13 +290,13 @@ CalendarDropdown.displayName = "CalendarDropdown";
 
 const OtpGroup = React.memo(
   ({ count = 6, value = "", onChange, otpRefs, version = "v1", error = false }) => {
-    const [focusedIdx, setFocusedIdx] = useState(-1);
-    const otpArray = useMemo(
+    const [focusedIdx, setFocusedIdx] = React.useState(-1);
+    const otpArray = React.useMemo(
       () => (typeof value === "string" ? value.split("").slice(0, count) : []),
       [value, count]
     );
 
-    const handlePaste = useCallback(
+    const handlePaste = React.useCallback(
       (e) => {
         e.preventDefault();
         const pasted = e.clipboardData.getData("text").trim().slice(0, count);
@@ -309,7 +309,7 @@ const OtpGroup = React.memo(
       [count, onChange, otpRefs]
     );
 
-    const handleChange = useCallback(
+    const handleChange = React.useCallback(
       (e, index) => {
         const char = e.target.value.slice(-1);
         if (char && !/^\d+$/.test(char)) return;
@@ -323,7 +323,7 @@ const OtpGroup = React.memo(
       [count, otpArray, onChange, otpRefs]
     );
 
-    const handleKeyDown = useCallback(
+    const handleKeyDown = React.useCallback(
       (e, index) => {
         if (e.key === "Backspace") {
           const newOtp = [...otpArray];
@@ -394,19 +394,19 @@ const Fields = React.memo(
     version = "v1",
     ...props
   }) => {
-    const [localError, setLocalError] = useState("");
+    const [localError, setLocalError] = React.useState("");
     const error = propError !== undefined ? propError : localError;
-    const [isFocused, setIsFocused] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
-    const [isOpen, setIsOpen] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+    const [isFocused, setIsFocused] = React.useState(false);
+    const [isDragging, setIsDragging] = React.useState(false);
+    const [isOpen, setIsOpen] = React.useState(false);
+    const [showPassword, setShowPassword] = React.useState(false);
 
-    const fieldId = useId();
-    const fieldRef = useRef(null);
-    const otpRefs = useRef([]);
-    const fileInputRef = useRef(null);
+    const fieldId = React.useId();
+    const fieldRef = React.useRef(null);
+    const otpRefs = React.useRef([]);
+    const fileInputRef = React.useRef(null);
 
-    const toggleOpen = useCallback(() => {
+    const toggleOpen = React.useCallback(() => {
       setIsOpen((prev) => {
         const next = !prev;
         if (next && typeof window !== "undefined") {
@@ -424,10 +424,10 @@ const Fields = React.memo(
       return isNaN(parsed.getTime()) ? new Date() : parsed;
     };
 
-    const [datepickerM, setDatepickerM] = useState(() => parseDateVal(value).getMonth());
-    const [datepickerY, setDatepickerY] = useState(() => parseDateVal(value).getFullYear());
+    const [datepickerM, setDatepickerM] = React.useState(() => parseDateVal(value).getMonth());
+    const [datepickerY, setDatepickerY] = React.useState(() => parseDateVal(value).getFullYear());
 
-    const [internalQty, setInternalQty] = useState(() => {
+    const [internalQty, setInternalQty] = React.useState(() => {
       if (value !== undefined && value !== null && value !== "") {
         const num = Number(value);
         return !isNaN(num) ? num : 1;
@@ -439,14 +439,14 @@ const Fields = React.memo(
       return 1;
     });
 
-    useEffect(() => {
+    React.useEffect(() => {
       if (value !== undefined && value !== null && value !== "") {
         const num = Number(value);
         if (!isNaN(num)) setInternalQty(num);
       }
     }, [value]);
 
-    useEffect(() => {
+    React.useEffect(() => {
       if (!isOpen) return;
       const handleOutsideClick = (e) => {
         if (fieldRef.current && !fieldRef.current.contains(e.target)) {
@@ -468,7 +468,7 @@ const Fields = React.memo(
       };
     }, [isOpen, fieldId]);
 
-    const validate = useCallback(
+    const validate = React.useCallback(
       (val) => {
         if (validation.required && !val) return "This field is required";
         if (validation.minLength && val?.length < validation.minLength) {
@@ -482,7 +482,7 @@ const Fields = React.memo(
       [validation.required, validation.minLength, validation.email]
     );
 
-    const handleChange = useCallback(
+    const handleChange = React.useCallback(
       (e) => {
         const val = e?.target?.type === "checkbox" ? e.target.checked : e?.target?.value;
         setLocalError(validate(val));
@@ -491,10 +491,10 @@ const Fields = React.memo(
       [validate, onChange]
     );
 
-    const handleFocus = useCallback(() => setIsFocused(true), []);
-    const handleBlur = useCallback(() => setIsFocused(false), []);
+    const handleFocus = React.useCallback(() => setIsFocused(true), []);
+    const handleBlur = React.useCallback(() => setIsFocused(false), []);
 
-    const displayValue = useMemo(() => {
+    const displayValue = React.useMemo(() => {
       const isMulti = type === "multiselect";
       if (isMulti) {
         if (!value || !value.length) return "Select";
@@ -508,17 +508,17 @@ const Fields = React.memo(
       return opt ? getOptLabel(opt) : value || "Select";
     }, [type, value, options]);
 
-    const computedInputStyle = useMemo(
+    const computedInputStyle = React.useMemo(
       () => getInputStyle(version, { error: Boolean(error), isFocused, outline, border }),
       [version, error, isFocused, outline, border]
     );
 
-    const computedBoxStyle = useMemo(
+    const computedBoxStyle = React.useMemo(
       () => getBoxStyle(version, { error: Boolean(error), isFocused, isOpen, outline, border }),
       [version, error, isFocused, isOpen, outline, border]
     );
 
-    const commonProps = useMemo(
+    const commonProps = React.useMemo(
       () => ({
         value: value !== undefined && value !== null ? value : "",
         onChange: handleChange,
@@ -537,7 +537,7 @@ const Fields = React.memo(
     const stepQty = props.step !== undefined ? Math.max(1, Number(props.step)) : 1;
     const isQtyDisabled = Boolean(props.disabled);
 
-    const handleQtyUpdate = useCallback(
+    const handleQtyUpdate = React.useCallback(
       (nextVal) => {
         const clamped = Math.min(maxQty, Math.max(minQty, nextVal));
         setInternalQty(clamped);
@@ -546,7 +546,7 @@ const Fields = React.memo(
       [minQty, maxQty, onChange]
     );
 
-    const handleQtyDecrement = useCallback(
+    const handleQtyDecrement = React.useCallback(
       (e) => {
         e?.preventDefault?.();
         e?.stopPropagation?.();
@@ -556,7 +556,7 @@ const Fields = React.memo(
       [isQtyDisabled, internalQty, minQty, stepQty, handleQtyUpdate]
     );
 
-    const handleQtyIncrement = useCallback(
+    const handleQtyIncrement = React.useCallback(
       (e) => {
         e?.preventDefault?.();
         e?.stopPropagation?.();
