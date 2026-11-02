@@ -4,24 +4,14 @@ import Icon from "./Icon";
 import {
     resolveImagePath,
     formatDate,
-    getFirstValue
+    getFirstValue,
+    getNestedValue
 } from '../../utils';
 import Image from "./Image";
 import Skeleton from "./Skeleton";
 import Button from "./Button";
 import Fields from "../forms/Fields";
 import Badge, { BadgeList, BADGE_MAP } from "./Badge";
-
-const getNestedValue = (obj, path) => {
-    if (!obj || !path) return undefined;
-    if (obj[path] !== undefined) return obj[path];
-    const val = path.split('.').reduce((curr, p) => (curr && typeof curr === 'object' ? curr[p] : undefined), obj);
-    if (val !== undefined) return val;
-    if (path === 'meta.title') return getFirstValue(obj, ['meta_title', 'title']);
-    if (path === 'meta.description') return getFirstValue(obj, ['meta_description', 'description']);
-    if (path === 'analytics.seoScore') return getFirstValue(obj, ['seoScore', 'score']);
-    return undefined;
-};
 
 export { formatDate, Badge, BadgeList, BADGE_MAP };
 
@@ -264,6 +254,8 @@ const TableCell = React.memo(({
                         color={col.badgeColor || "primary"}
                         shape={col.badgeShape || "rounded"}
                         size="sm"
+                        limit={col.limit ?? col.max ?? 3}
+                        expandable={col.expandable ?? true}
                     />
                 );
             case "status": {
@@ -322,6 +314,19 @@ const TableCell = React.memo(({
             default:
                 break;
         }
+    }
+
+    if (Array.isArray(cellValue)) {
+        return (
+            <BadgeList
+                items={cellValue}
+                color={col.badgeColor || "primary"}
+                shape={col.badgeShape || "rounded"}
+                size="sm"
+                limit={col.limit ?? col.max ?? 3}
+                expandable={col.expandable ?? true}
+            />
+        );
     }
 
     return (

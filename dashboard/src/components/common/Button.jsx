@@ -1,6 +1,6 @@
 import React from 'react';
 import Icon from "./Icon";
-import { getFirstValue } from "../../utils";
+import { getFirstValue, isColorCode } from "../../utils";
 
 const VERSION_CLASSES = {
   v0: "px-16 py-4 sm-px-12 sm-py-4 mini-text",
@@ -10,9 +10,6 @@ const VERSION_CLASSES = {
   icon: "p-8 inline-flex items-center justify-center",
   none: "",
 };
-
-const isColorCode = (str) =>
-  typeof str === "string" && (str.startsWith("#") || str.startsWith("rgb"));
 
 const Button = React.memo(
   ({

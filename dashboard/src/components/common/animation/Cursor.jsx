@@ -1,4 +1,5 @@
 import React from 'react';
+import { checkMobile } from '../../../utils';
 
 const Cursor = () => {
     const [isHovered, setIsHovered] = React.useState(false);
@@ -11,10 +12,6 @@ const Cursor = () => {
     const isHoveredRef = React.useRef(false);
 
     React.useEffect(() => {
-        const checkMobile = () => typeof window !== 'undefined' && (
-            window.matchMedia('(hover: none), (pointer: coarse)').matches || window.innerWidth <= 1024
-        );
-
         if (checkMobile()) return;
 
         const isExcluded = (target) => {

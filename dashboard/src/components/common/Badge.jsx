@@ -1,6 +1,6 @@
 import React from 'react';
 import Icon from "./Icon";
-import { getFirstValue } from "../../utils";
+import { getFirstValue, isColorCode } from "../../utils";
 
 export const getBadgeTheme = (val) => {
     switch (String(val || "").trim().toLowerCase()) {
@@ -89,8 +89,6 @@ export const BADGE_THEMES = new Proxy({}, { get: (_, prop) => getBadgeTheme(prop
 export const BADGE_MAP = new Proxy({}, { get: (_, prop) => getBadgeTheme(prop) });
 export const getColorTheme = getBadgeTheme;
 
-const isColorCode = (str) => typeof str === "string" && (str.startsWith("#") || str.startsWith("rgb"));
-
 export const Badge = React.memo(({
     text = "",
     children,
@@ -129,7 +127,7 @@ export const Badge = React.memo(({
             return (
                 <div
                     onClick={onClick}
-                    className={`inline-flex items-center gap-6 ${onClick ? "cursor-pointer hover:opacity-85" : ""} ${className}`}
+                    className={`flex items-center gap-6 ${onClick ? "cursor-pointer" : ""} ${className}`}
                     style={style}
                     {...props}
                 >
@@ -144,8 +142,8 @@ export const Badge = React.memo(({
                         }}
                     />
                     <p
-                        className={`${capitalize ? "capitalize" : ""} ${sizeClass} font-500`}
-                        style={{ color: statusTextColor, padding: 0, margin: 0 }}
+                        className={`${capitalize ? "capitalize" : ""} mini-text font-500`}
+                        style={{ color: statusTextColor }}
                     >
                         {label}
                     </p>
@@ -214,20 +212,54 @@ export const BadgeList = React.memo(({
     shape = "rounded",
     size = "md",
     gap = 4,
+    limit = 3,
+    max,
+    expandable = true,
     className = "",
     renderItem,
     onItemClick,
     ...props
 }) => {
-    const list = Array.isArray(items) ? items : [];
+    const [isExpanded, setIsExpanded] = React.useState(false);
+
+    const list = React.useMemo(() => {
+        if (Array.isArray(items)) return items;
+        if (typeof items === "string" && items.includes(",")) {
+            return items.split(",").map((s) => s.trim()).filter(Boolean);
+        }
+        return items !== undefined && items !== null && items !== "" ? [items] : [];
+    }, [items]);
+
+    const effectiveLimit = typeof max === "number" ? max : limit;
+    const hasLimit = typeof effectiveLimit === "number" && effectiveLimit > 0 && list.length > effectiveLimit;
+    const visibleList = hasLimit && !isExpanded ? list.slice(0, effectiveLimit) : list;
+    const remainingCount = list.length - effectiveLimit;
+
+    const remainingLabels = React.useMemo(() => {
+        if (!hasLimit) return [];
+        return list.slice(effectiveLimit).map((it) => {
+            if (typeof it === "object" && it !== null) {
+                return getFirstValue(it, ["label", "name", "title", "text", "tag", "permission", "slug", "id"]);
+            }
+            return String(it ?? "");
+        }).filter(Boolean);
+    }, [hasLimit, list, effectiveLimit]);
+
+    const handleToggle = React.useCallback((e) => {
+        e?.stopPropagation?.();
+        setIsExpanded((prev) => !prev);
+    }, []);
+
     if (!list.length) return null;
 
     return (
         <div className={`flex items-center gap-${gap} flex-wrap ${className}`} {...props}>
-            {list.map((item, idx) => {
+            {visibleList.map((item, idx) => {
                 if (renderItem) return renderItem(item, idx);
-                const label = typeof item === "object" && item !== null ? getFirstValue(item, ["label", "name", "text"]) : item;
-                const itemColor = typeof item === "object" && item !== null ? item.color || color : color;
+                const label = typeof item === "object" && item !== null
+                    ? getFirstValue(item, ["label", "name", "title", "text", "tag", "permission", "slug", "id"])
+                    : item;
+                const itemColor = typeof item === "object" && item !== null ? (item.color || item.badgeColor || color) : color;
                 const itemShape = typeof item === "object" && item !== null ? item.shape || shape : shape;
                 const itemIcon = typeof item === "object" && item !== null ? item.icon : undefined;
 
@@ -243,6 +275,29 @@ export const BadgeList = React.memo(({
                     />
                 );
             })}
+
+            {hasLimit && (
+                expandable ? (
+                    <p
+                        role="button"
+                        tabIndex={0}
+                        onClick={handleToggle}
+                        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleToggle(e)}
+                        title={!isExpanded ? remainingLabels.join(", ") : "Click to collapse"}
+                        className='mini-text font-500 text-gray'
+                    >
+                        {isExpanded ? "Show less" : `+${remainingCount} More`}
+                    </p>
+                ) : (
+                    <Badge
+                        text={`+${remainingCount} More`}
+                        color="light-primary"
+                        shape={shape}
+                        size={size}
+                        title={remainingLabels.join(", ")}
+                    />
+                )
+            )}
         </div>
     );
 });

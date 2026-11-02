@@ -1,4 +1,5 @@
 import React from 'react';
+import { checkMobile } from '../../utils';
 
 const ImageMagnifier = React.memo(({
   src,
@@ -20,10 +21,10 @@ const ImageMagnifier = React.memo(({
   const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    const updateMobile = () => setIsMobile(checkMobile(768));
+    updateMobile();
+    window.addEventListener("resize", updateMobile);
+    return () => window.removeEventListener("resize", updateMobile);
   }, []);
 
   const handleMove = React.useCallback((e) => {
