@@ -1,8 +1,7 @@
-import 'regenerator-runtime/runtime';
 import React from "react";
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
-import { store } from '../store';
+import { store } from './server/store.js';
 import App from './App.jsx';
 import '../styles/theme.scss';
 import '../styles/structure.scss';

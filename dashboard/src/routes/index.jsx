@@ -53,25 +53,16 @@ function AppRoutes() {
 
                     {/* Management Routes */}
                     <Route path="management/customers" element={<Customer />} />
-                    <Route path="customers" element={<Customer />} />
                     <Route path="management/tasks" element={<Tasks />} />
-                    <Route path="tasks" element={<Tasks />} />
                     <Route path="management/leads" element={<Leads />} />
-                    <Route path="leads" element={<Leads />} />
 
                     {/* Order & Payment Routes */}
                     <Route path="management/order" element={<Orders />} />
-                    <Route path="management/orders" element={<Orders />} />
-                    <Route path="orders" element={<Orders />} />
-                    <Route path="order" element={<Orders />} />
                     <Route path="management/transactions" element={<Transaction />} />
-                    <Route path="transactions" element={<Transaction />} />
 
                     {/* Settings Routes */}
                     <Route path="settings/users" element={<User />} />
-                    <Route path="users" element={<User />} />
                     <Route path="settings/roles" element={<Role />} />
-                    <Route path="roles" element={<Role />} />
                 </Route>
                 <Route path="*" element={<h2 style={{ textAlign: 'center', padding: '100px 20px' }}>404 - Page Not Found</h2>} />
             </Routes>

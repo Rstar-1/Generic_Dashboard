@@ -1,6 +1,6 @@
 const VITE_IMAGE =
   (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_IMAGE) ||
-  (typeof process !== "undefined" && process.env && process.env.VITE_IMAGE) ||
+  (typeof globalThis !== "undefined" && globalThis.process?.env?.VITE_IMAGE) ||
   "https://raw.githubusercontent.com/Rstar-1/generic_images/refs/heads/main/ashmita/";
 
 export const resolveImagePath = (path) => {
