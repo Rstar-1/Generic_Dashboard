@@ -1,9 +1,12 @@
 import React from "react";
+
 import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
+import Button from "../../components/common/Button";
 import { showToast } from "../../components/common/Toast";
+
 import { rolesTableColumns, rolesData as initialRolesData } from "../../utils/apiData";
 import { getFirstValue } from "../../utils";
 
@@ -192,13 +195,30 @@ const Role = () => {
         [roleFilter, handleRoleChange, statusFilter, permissionFilter, handleStatusChange, handlePermissionChange]
     );
 
+    const quickActionNode = React.useMemo(
+        () => (
+            <div className="flex items-center gap-8">
+                <Button
+                    text="Add Roles"
+                    version="v2"
+                    bg="primary"
+                    variant="outline"
+                    border="primary"
+                    color="white"
+                    icon="File"
+                />
+            </div>
+        ),
+        []
+    );
+
     return (
         <MainLayout
             showSidebar={false}
             headerIcon={<Icon name="Shield" width="18" height="18" />}
             headerTitle="Role Permissions & RBAC"
             headerSub="Define security profiles, granular permissions, privilege hierarchies, and user assignments"
-            quickAction=""
+            quickAction={quickActionNode}
             showTabControls={true}
             tabs={TABS}
             activeTab={activeTab}

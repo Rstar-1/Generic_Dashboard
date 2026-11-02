@@ -194,7 +194,7 @@ const Transaction = () => {
     const quickActionNode = React.useMemo(
         () => (
             <Button
-                text="Export Statement"
+                text="Add Transaction"
                 version="v2"
                 bg="primary"
                 variant="outline"

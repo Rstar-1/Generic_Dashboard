@@ -194,7 +194,7 @@ const OverviewProducts = () => {
     const quickActionNode = React.useMemo(
         () => (
             <Button
-                text="Export Catalog"
+                text="Add Products"
                 version="v2"
                 bg="primary"
                 variant="outline"

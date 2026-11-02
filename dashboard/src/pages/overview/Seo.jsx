@@ -195,7 +195,7 @@ const Seo = () => {
     const quickActionNode = React.useMemo(
         () => (
             <Button
-                text="Export SEO Audit"
+                text="Add SEO"
                 version="v2"
                 bg="primary"
                 variant="outline"

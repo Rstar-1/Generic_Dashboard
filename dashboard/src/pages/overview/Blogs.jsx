@@ -190,7 +190,7 @@ const OverviewBlogs = () => {
     const quickActionNode = React.useMemo(
         () => (
             <Button
-                text="Export Articles"
+                text="Add Blogs"
                 version="v2"
                 bg="primary"
                 variant="outline"

@@ -193,7 +193,7 @@ const Orders = () => {
     const quickActionNode = React.useMemo(
         () => (
             <Button
-                text="Export Orders"
+                text="Add Orders"
                 version="v2"
                 bg="primary"
                 variant="outline"

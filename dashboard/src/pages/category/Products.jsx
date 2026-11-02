@@ -188,7 +188,7 @@ const CategoryProducts = () => {
     const quickActionNode = React.useMemo(
         () => (
             <Button
-                text="Export Categories"
+                text="Add Category"
                 version="v2"
                 bg="primary"
                 variant="outline"

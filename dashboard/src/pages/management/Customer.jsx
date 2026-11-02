@@ -190,7 +190,7 @@ const Customer = () => {
         () => (
             <div className="flex items-center gap-8">
                 <Button
-                    text="Export CSV"
+                    text="Add Customers"
                     version="v2"
                     bg="primary"
                     variant="outline"

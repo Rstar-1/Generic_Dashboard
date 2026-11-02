@@ -187,7 +187,7 @@ const Cms = () => {
     const quickActionNode = React.useMemo(
         () => (
             <Button
-                text="Export CMS Data"
+                text="Add CMS"
                 version="v2"
                 bg="primary"
                 variant="outline"

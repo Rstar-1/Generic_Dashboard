@@ -194,7 +194,7 @@ const Leads = () => {
     const quickActionNode = React.useMemo(
         () => (
             <Button
-                text="Export Pipeline"
+                text="Add Leads"
                 version="v2"
                 bg="primary"
                 variant="outline"
