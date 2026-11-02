@@ -1,93 +1,71 @@
-import React from 'react';
+import React from "react";
+
 import Icon from "./Icon";
+
 import { getFirstValue, isColorCode } from "../../utils";
 
 export const getBadgeTheme = (val) => {
     switch (String(val || "").trim().toLowerCase()) {
-        // Red / Danger / Inactive / Critical / Admin
-        case "danger": case "red": case "error":
-        case "admin": case "administrator":
-        case "inactive": case "failed": case "cancelled": case "rejected": case "expired": case "blocked": case "private":
-        case "high": case "critical": case "urgent":
-        case "hot": case "sale":
-            return { bg: "#fee2e2", color: "#991b1b", border: "#fca5a5" };
+        case "approved":
+        case "active":
+            return {
+                bg: "rgba(75, 181, 67, 0.12)",
+                color: "var(--successtext)",
+                border: "var(--success)",
+                dot: "var(--success)",
+            };
 
-        // Green / Success / Active / Approved / User
-        case "success": case "green":
-        case "user": case "member": case "public":
-        case "active": case "completed": case "approved": case "published": case "verified": case "delivered":
-        case "low": case "certified":
-            return { bg: "#dcfce3", color: "#166534", border: "#86efac" };
+        case "rejected":
+        case "failed":
+        case "inactive":
+            return {
+                bg: "rgba(194, 27, 27, 0.12)",
+                color: "var(--danger)",
+                border: "var(--danger)",
+                dot: "var(--danger)",
+            };
 
-        // Amber / Warning / Pending / Review
-        case "warning": case "amber": case "yellow":
-        case "pending": case "processing": case "paused": case "review": case "refunded":
-        case "medium": case "popular": case "bestseller": case "best seller": case "best": case "trending":
-            return { bg: "#fef3c7", color: "#b45309", border: "#fcd34d" };
+        case "pending":
+            return {
+                bg: "rgba(251, 87, 17, 0.12)",
+                color: "var(--warningtext)",
+                border: "var(--warning)",
+                dot: "var(--warning)",
+            };
 
-        // Blue / Primary / Manager / Enterprise
-        case "primary": case "blue":
-        case "manager": case "enterprise": case "new":
-            return { bg: "#eff6ff", color: "#1f5ac0", border: "#bfdbfe" };
-
-        // Cyan / Info / Staff
-        case "info": case "cyan": case "staff":
-        case "coming soon": case "coming-soon":
-            return { bg: "#e0f2fe", color: "#0369a1", border: "#7dd3fc" };
-
-        // Purple / Vendor / Partner / Premium
-        case "purple": case "violet": case "indigo":
-        case "vendor": case "partner": case "premium": case "featured":
-            return { bg: "#ede9fe", color: "#5b21b6", border: "#c4b5fd" };
-
-        // Dark / Black
-        case "dark": case "black":
-            return { bg: "#f4f4f5", color: "#18181b", border: "#d4d4d8" };
-
-        // Forth / Neutral Background
-        case "forth":
-            return { bg: "var(--forth, #fafafa)", color: "var(--gray, #585a63)", border: "transparent" };
-
-        // White
-        case "white":
-            return { bg: "#ffffff", color: "#0f1623", border: "#e2e8f0" };
-
-        // Secondary / Gray / Default
-        case "secondary": case "gray": case "standard": default:
-            return { bg: "#f1f5f9", color: "#475569", border: "#cbd5e1" };
+        default:
+            return {
+                bg: "var(--forth)",
+                color: "var(--primary)",
+                border: "var(--tertiary)",
+                dot: "var(--primary)",
+            };
     }
 };
 
 export const getShapeClass = (shape) => {
     switch (shape) {
-        case "rounded": case "rect": case "tag":
+        case "rounded":
             return "rounded-5";
-        case "square":
-            return "rounded-0";
         case "circle":
             return "rounded-full";
-        case "pill": default:
+        case "pill":
+        default:
             return "rounded-20";
     }
 };
 
 export const getSizeClass = (size) => {
     switch (size) {
-        case "xs":
-            return "px-8 py-2 mini-text";
-        case "sm": case "mini":
+        case "sm":
             return "px-10 py-4 mini-text";
-        case "lg": case "large":
+        case "lg":
             return "px-17 py-6 small-text";
-        case "md": default:
+        case "md":
+        default:
             return "px-16 py-7 mini-text";
     }
 };
-
-// Backward compatibility proxies
-export const BADGE_THEMES = new Proxy({}, { get: (_, prop) => getBadgeTheme(prop) });
-export const BADGE_MAP = new Proxy({}, { get: (_, prop) => getBadgeTheme(prop) });
-export const getColorTheme = getBadgeTheme;
 
 export const Badge = React.memo(({
     text = "",
@@ -103,7 +81,6 @@ export const Badge = React.memo(({
     icon,
     iconPosition = "left",
     iconSize = 12,
-    iconStrokeWidth = "2.5",
     iconColor,
     iconClassName = "",
     dot,
@@ -111,7 +88,6 @@ export const Badge = React.memo(({
     className = "",
     style = {},
     onClick,
-    onRemove,
     ...props
 }) => {
     const label = (text !== undefined && text !== null && text !== "") ? text : (children ?? "");
@@ -122,7 +98,7 @@ export const Badge = React.memo(({
 
     switch (effectiveVariant) {
         case "status": {
-            const dotColor = typeof dot === "string" ? dot : (textColor || resolvedTheme.color);
+            const dotColor = typeof dot === "string" ? dot : (resolvedTheme.dot || textColor || resolvedTheme.color);
             const statusTextColor = textColor || resolvedTheme.color;
             return (
                 <div
@@ -181,23 +157,11 @@ export const Badge = React.memo(({
                     {...props}
                 >
                     {icon && iconPosition === "left" && (
-                        <Icon name={icon} width={iconSize} height={iconSize} strokeWidth={iconStrokeWidth} stroke={iconColor || "currentColor"} className={iconClassName} />
+                        <Icon name={icon} width={iconSize} height={iconSize} strokeWidth="2.5" stroke={iconColor || "currentColor"} className={iconClassName} />
                     )}
                     <span>{label}</span>
                     {icon && iconPosition === "right" && (
-                        <Icon name={icon} width={iconSize} height={iconSize} strokeWidth={iconStrokeWidth} stroke={iconColor || "currentColor"} className={iconClassName} />
-                    )}
-                    {onRemove && (
-                        <span
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onRemove(e);
-                            }}
-                            className="cursor-pointer flex items-center ml-2 hover:opacity-75"
-                            title="Remove"
-                        >
-                            <Icon name="Close" width={10} height={10} strokeWidth="2.5" stroke="currentColor" />
-                        </span>
+                        <Icon name={icon} width={iconSize} height={iconSize} strokeWidth="2.5" stroke={iconColor || "currentColor"} className={iconClassName} />
                     )}
                 </p>
             );
@@ -284,7 +248,7 @@ export const BadgeList = React.memo(({
                         onClick={handleToggle}
                         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleToggle(e)}
                         title={!isExpanded ? remainingLabels.join(", ") : "Click to collapse"}
-                        className='mini-text font-500 text-gray'
+                        className="cursor-pointer text-gray mini-text font-500"
                     >
                         {isExpanded ? "Show less" : `+${remainingCount} More`}
                     </p>

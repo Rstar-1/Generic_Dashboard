@@ -217,31 +217,32 @@ const rolesTableColumns = [
     header: "Role Name",
     accessor: "name",
     ui: "badge",
-    style: { minWidth: "100px" },
+    style: { minWidth: "120px", maxWidth: "120px" },
   },
   {
     header: "Permissions",
     accessor: "permissions",
     ui: "badge-list",
-    style: { minWidth: "160px" },
+    style: { minWidth: "250px", maxWidth: "250px" },
   },
   {
     header: "Pages",
     accessor: "pages",
     ui: "badge-list",
-    style: { minWidth: "160px" },
+    style: { minWidth: "250px", maxWidth: "250px" },
   },
   {
     header: "Users Assigned",
     accessor: "usersCount",
-    ui: "code",
-    style: { minWidth: "110px" },
+    ui: "text",
+    className: "text-center",
+    style: { minWidth: "110px", maxWidth: "110px" },
   },
   {
     header: "Status",
     accessor: "status",
     ui: "status",
-    style: { minWidth: "100px" },
+    style: { minWidth: "80px", maxWidth: "80px" },
   },
   {
     header: "Created",
@@ -1439,13 +1440,8 @@ const rolesData = [
     id: "ROLE-001",
     name: "Customer",
     role: "customer",
-    permissions: [
-      "manage_products",
-      "view_orders",
-      "process_shipments",
-      "view_vendor_analytics",
-    ],
-    pages: ["Dashboard", "Analytics", "Users", "Roles", "Settings"],
+    permissions: ["dashboard"],
+    pages: ["Dashboard"],
     usersCount: 3,
     status: "active",
     createdDate: "2026-01-15",
@@ -1455,15 +1451,8 @@ const rolesData = [
     id: "ROLE-002",
     name: "Admin",
     role: "admin",
-    permissions: [
-      "manage_users",
-      "manage_roles",
-      "manage_billing",
-      "view_analytics",
-      "edit_system_config",
-      "full_access",
-    ],
-    pages: ["Dashboard", "Analytics", "Users", "Roles", "Settings"],
+    permissions: ["Full_Access"],
+    pages: ["Full_Access"],
     usersCount: 3,
     status: "active",
     createdDate: "2025-12-01",
@@ -1479,7 +1468,7 @@ const rolesData = [
       "submit_tickets",
       "view_invoices",
     ],
-    pages: ["Dashboard", "Analytics", "Users", "Roles", "Settings"],
+    pages: ["Dashboard", "Analytics", "Orders", "Transactions", "System Users"],
     usersCount: 4,
     status: "active",
     createdDate: "2026-01-20",
@@ -1495,7 +1484,15 @@ const rolesData = [
       "assign_tasks",
       "manage_customers",
     ],
-    pages: ["Dashboard", "Analytics", "Users", "Roles", "Settings"],
+    pages: [
+      "Dashboard",
+      "Analytics",
+      "Blogs Category",
+      "Blogs",
+      "CMS",
+      "SEO",
+      "System Users",
+    ],
     usersCount: 2,
     status: "active",
     createdDate: "2026-02-10",
@@ -1510,7 +1507,15 @@ const rolesData = [
       "export_compliance_reports",
       "read_only_access",
     ],
-    pages: ["Dashboard", "Analytics", "Users", "Roles", "Settings"],
+    pages: [
+      "Dashboard",
+      "Analytics",
+      "Products Category",
+      "Products",
+      "Customers",
+      "Leads",
+      "System Users",
+    ],
     usersCount: 1,
     status: "Active",
     createdDate: "2026-04-05",
@@ -1813,7 +1818,8 @@ const blogCategoriesData = [
 const blogsData = [
   {
     id: 1,
-    title: "PVC Curtain Rolls in 2026: Latest Trends, Applications & Buying Guide",
+    title:
+      "PVC Curtain Rolls in 2026: Latest Trends, Applications & Buying Guide",
     categoryId: 1,
     category: "Buying & Selection Guide",
     author: "Technical Specialist",
@@ -1824,34 +1830,34 @@ const blogsData = [
     readTime: "6 min read",
     image: "blog/Blog1.jpg",
     coverImage: "hero.png",
-    excerpt: "Discover the latest material innovations, environmental standards, and automated sealing trends shaping industrial PVC strip curtains in 2026.",
-    content: "As modern industrial facilities demand higher energy efficiency and stricter environmental compliance, PVC curtain rolls in 2026 have evolved significantly. Contemporary manufacturing utilizes phthalate-free, UV-stabilized, and fire-retardant vinyl formulations that deliver longer lifespans under heavy traffic.\n\nFrom magnetic automated closures to specialized low-temperature polar grades, choosing the right curtain roll requires understanding door dimensions, forklift traffic volume, and climate control requirements.",
-    quote: "Modern PVC strip curtains represent a high-return, low-maintenance investment that slashes industrial energy bills by up to 30%.",
-    tags: [
-      "Trends",
-      "Buying Guide",
-      "Industrial",
-      "PVC Rolls"
-    ],
+    excerpt:
+      "Discover the latest material innovations, environmental standards, and automated sealing trends shaping industrial PVC strip curtains in 2026.",
+    content:
+      "As modern industrial facilities demand higher energy efficiency and stricter environmental compliance, PVC curtain rolls in 2026 have evolved significantly. Contemporary manufacturing utilizes phthalate-free, UV-stabilized, and fire-retardant vinyl formulations that deliver longer lifespans under heavy traffic.\n\nFrom magnetic automated closures to specialized low-temperature polar grades, choosing the right curtain roll requires understanding door dimensions, forklift traffic volume, and climate control requirements.",
+    quote:
+      "Modern PVC strip curtains represent a high-return, low-maintenance investment that slashes industrial energy bills by up to 30%.",
+    tags: ["Trends", "Buying Guide", "Industrial", "PVC Rolls"],
     reviews: [
       {
         id: 1,
         name: "Amitabh Roy",
         role: "Procurement Head, Om Logistics",
         date: "October 06, 2026 at 2:30 pm",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+        avatar:
+          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
         rating: 5,
-        text: "Comprehensive and practical overview of the latest material advancements in 2026. The emphasis on phthalate-free and UV-stabilized PVC helped us refine our warehouse procurement specs."
+        text: "Comprehensive and practical overview of the latest material advancements in 2026. The emphasis on phthalate-free and UV-stabilized PVC helped us refine our warehouse procurement specs.",
       },
       {
         id: 2,
         name: "Pooja Varma",
         role: "Operations Manager, Apex Industrial Hub",
         date: "October 06, 2026 at 5:10 pm",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+        avatar:
+          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
         rating: 5,
-        text: "The selection criteria for strip thickness and door traffic volume made choosing the right rolls completely hassle-free."
-      }
+        text: "The selection criteria for strip thickness and door traffic volume made choosing the right rolls completely hassle-free.",
+      },
     ],
     status: "Published",
     views: "18,420",
@@ -1869,9 +1875,12 @@ const blogsData = [
     readTime: "5 min read",
     image: "blog/Blog2.jpg",
     coverImage: "hero.png",
-    excerpt: "Learn how polar grade PVC strip curtains retain thermal barriers down to -40°C in food preservation warehouses.",
-    content: "Thermal leakage around cold room openings contributes up to 40% of refrigeration compressor load. Polar grade strip curtains remain flexible in sub-zero environments without cracking.",
-    quote: "Polar grade vinyl reduces refrigeration cycle frequency by sealing extreme temperature differentials.",
+    excerpt:
+      "Learn how polar grade PVC strip curtains retain thermal barriers down to -40°C in food preservation warehouses.",
+    content:
+      "Thermal leakage around cold room openings contributes up to 40% of refrigeration compressor load. Polar grade strip curtains remain flexible in sub-zero environments without cracking.",
+    quote:
+      "Polar grade vinyl reduces refrigeration cycle frequency by sealing extreme temperature differentials.",
     tags: ["Cold Storage", "Energy", "Polar Grade"],
     reviews: [],
     status: "Published",
@@ -1890,9 +1899,12 @@ const blogsData = [
     readTime: "7 min read",
     image: "blog/Blog3.jpg",
     coverImage: "product/Product7.jpg",
-    excerpt: "Comparing SS304 hook-on tracks with galvanized options for rust prevention in high-humidity zones.",
-    content: "Selecting the proper mounting hardware is as crucial as the vinyl material itself. Marine-grade stainless steel 304 tracks resist harsh sanitizing detergents and humidity.",
-    quote: "SS304 hardware outlasts standard galvanized brackets by more than 3x in corrosive food processing areas.",
+    excerpt:
+      "Comparing SS304 hook-on tracks with galvanized options for rust prevention in high-humidity zones.",
+    content:
+      "Selecting the proper mounting hardware is as crucial as the vinyl material itself. Marine-grade stainless steel 304 tracks resist harsh sanitizing detergents and humidity.",
+    quote:
+      "SS304 hardware outlasts standard galvanized brackets by more than 3x in corrosive food processing areas.",
     tags: ["Hardware", "Stainless Steel", "Installation"],
     reviews: [],
     status: "Published",
@@ -1911,9 +1923,12 @@ const blogsData = [
     readTime: "4 min read",
     image: "blog/Blog4.jpg",
     coverImage: "product/Product4.jpg",
-    excerpt: "Amber yellow anti-insect curtains block specific light spectrums to keep flying pests away from sterile zones.",
-    content: "Flying insects are attracted to ultraviolet and visible light emitted from indoor factory luminaires. Specially tinted amber curtains block these attractive wavelengths.",
-    quote: "Amber strips act as an invisible physiological barrier to phototactic insects.",
+    excerpt:
+      "Amber yellow anti-insect curtains block specific light spectrums to keep flying pests away from sterile zones.",
+    content:
+      "Flying insects are attracted to ultraviolet and visible light emitted from indoor factory luminaires. Specially tinted amber curtains block these attractive wavelengths.",
+    quote:
+      "Amber strips act as an invisible physiological barrier to phototactic insects.",
     tags: ["Workplace Safety", "Anti-Insect", "Food Safety"],
     reviews: [],
     status: "Published",
@@ -1932,9 +1947,12 @@ const blogsData = [
     readTime: "6 min read",
     image: "blog/Blog5.jpg",
     coverImage: "CROSY.png",
-    excerpt: "Self-closing magnetic strip doors optimize forklift pass-through cycles without manual intervention.",
-    content: "Magnetic edge strips snap shut immediately after pedestrian or pallet jack passage, virtually eliminating opening dwell times and air exchange.",
-    quote: "Instant magnetic snap-closure cuts door transition air loss by over 80%.",
+    excerpt:
+      "Self-closing magnetic strip doors optimize forklift pass-through cycles without manual intervention.",
+    content:
+      "Magnetic edge strips snap shut immediately after pedestrian or pallet jack passage, virtually eliminating opening dwell times and air exchange.",
+    quote:
+      "Instant magnetic snap-closure cuts door transition air loss by over 80%.",
     tags: ["Automation", "Magnetic Closures", "Logistics"],
     reviews: [],
     status: "Draft",
@@ -1953,9 +1971,12 @@ const blogsData = [
     readTime: "5 min read",
     image: "blog/Blog6.jpg",
     coverImage: "DSBKO.png",
-    excerpt: "Double-ribbed raised ridges take the brunt of heavy forklift scratches, preserving strip transparency.",
-    content: "Industrial traffic quickly scratches smooth vinyl curtains, obscuring driver visibility. Raised ridges absorb mechanical abrasion while maintaining see-through clarity in the recessed valleys.",
-    quote: "Ribbed profiles extend optical clarity and functional lifetime in heavy forklift loading bays.",
+    excerpt:
+      "Double-ribbed raised ridges take the brunt of heavy forklift scratches, preserving strip transparency.",
+    content:
+      "Industrial traffic quickly scratches smooth vinyl curtains, obscuring driver visibility. Raised ridges absorb mechanical abrasion while maintaining see-through clarity in the recessed valleys.",
+    quote:
+      "Ribbed profiles extend optical clarity and functional lifetime in heavy forklift loading bays.",
     tags: ["Ribbed PVC", "Durability", "Forklift Safety"],
     reviews: [],
     status: "Scheduled",
@@ -2111,18 +2132,21 @@ const ordersData = [
 
 const seoSiteInfo = {
   name: "Ashmita Vinyls",
-  description: "Ashmita Vinyls supplies premium PVC vinyl products, strip curtains, and industrial vinyl solutions across India.",
+  description:
+    "Ashmita Vinyls supplies premium PVC vinyl products, strip curtains, and industrial vinyl solutions across India.",
   url: "https://ashmitavinyls.com",
   image: "/products/spaces/hospital_ward.jpg",
   phone: "+91 9873198731",
   email: "info@ashmitavinyls.com",
   address: {
-    streetAddress: "C 304, 3rd Floor, Eastern Business District, L.B.S Marg Road, Bhandup West",
+    streetAddress:
+      "C 304, 3rd Floor, Eastern Business District, L.B.S Marg Road, Bhandup West",
     addressLocality: "Mumbai",
     addressRegion: "Maharashtra",
     postalCode: "400078",
     addressCountry: "IN",
-    fullAddress: "Ashmita Enterprises, C 304, 3rd Floor, Eastern Business District, Bhandup West, Mumbai, Maharashtra 400078, India",
+    fullAddress:
+      "Ashmita Enterprises, C 304, 3rd Floor, Eastern Business District, Bhandup West, Mumbai, Maharashtra 400078, India",
   },
   geo: {
     latitude: 19.1485,
@@ -2139,8 +2163,10 @@ const seoData = [
     route: "/home",
     title: "PVC Vinyl Products Supplier in India | Ashmita Vinyls",
     metaTitle: "PVC Vinyl Products Supplier in India | Ashmita Vinyls",
-    description: "Explore high-grade PVC strip curtains, industrial vinyl rolls, polar freezer curtains, and mounting accessories from Ashmita Vinyls across India.",
-    keywords: "PVC vinyl products, PVC strip curtains, industrial vinyl rolls, polar freezer curtains, Ashmita Vinyls, Mumbai vinyl supplier",
+    description:
+      "Explore high-grade PVC strip curtains, industrial vinyl rolls, polar freezer curtains, and mounting accessories from Ashmita Vinyls across India.",
+    keywords:
+      "PVC vinyl products, PVC strip curtains, industrial vinyl rolls, polar freezer curtains, Ashmita Vinyls, Mumbai vinyl supplier",
     targetKeyword: "PVC vinyl products",
     breadcrumbs: [{ label: "Home", path: "/home" }],
     breadcrumbsText: "Home",
@@ -2157,8 +2183,10 @@ const seoData = [
     route: "/about",
     title: "About Us | Ashmita Vinyls - Industrial PVC Solutions",
     metaTitle: "About Us | Ashmita Vinyls - Industrial PVC Solutions",
-    description: "Learn about Ashmita Vinyls, our manufacturing expertise, stringent quality standards, infrastructure, and nationwide supply of PVC strip curtain solutions.",
-    keywords: "about Ashmita Vinyls, PVC curtain manufacturer, industrial vinyl solutions, PVC quality assurance, Mumbai PVC supplier",
+    description:
+      "Learn about Ashmita Vinyls, our manufacturing expertise, stringent quality standards, infrastructure, and nationwide supply of PVC strip curtain solutions.",
+    keywords:
+      "about Ashmita Vinyls, PVC curtain manufacturer, industrial vinyl solutions, PVC quality assurance, Mumbai PVC supplier",
     targetKeyword: "PVC curtain manufacturer",
     breadcrumbs: [
       { label: "Home", path: "/home" },
@@ -2178,8 +2206,10 @@ const seoData = [
     route: "/product",
     title: "PVC Vinyl Products & Catalog | Ashmita Vinyls",
     metaTitle: "PVC Vinyl Products & Catalog | Ashmita Vinyls",
-    description: "Explore PVC strip curtains, PVC rolls and other industrial vinyl products from Ashmita Vinyls.",
-    keywords: "PVC products, strip curtains, vinyl rolls, industrial vinyl, Ashmita Vinyls",
+    description:
+      "Explore PVC strip curtains, PVC rolls and other industrial vinyl products from Ashmita Vinyls.",
+    keywords:
+      "PVC products, strip curtains, vinyl rolls, industrial vinyl, Ashmita Vinyls",
     targetKeyword: "PVC products catalog",
     breadcrumbs: [
       { label: "Home", path: "/home" },
@@ -2199,8 +2229,10 @@ const seoData = [
     route: "/product-detail",
     title: "PVC Product Specifications | Ashmita Vinyls",
     metaTitle: "PVC Product Specifications | Ashmita Vinyls",
-    description: "Explore product specifications, features, technical data sheets, and industrial applications.",
-    keywords: "PVC product specifications, technical details, vinyl curtain dimensions, strip curtain hardware",
+    description:
+      "Explore product specifications, features, technical data sheets, and industrial applications.",
+    keywords:
+      "PVC product specifications, technical details, vinyl curtain dimensions, strip curtain hardware",
     targetKeyword: "PVC product specifications",
     breadcrumbs: [
       { label: "Home", path: "/home" },
@@ -2221,8 +2253,10 @@ const seoData = [
     route: "/collection",
     title: "PVC Strip Curtains & Vinyl Rolls Collection | Ashmita Vinyls",
     metaTitle: "PVC Strip Curtains & Vinyl Rolls Collection | Ashmita Vinyls",
-    description: "Explore our complete collection of industrial PVC strip curtains, polar freezer curtains, ribbed vinyl rolls, anti-insect amber curtains, and SS brackets.",
-    keywords: "PVC collection, strip curtain catalog, industrial vinyl rolls, ribbed PVC curtains, freezer curtains, mounting brackets collection",
+    description:
+      "Explore our complete collection of industrial PVC strip curtains, polar freezer curtains, ribbed vinyl rolls, anti-insect amber curtains, and SS brackets.",
+    keywords:
+      "PVC collection, strip curtain catalog, industrial vinyl rolls, ribbed PVC curtains, freezer curtains, mounting brackets collection",
     targetKeyword: "strip curtain catalog",
     breadcrumbs: [
       { label: "Home", path: "/home" },
@@ -2242,8 +2276,10 @@ const seoData = [
     route: "/blog",
     title: "PVC Industry Blog & Technical Guides | Ashmita Vinyls",
     metaTitle: "PVC Industry Blog & Technical Guides | Ashmita Vinyls",
-    description: "Read expert articles, installation guides, temperature regulation tips, and industrial insights on PVC strip curtains and vinyl rolls.",
-    keywords: "PVC products blog, industrial strip curtains guide, cold storage curtains, PVC curtain installation, vinyl news",
+    description:
+      "Read expert articles, installation guides, temperature regulation tips, and industrial insights on PVC strip curtains and vinyl rolls.",
+    keywords:
+      "PVC products blog, industrial strip curtains guide, cold storage curtains, PVC curtain installation, vinyl news",
     targetKeyword: "PVC products blog",
     breadcrumbs: [
       { label: "Home", path: "/home" },
@@ -2263,8 +2299,10 @@ const seoData = [
     route: "/blog-detail",
     title: "PVC Industry Article | Ashmita Vinyls",
     metaTitle: "PVC Industry Article | Ashmita Vinyls",
-    description: "Read detailed articles about PVC products, applications, temperature maintenance, and industry solutions.",
-    keywords: "PVC article, industrial vinyl guide, curtain installation article",
+    description:
+      "Read detailed articles about PVC products, applications, temperature maintenance, and industry solutions.",
+    keywords:
+      "PVC article, industrial vinyl guide, curtain installation article",
     targetKeyword: "industrial vinyl guide",
     breadcrumbs: [
       { label: "Home", path: "/home" },
@@ -2285,8 +2323,10 @@ const seoData = [
     route: "/supplier",
     title: "Authorized PVC Suppliers & Store Locations | Ashmita Vinyls",
     metaTitle: "Authorized PVC Suppliers & Store Locations | Ashmita Vinyls",
-    description: "Locate authorized Ashmita Vinyls dealers, suppliers, and distribution centers for industrial PVC products across India.",
-    keywords: "PVC suppliers India, find PVC store, authorized vinyl distributor, industrial PVC supplier, Ashmita dealer network",
+    description:
+      "Locate authorized Ashmita Vinyls dealers, suppliers, and distribution centers for industrial PVC products across India.",
+    keywords:
+      "PVC suppliers India, find PVC store, authorized vinyl distributor, industrial PVC supplier, Ashmita dealer network",
     targetKeyword: "PVC suppliers India",
     breadcrumbs: [
       { label: "Home", path: "/home" },
@@ -2306,8 +2346,10 @@ const seoData = [
     route: "/quality",
     title: "Product Quality & Standards | Ashmita Vinyls",
     metaTitle: "Product Quality & Standards | Ashmita Vinyls",
-    description: "Learn about our rigorous product quality testing, ISO certifications, and industrial PVC performance standards.",
-    keywords: "PVC quality, quality standards, industrial grade vinyl, durability, certifications",
+    description:
+      "Learn about our rigorous product quality testing, ISO certifications, and industrial PVC performance standards.",
+    keywords:
+      "PVC quality, quality standards, industrial grade vinyl, durability, certifications",
     targetKeyword: "PVC quality standards",
     breadcrumbs: [
       { label: "Home", path: "/home" },
@@ -2327,8 +2369,10 @@ const seoData = [
     route: "/connect",
     title: "Connect With Us | Ashmita Vinyls Customer Support & Quotes",
     metaTitle: "Connect With Us | Ashmita Vinyls Customer Support & Quotes",
-    description: "Get in touch with Ashmita Vinyls for custom PVC strip curtain sizes, bulk wholesale inquiries, technical consultations, and instant quotes.",
-    keywords: "connect with us, contact Ashmita Vinyls, PVC curtain inquiry, bulk order vinyl, customer support, request quotation",
+    description:
+      "Get in touch with Ashmita Vinyls for custom PVC strip curtain sizes, bulk wholesale inquiries, technical consultations, and instant quotes.",
+    keywords:
+      "connect with us, contact Ashmita Vinyls, PVC curtain inquiry, bulk order vinyl, customer support, request quotation",
     targetKeyword: "bulk order vinyl quote",
     breadcrumbs: [
       { label: "Home", path: "/home" },
@@ -2348,8 +2392,10 @@ const seoData = [
     route: "/faq",
     title: "Frequently Asked Questions (FAQ) | Ashmita Vinyls",
     metaTitle: "Frequently Asked Questions (FAQ) | Ashmita Vinyls",
-    description: "Find answers to frequently asked questions about PVC strip curtains, thickness options, temperature tolerance, hardware installation, and deliveries.",
-    keywords: "PVC curtain FAQ, strip curtain questions, vinyl roll installation, cold room curtains, maintenance FAQ, Ashmita Vinyls FAQ",
+    description:
+      "Find answers to frequently asked questions about PVC strip curtains, thickness options, temperature tolerance, hardware installation, and deliveries.",
+    keywords:
+      "PVC curtain FAQ, strip curtain questions, vinyl roll installation, cold room curtains, maintenance FAQ, Ashmita Vinyls FAQ",
     targetKeyword: "PVC curtain FAQ",
     breadcrumbs: [
       { label: "Home", path: "/home" },
@@ -2369,8 +2415,10 @@ const seoData = [
     route: "/privacy",
     title: "Privacy Policy | Ashmita Vinyls",
     metaTitle: "Privacy Policy | Ashmita Vinyls",
-    description: "Learn how Ashmita Vinyls collects, manages, and protects your personal information, corporate details, and inquiry data under our privacy policy.",
-    keywords: "privacy policy, data protection, security, Ashmita Vinyls policy, user privacy",
+    description:
+      "Learn how Ashmita Vinyls collects, manages, and protects your personal information, corporate details, and inquiry data under our privacy policy.",
+    keywords:
+      "privacy policy, data protection, security, Ashmita Vinyls policy, user privacy",
     targetKeyword: "data protection privacy",
     breadcrumbs: [
       { label: "Home", path: "/home" },
@@ -2390,8 +2438,10 @@ const seoData = [
     route: "/terms",
     title: "Terms & Conditions | Ashmita Vinyls",
     metaTitle: "Terms & Conditions | Ashmita Vinyls",
-    description: "Review the commercial terms and conditions, warranty details, cancellation policies, and order fulfillment guidelines of Ashmita Vinyls.",
-    keywords: "terms and conditions, commercial terms, warranty policy, delivery terms, Ashmita Vinyls legal",
+    description:
+      "Review the commercial terms and conditions, warranty details, cancellation policies, and order fulfillment guidelines of Ashmita Vinyls.",
+    keywords:
+      "terms and conditions, commercial terms, warranty policy, delivery terms, Ashmita Vinyls legal",
     targetKeyword: "commercial terms warranty",
     breadcrumbs: [
       { label: "Home", path: "/home" },
@@ -2408,23 +2458,29 @@ const seoData = [
 const seoFaqsData = [
   {
     question: "What is Ashmita Vinyls?",
-    answer: "Ashmita Vinyls is a premier manufacturer and supplier of commercial and industrial PVC vinyl products, strip curtains, and hanging systems across India.",
+    answer:
+      "Ashmita Vinyls is a premier manufacturer and supplier of commercial and industrial PVC vinyl products, strip curtains, and hanging systems across India.",
   },
   {
     question: "What types of PVC strip curtains are available?",
-    answer: "We offer standard transparent, ribbed double-rib, polar freezer grade (-40°C), anti-static, anti-insect amber yellow, and welding screen PVC curtains.",
+    answer:
+      "We offer standard transparent, ribbed double-rib, polar freezer grade (-40°C), anti-static, anti-insect amber yellow, and welding screen PVC curtains.",
   },
   {
     question: "How do I choose the correct strip thickness and width?",
-    answer: "For pedestrian doors up to 7-8 ft, 2mm x 200mm is recommended. For warehouse fork-lift openings or high wind exposure, 3mm x 300mm or 4mm x 400mm with 50% to 100% overlap is ideal.",
+    answer:
+      "For pedestrian doors up to 7-8 ft, 2mm x 200mm is recommended. For warehouse fork-lift openings or high wind exposure, 3mm x 300mm or 4mm x 400mm with 50% to 100% overlap is ideal.",
   },
   {
-    question: "Can Ashmita Vinyls customize curtain sizes and mounting brackets?",
-    answer: "Yes, we fabricate custom door sizes with pre-punched strips and provide high-grade Stainless Steel 202/304 and Mild Steel powder-coated mounting rails.",
+    question:
+      "Can Ashmita Vinyls customize curtain sizes and mounting brackets?",
+    answer:
+      "Yes, we fabricate custom door sizes with pre-punched strips and provide high-grade Stainless Steel 202/304 and Mild Steel powder-coated mounting rails.",
   },
   {
     question: "How do I request a bulk quote or place an order?",
-    answer: "You can reach out through our Connect Us page, call our sales helpline, or email info@ashmitavinyls.com for prompt quotations and B2B pricing.",
+    answer:
+      "You can reach out through our Connect Us page, call our sales helpline, or email info@ashmitavinyls.com for prompt quotations and B2B pricing.",
   },
 ];
 

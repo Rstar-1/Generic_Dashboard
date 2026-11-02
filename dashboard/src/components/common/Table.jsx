@@ -1,21 +1,21 @@
 import React from 'react';
+
+import Image from "./Image";
+import Skeleton from "./Skeleton";
+import Button from "./Button";
+import Fields from "../forms/Fields";
 import Pagination from "./Pagination";
-import Icon from "./Icon";
+import Badge, { BadgeList } from "./Badge";
+
 import {
     resolveImagePath,
     formatDate,
     getFirstValue,
     getNestedValue
 } from '../../utils';
-import Image from "./Image";
-import Skeleton from "./Skeleton";
-import Button from "./Button";
-import Fields from "../forms/Fields";
-import Badge, { BadgeList, BADGE_MAP } from "./Badge";
 
-export { formatDate, Badge, BadgeList, BADGE_MAP };
+export { formatDate, Badge, BadgeList };
 
-// Memoized Actions Subcomponent
 const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, actions, editTitle, deleteTitle, viewTitle }) => {
     const rowActions = col.actions || actions;
     if (Array.isArray(rowActions) && rowActions.length > 0) {
@@ -27,10 +27,10 @@ const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, 
                         type="button"
                         version="icon"
                         icon={act.icon}
-                        bg={act.bg || "light-primary"}
-                        color={act.color || "primary"}
+                        bg={act.bg}
+                        color={act.color}
                         onClick={() => act.onClick(row, rowIdx)}
-                        title={act.title || ""}
+                        title={act.title}
                     />
                 ))}
             </div>
@@ -261,14 +261,14 @@ const TableCell = React.memo(({
             case "status": {
                 const lower = String(cellValue || "").toLowerCase();
                 const isActive = typeof cellValue === "boolean" ? cellValue : ["active", "approved", "published", "true"].includes(lower);
-                const statusColor = isActive ? "#10b981" : "#ef4444";
-                const displayLabel = cellValue && typeof cellValue === "string" ? cellValue : (isActive ? "Active" : "Inactive");
+                const isPending = ["pending", "review", "processing"].includes(lower);
+                const displayLabel = cellValue && typeof cellValue === "string"
+                    ? cellValue
+                    : (isActive ? "Active" : isPending ? "Pending" : "Inactive");
                 return (
                     <Badge
                         variant="status"
-                        dot={statusColor}
                         text={displayLabel}
-                        textColor={isActive ? "var(--success, #10b981)" : "var(--danger, #ef4444)"}
                         className="small-text font-500"
                     />
                 );
@@ -390,15 +390,16 @@ const TableRow = React.memo(({
                     if (col.accessor === "_expand") {
                         return (
                             <td key={colIdx} className="p-10 text-center bordb" style={{ verticalAlign: "middle" }}>
-                                <button
-                                    type="button"
+                                <Button
+                                    icon="ChevronDown"
+                                    version="icon"
+                                    bg='tertiary'
+                                    color='gray'
                                     onClick={() => onToggleExpand(rowId)}
-                                    className="p-6 rounded-5 border-0 bg-light text-primary hover:bg-primary hover:text-white cursor-pointer flex items-center justify-center"
-                                    style={{ margin: "0 auto", transition: "all 0.2s ease", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
+                                    className='rounded-5'
+                                    style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
                                     title={isExpanded ? "Collapse Details" : "Expand Details"}
-                                >
-                                    <Icon name="ChevronDown" width="14" height="14" strokeWidth="2.5" />
-                                </button>
+                                />
                             </td>
                         );
                     }
