@@ -1,37 +1,48 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React from 'react';
 import { useLocation } from "react-router-dom";
 import Icon from "../Icon";
+import {
+  scrollToTop
+} from '../../../utils';
 
 const CIRCUMFERENCE = 40 * Math.PI;
 
 const ScrollToTop = React.memo(() => {
   const { pathname } = useLocation();
-  const [isVisible, setIsVisible] = useState(false);
-  const circleRef = useRef(null);
+  const [isVisible, setIsVisible] = React.useState(false);
+  const circleRef = React.useRef(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } =
-        document.documentElement;
+  React.useEffect(() => {
+    let ticking = false;
+
+    const updateScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const clientHeight = document.documentElement.clientHeight;
       const total = scrollHeight - clientHeight;
+
       if (circleRef.current && total > 0) {
-        circleRef.current.style.strokeDashoffset =
-          CIRCUMFERENCE * (1 - scrollTop / total);
+        const offset = Math.max(0, Math.min(CIRCUMFERENCE, CIRCUMFERENCE * (1 - scrollTop / total)));
+        circleRef.current.style.strokeDashoffset = offset;
       }
+
       setIsVisible(scrollTop > 300);
+      ticking = false;
+    };
+
+    const handleScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        window.requestAnimationFrame(updateScroll);
+      }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const scrollToTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   return (

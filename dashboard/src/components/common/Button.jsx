@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from "react";
+import React from 'react';
 import Icon from "./Icon";
 
 const VERSION_CLASSES = {
@@ -6,14 +6,14 @@ const VERSION_CLASSES = {
   v1: "px-20 py-9 para-text",
   v2: "px-19 py-8 sm-px-10 sm-py-7 mini-text",
   v3: "w-full py-9 sm-py-12 small-text",
-  icon: "p-8",
+  icon: "p-8 inline-flex items-center justify-center",
   none: "",
 };
 
 const isColorCode = (str) =>
   typeof str === "string" && (str.startsWith("#") || str.startsWith("rgb"));
 
-const Button = memo(
+const Button = React.memo(
   ({
     text = "",
     children,
@@ -42,7 +42,7 @@ const Button = memo(
     const isHexBorder = isColorCode(border);
 
     // Dynamic border class
-    const borderClass = useMemo(() => {
+    const borderClass = React.useMemo(() => {
       if (border === "none" || border === "0") return "border-0";
       if (border) return isHexBorder ? "" : `border-${border}`;
       if (isOutline) {
@@ -56,13 +56,13 @@ const Button = memo(
     }, [border, isOutline, isHexBorder, isHexBg, bg, color, isHexColor]);
 
     // Dynamic background class
-    const bgClass = useMemo(() => {
+    const bgClass = React.useMemo(() => {
       if (isOutline) return "bg-transparent";
       return isHexBg ? "" : `bg-${bg}`;
     }, [isOutline, isHexBg, bg]);
 
     // Dynamic text color class
-    const textClass = useMemo(() => {
+    const textClass = React.useMemo(() => {
       if (isOutline) {
         if (color && color !== "white") return isHexColor ? "" : `text-${color}`;
         if (border && border !== "none" && border !== "0") return isHexBorder ? "" : `text-${border}`;
@@ -75,11 +75,15 @@ const Button = memo(
     const versionClass = VERSION_CLASSES[version] || "w-full py-7 small-text";
 
     // Computed inline styles guaranteed to apply correctly across all browsers
-    const computedStyle = useMemo(() => {
+    const computedStyle = React.useMemo(() => {
       const base = { ...style };
       if (disabled) base.cursor = "not-allowed";
       if (isHexBg && !isOutline) base.backgroundColor = bg;
-      if (isHexColor) base.color = color;
+      if (isHexColor) {
+        base.color = color;
+      } else if (color && color !== "white" && color !== "transparent" && color !== "none") {
+        base.color = `var(--${color}, currentColor)`;
+      }
 
       // Handle border explicitly
       if (border === "none" || border === "0") {
@@ -121,7 +125,7 @@ const Button = memo(
       return base;
     }, [style, disabled, isHexBg, isOutline, bg, isHexColor, color, border, isHexBorder]);
 
-    const handleClick = useCallback(
+    const handleClick = React.useCallback(
       (e) => {
         if (disabled) return;
         onClick?.(e);
@@ -131,7 +135,7 @@ const Button = memo(
 
     const defaultStroke = iconStroke || computedStyle.color || style.color || "currentColor";
 
-    const iconElement = useMemo(() => {
+    const iconElement = React.useMemo(() => {
       if (!icon) return null;
       return (
         <Icon

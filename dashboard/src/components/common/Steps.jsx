@@ -1,7 +1,7 @@
-import React, { memo, useCallback } from "react";
+import React from 'react';
 import Icon from "./Icon";
 
-const Steps = memo(
+const Steps = React.memo(
   ({
     currentStep = 1,
     steps = [],
@@ -25,7 +25,7 @@ const Steps = memo(
         ? Math.min(100, Math.max(0, Math.round(percentage)))
         : Math.round((activeStep / numSteps) * 100);
 
-    const handleStepClick = useCallback(
+    const handleStepClick = React.useCallback(
       (stepNumber) => {
         onChange?.(stepNumber);
         onStepClick?.(stepNumber);

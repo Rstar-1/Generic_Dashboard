@@ -1,8 +1,8 @@
-import React, { memo, useCallback } from "react";
+import React from 'react';
 import { NavLink } from "react-router-dom";
 import Icon from "./Icon";
 
-const Breadcrumb = memo(
+const Breadcrumb = React.memo(
   ({
     items = [],
     showIcon = true,
@@ -21,7 +21,7 @@ const Breadcrumb = memo(
     const activeCls = isDark ? "text-dark font-500" : "text-white font-500";
     const sepCls = isDark ? "text-gray opacity-60" : "text-white opacity-60";
 
-    const handleClick = useCallback(
+    const handleClick = React.useCallback(
       (item, e) => {
         item.onClick?.(item, e);
         onItemClick?.(item, e);
@@ -29,7 +29,7 @@ const Breadcrumb = memo(
       [onItemClick]
     );
 
-    const renderSeparator = useCallback(
+    const renderSeparator = React.useCallback(
       (idx) => {
         const sep = separatorIcon || separator;
         const isIcon =

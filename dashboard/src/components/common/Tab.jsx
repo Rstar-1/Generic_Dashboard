@@ -1,9 +1,9 @@
-import React, { memo, useMemo, useCallback } from "react";
+import React from 'react';
 import Icon from "./Icon";
 
-const TabItem = memo(
+const TabItem = React.memo(
   ({ name, count, icon, active, isV2, isV3, value, onSelect }) => {
-    const handleClick = useCallback(() => {
+    const handleClick = React.useCallback(() => {
       onSelect?.(value);
     }, [onSelect, value]);
 
@@ -73,7 +73,7 @@ const TabItem = memo(
 
 TabItem.displayName = "TabItem";
 
-const Tab = memo(
+const Tab = React.memo(
   ({
     tabs = [],
     activeTab,
@@ -85,7 +85,7 @@ const Tab = memo(
     const isV2 = String(version).includes("2");
     const isV3 = String(version).includes("3");
 
-    const normalizedTabs = useMemo(
+    const normalizedTabs = React.useMemo(
       () =>
         tabs.map((tab) => {
           const isObj = typeof tab === "object" && tab !== null;
@@ -99,7 +99,7 @@ const Tab = memo(
       [tabs]
     );
 
-    const handleSelect = useCallback(
+    const handleSelect = React.useCallback(
       (val) => {
         onChange?.(val);
       },

@@ -45,13 +45,17 @@ export const formatRelativeTime = (date, baseDate = new Date()) => {
   if (!d) return "";
 
   const diffSec = Math.round((d.getTime() - baseDate.getTime()) / 1000);
-  if (Math.abs(diffSec) < 45) return diffSec <= 0 ? "just now" : "in a few seconds";
+  if (Math.abs(diffSec) < 45)
+    return diffSec <= 0 ? "just now" : "in a few seconds";
 
   const absSec = Math.abs(diffSec);
   for (const [max, unit, divisor] of RELATIVE_UNITS) {
     if (absSec < max) {
       const count = Math.round(diffSec / divisor);
-      return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(count, unit);
+      return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(
+        count,
+        unit,
+      );
     }
   }
   return formatDate(d, "short");
@@ -70,9 +74,30 @@ const FORMAT_PRESETS = {
   time: { hour: "2-digit", minute: "2-digit", hour12: true },
   time12: { hour: "2-digit", minute: "2-digit", hour12: true },
   time24: { hour: "2-digit", minute: "2-digit", hour12: false },
-  datetime: { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true },
-  full: { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true },
-  "datetime-long": { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true },
+  datetime: {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  },
+  full: {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  },
+  "datetime-long": {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  },
 };
 
 export const formatDate = (date, format = "human", options = {}) => {
@@ -80,7 +105,8 @@ export const formatDate = (date, format = "human", options = {}) => {
   const locale = options?.locale || "en-US";
 
   const d = parseDate(date);
-  if (!d) return typeof date === "string" && date.trim() ? date.trim() : fallback;
+  if (!d)
+    return typeof date === "string" && date.trim() ? date.trim() : fallback;
 
   if (typeof format === "object" && format !== null) {
     try {
@@ -93,7 +119,12 @@ export const formatDate = (date, format = "human", options = {}) => {
   const fmt = String(format).toLowerCase();
   if (fmt === "relative" || fmt === "ago") return formatRelativeTime(d);
   if (fmt === "iso") return d.toISOString();
-  if (fmt === "dash" || fmt === "input" || fmt === "iso-date" || fmt === "yyyy-mm-dd") {
+  if (
+    fmt === "dash" ||
+    fmt === "input" ||
+    fmt === "iso-date" ||
+    fmt === "yyyy-mm-dd"
+  ) {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
   if (fmt === "numeric" || fmt === "slash" || fmt === "dd/mm/yyyy") {
@@ -107,12 +138,17 @@ export const formatDate = (date, format = "human", options = {}) => {
   return d.toLocaleString(locale, preset);
 };
 
-export const formatDateTime = (date, format = "datetime", options = {}) => formatDate(date, format, options);
-export const formatTime = (date, is24Hour = false, options = {}) => formatDate(date, is24Hour ? "time24" : "time12", options);
+export const formatDateTime = (date, format = "datetime", options = {}) =>
+  formatDate(date, format, options);
+export const formatTime = (date, is24Hour = false, options = {}) =>
+  formatDate(date, is24Hour ? "time24" : "time12", options);
 export const toDateInputString = (date) => formatDate(date, "input");
 
 export const getDateRangeString = (startDate, endDate, format = "short") =>
-  [parseDate(startDate), parseDate(endDate)].filter(Boolean).map((d) => formatDate(d, format)).join(" – ");
+  [parseDate(startDate), parseDate(endDate)]
+    .filter(Boolean)
+    .map((d) => formatDate(d, format))
+    .join(" – ");
 
 export const isToday = (date) => {
   const d = parseDate(date);
@@ -133,7 +169,9 @@ export const daysBetween = (d1, d2) => {
   const date1 = parseDate(d1);
   const date2 = parseDate(d2);
   if (!date1 || !date2) return 0;
-  return Math.round(Math.abs(date1.getTime() - date2.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.round(
+    Math.abs(date1.getTime() - date2.getTime()) / (1000 * 60 * 60 * 24),
+  );
 };
 
 export default formatDate;

@@ -1,12 +1,14 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React from 'react';
 import Pagination from "./Pagination";
 import Icon from "./Icon";
-import { resolveImagePath } from "../../utils/imageResolver";
+import {
+  resolveImagePath,
+  formatDate
+} from '../../utils';
 import Image from "./Image";
 import Skeleton from "./Skeleton";
 import Button from "./Button";
 import Fields from "../forms/Fields";
-import { formatDate } from "../../utils/formatDate";
 import Badge, { BadgeList, BADGE_MAP } from "./Badge";
 
 const getNestedValue = (obj, path) => {
@@ -96,18 +98,18 @@ const ProfileCell = React.memo(({ col, row }) => {
     const obj = (rawVal && typeof rawVal === "object") ? rawVal : {};
     const name = obj.fullname || obj.name || obj.username || (typeof rawVal === "string" ? rawVal : "") || row[col.nameKey || "createdByName"] || row.username || row.name || "";
     const subText = obj.mobile || obj.phone || obj.email || obj.sub || row[col.subKey || "sub"] || row[col.emailKey || "email"] || row.email || row.sub || "";
-    const rawImg = obj.image || obj.avatar || row[col.imageKey || "image"] || row.image || row.coverImage || (Array.isArray(row.images) && row.images[0]) || row.avatar || "";
+    const rawImg = obj.image ?? obj.avatar ?? row[col.imageKey ?? "image"] ?? row.image ?? (Array.isArray(row.images) ? row.images[0] : "") ?? "";
     const imgUrl = resolveImagePath(rawImg);
     const favColor = row[col.colorKey || "favoriteColor"] || "#6366f1";
     const imgStyle = { width: "40px", height: "40px", flexShrink: 0, ...col.imgStyle, ...col.imageStyle };
 
     return (
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-12">
             {imgUrl ? (
-                <Image src={imgUrl} alt={name} className="rounded-5 object-cover bg-forth" style={imgStyle} />
+                <Image src={imgUrl} alt={name} className="rounded-5 object-contain bg-forth p-2 border-tertiary" style={imgStyle} />
             ) : (
-                <div style={{ background: favColor, width: "40px", height: "40px" }} className="flex items-center justify-center rounded-5">
-                    <p className="headpara-text text-white font-500">
+                <div style={{ background: favColor, width: "32px", height: "32px", borderRadius: "50%", flexShrink: 0 }} className="center-div">
+                    <p className="mini-text text-white font-600">
                         {name ? String(name).charAt(0).toUpperCase() : "?"}
                     </p>
                 </div>
@@ -263,19 +265,15 @@ const TableCell = React.memo(({
                 );
             case "status": {
                 const lower = String(cellValue || "").toLowerCase();
-                const isSuccess = typeof cellValue === "boolean"
-                    ? cellValue
-                    : ["active", "approved", "published", "completed", "success", "paid", "delivered", "true", "indexed"].includes(lower);
-                const isWarning = ["pending", "in progress", "processing", "waiting", "review", "needs attention", "draft"].includes(lower);
-                const statusColor = isSuccess ? "#10b981" : isWarning ? "#f59e0b" : "#ef4444";
-                const textColor = isSuccess ? "var(--success)" : isWarning ? "var(--warning)" : "var(--danger)";
-                const displayLabel = cellValue && typeof cellValue === "string" ? cellValue : (isSuccess ? "Active" : isWarning ? "Pending" : "Inactive");
+                const isActive = typeof cellValue === "boolean" ? cellValue : ["active", "approved", "published", "true"].includes(lower);
+                const statusColor = isActive ? "#10b981" : "#ef4444";
+                const displayLabel = cellValue && typeof cellValue === "string" ? cellValue : (isActive ? "Active" : "Inactive");
                 return (
                     <Badge
                         variant="status"
                         dot={statusColor}
                         text={displayLabel}
-                        textColor={textColor}
+                        textColor={isActive ? "var(--success, #10b981)" : "var(--danger, #ef4444)"}
                         className="small-text font-500"
                     />
                 );
@@ -384,14 +382,15 @@ const TableRow = React.memo(({
                     if (col.accessor === "_expand") {
                         return (
                             <td key={colIdx} className="p-10 text-center bordb" style={{ verticalAlign: "middle" }}>
-                                <Button
+                                <button
+                                    type="button"
                                     onClick={() => onToggleExpand(rowId)}
-                                    icon={isExpanded ? "ChevronUp" : "ChevronDown"}
-                                    bg="tertiary"
-                                    color="dark"
-                                    version="icon"
+                                    className="p-6 rounded-5 border-0 bg-light text-primary hover:bg-primary hover:text-white cursor-pointer flex items-center justify-center"
+                                    style={{ margin: "0 auto", transition: "all 0.2s ease", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
                                     title={isExpanded ? "Collapse Details" : "Expand Details"}
-                                />
+                                >
+                                    <Icon name="ChevronDown" width="14" height="14" strokeWidth="2.5" />
+                                </button>
                             </td>
                         );
                     }
@@ -490,20 +489,20 @@ const Table = ({
     onSelectRow,
     onSelectAll,
 }) => {
-    const [expandedRowId, setExpandedRowId] = useState(null);
-    const [internalSelectedRowIds, setInternalSelectedRowIds] = useState(() => new Set());
+    const [expandedRowId, setExpandedRowId] = React.useState(null);
+    const [internalSelectedRowIds, setInternalSelectedRowIds] = React.useState(() => new Set());
 
-    const toggleRow = useCallback((id) => {
+    const toggleRow = React.useCallback((id) => {
         setExpandedRowId((prev) => (prev === id ? null : id));
     }, []);
 
     const subText = subtitle || headerSub;
 
     // Check if collapsing is active
-    const hasExplicitCollapsed = useMemo(() => columns.some((col) => col.collapsed !== undefined), [columns]);
+    const hasExplicitCollapsed = React.useMemo(() => columns.some((col) => col.collapsed !== undefined), [columns]);
     const shouldCollapse = collapsible || hasExplicitCollapsed || (columns.filter(c => c.accessor !== "checkbox" && c.accessor !== "actions").length > maxVisibleColumns && collapsible !== false);
 
-    const [displayHeaders, collapsedColumns] = useMemo(() => {
+    const [displayHeaders, collapsedColumns] = React.useMemo(() => {
         let main = columns;
         let collapsed = [];
         if (shouldCollapse) {
@@ -536,14 +535,14 @@ const Table = ({
     }, [columns, shouldCollapse, hasExplicitCollapsed, maxVisibleColumns]);
 
     // Checkbox selection handlers
-    const isRowSelected = useCallback((rowId, row) => {
+    const isRowSelected = React.useCallback((rowId, row) => {
         if (selectedRows !== undefined) {
             return Array.isArray(selectedRows) ? selectedRows.includes(rowId) : Boolean(selectedRows?.has?.(rowId));
         }
         return internalSelectedRowIds.has(rowId) || Boolean(row?.checked || row?.isSelected);
     }, [selectedRows, internalSelectedRowIds]);
 
-    const handleSelectRow = useCallback((rowId, row) => {
+    const handleSelectRow = React.useCallback((rowId, row) => {
         if (onSelectRow) {
             onSelectRow(rowId, row);
         } else {
@@ -556,12 +555,12 @@ const Table = ({
         }
     }, [onSelectRow]);
 
-    const isAllSelected = useMemo(() => {
+    const isAllSelected = React.useMemo(() => {
         if (!data.length) return false;
         return data.every((row, idx) => isRowSelected(row._id || row.id || idx, row));
     }, [data, isRowSelected]);
 
-    const handleSelectAll = useCallback(() => {
+    const handleSelectAll = React.useCallback(() => {
         if (onSelectAll) {
             onSelectAll();
         } else {
@@ -572,12 +571,12 @@ const Table = ({
         }
     }, [data, onSelectAll]);
 
-    const handleSearch = useCallback((val) => {
+    const handleSearch = React.useCallback((val) => {
         if (!onSearchChange) return;
         onSearchChange(typeof val === "string" ? val : val?.target?.value ?? "");
     }, [onSearchChange]);
 
-    const actionProps = useMemo(() => ({
+    const actionProps = React.useMemo(() => ({
         onEdit,
         onDelete,
         onView,
@@ -624,7 +623,7 @@ const Table = ({
             )}
 
             {loading ? (
-                <Skeleton variant="table" columns={displayHeaders} count={5} style={{ marginTop: "12px" }} minWidth={minWidth} />
+                <Skeleton variant="array-text" count={5} style={{ marginTop: "12px" }} />
             ) : (
                 <div className="table-w rounded-5 mt-12 bordl bordr" style={{ overflowX: "auto" }}>
                     <table className="w-full responsive-table-el" style={{ borderCollapse: "collapse", minWidth }}>
@@ -648,7 +647,7 @@ const Table = ({
                                     const rowId = row._id || row.id || rowIdx;
                                     return (
                                         <TableRow
-                                            key={`${rowId}_${rowIdx}`}
+                                            key={rowId}
                                             row={row}
                                             rowIdx={rowIdx}
                                             displayHeaders={displayHeaders}

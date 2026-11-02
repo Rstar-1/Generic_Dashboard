@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback, useMemo } from "react";
+import React from 'react';
 import Image from "./Image";
 import Icon from "./Icon";
 
@@ -9,7 +9,7 @@ const STATUS_COLORS = {
   offline: "#94a3b8",
 };
 
-export const Avatar = memo(
+export const Avatar = React.memo(
   ({
     src,
     alt = "Avatar",
@@ -24,20 +24,20 @@ export const Avatar = memo(
     onClick,
     ...props
   }) => {
-    const [hasError, setHasError] = useState(false);
+    const [hasError, setHasError] = React.useState(false);
 
-    const handleError = useCallback(() => {
+    const handleError = React.useCallback(() => {
       setHasError(true);
     }, []);
 
-    const handleClick = useCallback(
+    const handleClick = React.useCallback(
       (e) => {
         onClick?.(e);
       },
       [onClick]
     );
 
-    const initials = useMemo(() => {
+    const initials = React.useMemo(() => {
       const source = name || alt;
       if (!source || source === "Avatar") return "";
       const parts = source.trim().split(/\s+/);
@@ -114,7 +114,7 @@ export const Avatar = memo(
 
 Avatar.displayName = "Avatar";
 
-export const AvatarGroup = memo(
+export const AvatarGroup = React.memo(
   ({
     avatars = [],
     max,
@@ -130,7 +130,7 @@ export const AvatarGroup = memo(
     const remainingCount = avatars.length - visibleAvatars.length;
     const displayBadge = badgeText || (remainingCount > 0 ? `+${remainingCount}` : null);
 
-    const handleGroupClick = useCallback(
+    const handleGroupClick = React.useCallback(
       (e) => {
         onClick?.(e);
       },

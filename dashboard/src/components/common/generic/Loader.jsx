@@ -1,8 +1,9 @@
 import React from "react";
 
-const Loader = React.memo(() => {
+const Loader = React.memo(({ isFading = false }) => {
   return (
     <div
+      className="site-loader"
       style={{
         display: "flex",
         flexDirection: "column",
@@ -11,11 +12,14 @@ const Loader = React.memo(() => {
         height: "100vh",
         backgroundColor: "#050505",
         textAlign: "center",
-        zIndex: 9999,
+        zIndex: 99999,
         position: "fixed",
         top: 0,
         left: 0,
         width: "100%",
+        opacity: isFading ? 0 : 1,
+        transition: "opacity 0.35s ease-out",
+        pointerEvents: isFading ? "none" : "auto",
       }}
     >
       <div className="loader-container" style={{ position: "relative" }}>
@@ -23,10 +27,10 @@ const Loader = React.memo(() => {
           style={{
             width: "4rem",
             height: "4rem",
-            border: "2px solid rgba(255, 107, 0, 0.1)",
-            borderTop: "2px solid #ff6b00",
+            border: "2px solid rgba(255, 107, 0, 0.15)",
+            borderTop: "2px solid var(--primary, #cc5b2b)",
             borderRadius: "50%",
-            animation: "spin 1s cubic-bezier(0.16, 1, 0.3, 1) infinite",
+            animation: "spin 0.85s linear infinite",
           }}
         />
         <div
@@ -37,33 +41,24 @@ const Loader = React.memo(() => {
             transform: "translate(-50%, -50%)",
             fontSize: "10px",
             fontWeight: "900",
-            color: "#ff6b00",
+            color: "var(--primary, #cc5b2b)",
             letterSpacing: "0.2em",
           }}
         >
-          IOM
+          ASH
         </div>
       </div>
       <p
         style={{
           marginTop: "20px",
-          color: "#666",
+          color: "#888",
           fontSize: "12px",
           textTransform: "uppercase",
           letterSpacing: "0.3em",
         }}
       >
-        KAIAOM
+        VINYLS
       </p>
-
-      <style>
-        {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}
-      </style>
     </div>
   );
 });

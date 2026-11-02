@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback, useMemo } from "react";
+import React from 'react';
 
 const POSITIONS = {
     top: {
@@ -46,7 +46,7 @@ export const TOOLTIP_THEMES = [
     { label: "Danger Red", value: "danger" },
 ];
 
-const Tooltip = memo(({
+const Tooltip = React.memo(({
     children,
     text,
     position = "top",
@@ -55,19 +55,19 @@ const Tooltip = memo(({
     className = "",
     style = {},
 }) => {
-    const [show, setShow] = useState(false);
+    const [show, setShow] = React.useState(false);
 
-    const handleEnter = useCallback(() => {
+    const handleEnter = React.useCallback(() => {
         if (!disabled && text) setShow(true);
     }, [disabled, text]);
 
-    const handleLeave = useCallback(() => {
+    const handleLeave = React.useCallback(() => {
         setShow(false);
     }, []);
 
     const activeTheme = THEME_STYLES[theme] || THEME_STYLES.dark;
 
-    const tooltipStyle = useMemo(() => ({
+    const tooltipStyle = React.useMemo(() => ({
         position: "absolute",
         zIndex: 999,
         padding: "6px 10px",

@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from "react";
+import React from 'react';
 import Button from "./Button";
 
 const BTN_STYLE = {
@@ -13,7 +13,7 @@ const BTN_STYLE = {
   transition: "all 0.2s ease",
 };
 
-const Pagination = memo(
+const Pagination = React.memo(
   ({
     page = 1,
     totalItems = 0,
@@ -31,7 +31,7 @@ const Pagination = memo(
     const startItem = (currentPage - 1) * itemsPerPage + 1;
     const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
-    const handlePageChange = useCallback(
+    const handlePageChange = React.useCallback(
       (pNum) => {
         if (pNum >= 1 && pNum <= totalPages && pNum !== currentPage) {
           onPageChange?.(pNum);
@@ -40,7 +40,7 @@ const Pagination = memo(
       [currentPage, totalPages, onPageChange]
     );
 
-    const pages = useMemo(() => {
+    const pages = React.useMemo(() => {
       if (totalPages <= 5) {
         return Array.from({ length: totalPages }, (_, i) => i + 1);
       }

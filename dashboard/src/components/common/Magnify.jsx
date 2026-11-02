@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo, memo } from "react";
+import React from 'react';
 
-const ImageMagnifier = memo(({
+const ImageMagnifier = React.memo(({
   src,
   alt = "Magnified visual",
   width = "100%",
@@ -14,19 +14,19 @@ const ImageMagnifier = memo(({
   className = "",
   imgClassName = "",
 }) => {
-  const imgRef = useRef(null);
-  const [showZoom, setShowZoom] = useState(false);
-  const [backgroundPos, setBackgroundPos] = useState("0% 0%");
-  const [isMobile, setIsMobile] = useState(false);
+  const imgRef = React.useRef(null);
+  const [showZoom, setShowZoom] = React.useState(false);
+  const [backgroundPos, setBackgroundPos] = React.useState("0% 0%");
+  const [isMobile, setIsMobile] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const handleMove = useCallback((e) => {
+  const handleMove = React.useCallback((e) => {
     if (!imgRef.current) return;
     const { left, top, width: imgW, height: imgH } = imgRef.current.getBoundingClientRect();
     const x = Math.max(0, Math.min(100, ((e.clientX - left) / imgW) * 100));
@@ -34,10 +34,10 @@ const ImageMagnifier = memo(({
     setBackgroundPos(`${x}% ${y}%`);
   }, []);
 
-  const handleMouseEnter = useCallback(() => setShowZoom(true), []);
-  const handleMouseLeave = useCallback(() => setShowZoom(false), []);
+  const handleMouseEnter = React.useCallback(() => setShowZoom(true), []);
+  const handleMouseLeave = React.useCallback(() => setShowZoom(false), []);
 
-  const zoomStyle = useMemo(() => {
+  const zoomStyle = React.useMemo(() => {
     const base = {
       position: "absolute",
       border: "1px solid #e2e8f0",

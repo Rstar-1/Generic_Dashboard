@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef, memo } from "react";
+import React from 'react';
 
-export const AccordionItem = memo(
+export const AccordionItem = React.memo(
   ({
     id,
     idx = 0,
@@ -16,7 +16,7 @@ export const AccordionItem = memo(
     const body = children ?? item?.children ?? item?.content ?? item?.answer ?? "";
     const numStr = String(idx + 1).padStart(2, "0");
 
-    const handleClick = useCallback(() => {
+    const handleClick = React.useCallback(() => {
       onToggle?.(id);
     }, [onToggle, id]);
 
@@ -25,7 +25,7 @@ export const AccordionItem = memo(
         <div className="cursor-pointer" onClick={handleClick}>
           <div className="flex items-center w-full">
             {!isV2 && (
-              <div className="w-5">
+              <div style={{ minWidth: '60px' }}>
                 <p className="rounded-full font-500 small-text text-dark icon-lg border-ec">
                   {numStr}
                 </p>
@@ -72,7 +72,7 @@ export const AccordionItem = memo(
 
 AccordionItem.displayName = "AccordionItem";
 
-const Accordion = memo(
+const Accordion = React.memo(
   ({
     items = [],
     allowMultiple = false,
@@ -86,7 +86,7 @@ const Accordion = memo(
   }) => {
     const isMulti = Boolean(allowMultiple === true || allowMultiple === "true");
 
-    const getInitialOpenIds = useCallback(() => {
+    const getInitialOpenIds = React.useCallback(() => {
       if (defaultOpenIds && Array.isArray(defaultOpenIds)) return defaultOpenIds;
       if (defaultOpenId !== undefined) return [defaultOpenId];
       if (typeof defaultOpenIndex === "number" && items && items.length > 0) {
@@ -119,10 +119,10 @@ const Accordion = memo(
       return [];
     }, [defaultOpenIds, defaultOpenId, defaultOpenIndex, items, children, isMulti]);
 
-    const [openIds, setOpenIds] = useState(getInitialOpenIds);
-    const hasInitializedRef = useRef(false);
+    const [openIds, setOpenIds] = React.useState(getInitialOpenIds);
+    const hasInitializedRef = React.useRef(false);
 
-    useEffect(() => {
+    React.useEffect(() => {
       if (!hasInitializedRef.current && items && items.length > 0) {
         hasInitializedRef.current = true;
         const initial = getInitialOpenIds();
@@ -133,13 +133,13 @@ const Accordion = memo(
     }, [items, getInitialOpenIds]);
 
     // Keep openIds valid if switching dynamically between multi and single
-    useEffect(() => {
+    React.useEffect(() => {
       if (!isMulti) {
         setOpenIds((prev) => (prev.length > 1 ? [prev[prev.length - 1]] : prev));
       }
     }, [isMulti]);
 
-    const toggleItem = useCallback(
+    const toggleItem = React.useCallback(
       (id) => {
         setOpenIds((prev) => {
           const isOpen = prev.includes(id);
@@ -153,7 +153,7 @@ const Accordion = memo(
       [isMulti]
     );
 
-    const isItemOpen = useCallback(
+    const isItemOpen = React.useCallback(
       (id) => {
         return openIds.includes(id);
       },

@@ -1,15 +1,21 @@
-import React, { useState, forwardRef, useCallback } from "react";
+import React from 'react';
+import {
+  resolveImagePath
+} from '../../utils';
 
 const isVideoSrc = (url) => {
   if (!url || typeof url !== "string") return false;
   return /\.(mp4|webm|ogg)($|\?|#)/i.test(url);
 };
 
+const DEFAULT_FALLBACK =
+  "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect width='100%25' height='100%25' fill='%23f8fafc'/%3E%3C/svg%3E";
+
 export const Image = React.memo(
   ({
     src,
     alt = "",
-    fallback = "/images/fallback.webp",
+    fallback = DEFAULT_FALLBACK,
     className = "",
     loading = "lazy",
     width,
@@ -17,15 +23,16 @@ export const Image = React.memo(
     aspectRatio,
     style,
     decoding,
-    preload = "metadata",
+    preload = "none",
     ...props
   }) => {
-    const [prevSrc, setPrevSrc] = useState(src);
-    const [imgSrc, setImgSrc] = useState(src);
+    const resolved = resolveImagePath(src);
+    const [prevSrc, setPrevSrc] = React.useState(resolved);
+    const [imgSrc, setImgSrc] = React.useState(resolved);
 
-    if (src !== prevSrc) {
-      setPrevSrc(src);
-      setImgSrc(src);
+    if (resolved !== prevSrc) {
+      setPrevSrc(resolved);
+      setImgSrc(resolved);
     }
 
     const isEager =
@@ -33,16 +40,17 @@ export const Image = React.memo(
       props.fetchPriority === "high" ||
       props.fetchpriority === "high";
 
-    const handleError = useCallback(() => {
+    const handleError = React.useCallback(() => {
       if (imgSrc !== fallback) {
         setImgSrc(fallback);
       }
     }, [imgSrc, fallback]);
 
-    if (isVideoSrc(src)) {
+    if (isVideoSrc(resolved)) {
       return (
         <video
-          src={src}
+          src={resolved}
+          poster={props.poster}
           className={className}
           style={{
             aspectRatio,
@@ -61,6 +69,8 @@ export const Image = React.memo(
       );
     }
 
+    const computedRatio = aspectRatio || (width && height && !isNaN(Number(width)) && !isNaN(Number(height)) ? `${width} / ${height}` : undefined);
+
     return (
       <img
         src={imgSrc || fallback}
@@ -71,8 +81,8 @@ export const Image = React.memo(
         height={height}
         className={className}
         style={{
-          aspectRatio,
-          objectFit: aspectRatio ? "cover" : undefined,
+          aspectRatio: computedRatio,
+          objectFit: computedRatio ? "cover" : undefined,
           ...style,
         }}
         onError={handleError}
@@ -85,28 +95,29 @@ export const Image = React.memo(
 Image.displayName = "Image";
 
 export const ImageDiv = React.memo(
-  forwardRef(
+  React.forwardRef(
     (
       {
         image,
-        fallback = "/images/fallback.webp",
+        fallback = DEFAULT_FALLBACK,
         children,
         className = "",
         innerClassName = "",
         overlay = false,
         overlayClass = "",
         innerRef,
-        preload = "metadata",
+        preload = "none",
         ...props
       },
       ref
     ) => {
-      const [prevImage, setPrevImage] = useState(image);
-      const [bgImage, setBgImage] = useState(image);
+      const resolved = resolveImagePath(image);
+      const [prevImage, setPrevImage] = React.useState(resolved);
+      const [bgImage, setBgImage] = React.useState(resolved);
 
-      if (image !== prevImage) {
-        setPrevImage(image);
-        setBgImage(image);
+      if (resolved !== prevImage) {
+        setPrevImage(resolved);
+        setBgImage(resolved);
       }
 
       const isVideo = isVideoSrc(bgImage);
@@ -121,6 +132,7 @@ export const ImageDiv = React.memo(
             <video
               ref={innerRef}
               src={bgImage}
+              poster={props.poster}
               className={`${innerClassName} absolute inset-0 w-full h-full object-cover`}
               style={{ zIndex: 0 }}
               autoPlay

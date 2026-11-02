@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useState } from "react";
+import React from 'react';
 import Icon from "./Icon";
 import Button from "./Button";
 
@@ -11,7 +11,7 @@ export const TYPES = {
 
 const getType = (type) => TYPES[type] || (type === "danger" ? TYPES.error : TYPES.success);
 
-export const Toast = memo(
+export const Toast = React.memo(
   ({
     type = "success",
     title,
@@ -22,7 +22,7 @@ export const Toast = memo(
   }) => {
     const config = getType(type);
 
-    const handleClose = useCallback(
+    const handleClose = React.useCallback(
       (e) => {
         e?.stopPropagation();
         onClose?.();
@@ -96,9 +96,9 @@ export const Toast = memo(
 Toast.displayName = "Toast"
 
 export const ToastContainer = () => {
-  const [toasts, setToasts] = useState([]);
+  const [toasts, setToasts] = React.useState([]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const handleToast = ({ detail }) => {
       const id = Date.now() + Math.random();
 
@@ -114,7 +114,7 @@ export const ToastContainer = () => {
     return () => window.removeEventListener("toast", handleToast);
   }, []);
 
-  const removeToast = useCallback((id) => {
+  const removeToast = React.useCallback((id) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 

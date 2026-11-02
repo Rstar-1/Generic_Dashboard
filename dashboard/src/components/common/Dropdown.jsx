@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback, memo, useMemo } from "react";
+import React from 'react';
 
 const ALIGN_STYLES = {
   left: { left: 0 },
@@ -7,7 +7,7 @@ const ALIGN_STYLES = {
   full: { left: 0, right: 0, width: "100%" },
 };
 
-const Dropdown = memo(({
+const Dropdown = React.memo(({
   isOpen,
   onClose,
   triggerRef,
@@ -20,9 +20,9 @@ const Dropdown = memo(({
   items,
   ...props
 }) => {
-  const dropdownRef = useRef(null);
+  const dropdownRef = React.useRef(null);
 
-  const handleClickOutside = useCallback(
+  const handleClickOutside = React.useCallback(
     (event) => {
       if (!dropdownRef.current) return;
       const target = event.target;
@@ -43,7 +43,7 @@ const Dropdown = memo(({
     [onClose, triggerRef]
   );
 
-  const handleKeyDown = useCallback(
+  const handleKeyDown = React.useCallback(
     (event) => {
       if (event.key === "Escape") {
         onClose?.();
@@ -52,7 +52,7 @@ const Dropdown = memo(({
     [onClose]
   );
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isOpen || !onClose) return;
 
     document.addEventListener("pointerdown", handleClickOutside, true);
@@ -64,7 +64,7 @@ const Dropdown = memo(({
     };
   }, [isOpen, onClose, handleClickOutside, handleKeyDown]);
 
-  const computedStyle = useMemo(() => ({
+  const computedStyle = React.useMemo(() => ({
     position: "absolute",
     top: "calc(100% + 4px)",
     zIndex: 1000,

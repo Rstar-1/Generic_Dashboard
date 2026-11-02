@@ -2481,7 +2481,17 @@ const cmsData = [
   },
 ];
 
+const configData = {
+  Header: [
+    {
+      HeaderTopBar: true,
+      HeaderBottomBar: true,
+    },
+  ],
+};
+
 export {
+  configData,
   formatDate,
   menuData,
   usersTableColumns,

@@ -1,6 +1,6 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import React from 'react';
 
-const LazySection = memo(
+const LazySection = React.memo(
   ({
     children,
     className = "",
@@ -10,10 +10,10 @@ const LazySection = memo(
     threshold = 0.01,
     once = true,
   }) => {
-    const containerRef = useRef(null);
-    const [isVisible, setIsVisible] = useState(false);
+    const containerRef = React.useRef(null);
+    const [isVisible, setIsVisible] = React.useState(true);
 
-    const placeholderStyle = useMemo(
+    const placeholderStyle = React.useMemo(
       () => ({
         minHeight:
           typeof placeholderHeight === "number"
@@ -23,7 +23,7 @@ const LazySection = memo(
       [placeholderHeight]
     );
 
-    useEffect(() => {
+    React.useEffect(() => {
       if (isVisible && once) return;
 
       if (

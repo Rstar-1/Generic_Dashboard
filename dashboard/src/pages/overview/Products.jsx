@@ -23,6 +23,7 @@ const STOCK_OPTIONS = [
 
 const CATEGORY_OPTIONS = [
     { label: "All Categories", value: "all" },
+    { label: "PVC strip Curtain Rolls", value: "PVC strip Curtain Rolls" },
     { label: "Standard PVC", value: "Standard PVC" },
     { label: "Polar Grade", value: "Polar Grade" },
     { label: "Brackets", value: "Brackets" },
@@ -124,16 +125,16 @@ const OverviewProducts = () => {
 
     // Action handlers for rows
     const handleViewProduct = useCallback((row) => {
-        showToast(`Viewing product specifications for ${row.title}`, "info");
+        showToast(`Viewing product specifications for ${row.name || row.title}`, "info");
     }, []);
 
     const handleEditProduct = useCallback((row) => {
-        showToast(`Editing product ${row.sku}`, "info");
+        showToast(`Editing product ${row.name || row.sku || row.id}`, "info");
     }, []);
 
     const handleDeleteProduct = useCallback((row) => {
         setProducts((prev) => prev.filter((p) => p.id !== row.id));
-        showToast(`Product ${row.sku} removed from catalog!`, "danger");
+        showToast(`Product ${row.name || row.sku || row.id} removed from catalog!`, "danger");
     }, []);
 
     const handleExportProducts = useCallback(() => {
@@ -149,7 +150,7 @@ const OverviewProducts = () => {
         const targetCategory = String(categoryFilter || "all").toLowerCase().trim();
 
         return products.filter((item) => {
-            const itemStatus = String(item.status || "").toLowerCase().trim();
+            const itemStatus = String(item.status || (item.inStock ? "In Stock" : "Out of Stock")).toLowerCase().trim();
             const itemCategory = String(item.category || "").toLowerCase().trim();
 
             const matchesTab = targetTab === "all" || itemStatus === targetTab;
@@ -158,9 +159,9 @@ const OverviewProducts = () => {
 
             const matchesSearch =
                 !q ||
-                String(item.title || "").toLowerCase().includes(q) ||
-                String(item.sku || "").toLowerCase().includes(q) ||
-                String(item.price || "").toLowerCase().includes(q) ||
+                String(item.name || item.title || "").toLowerCase().includes(q) ||
+                String(item.sku || item.subCategory || item.type || item.vendor || item.brand || "").toLowerCase().includes(q) ||
+                String(item.priceFormatted || item.price || "").toLowerCase().includes(q) ||
                 itemCategory.includes(q) ||
                 itemStatus.includes(q);
 

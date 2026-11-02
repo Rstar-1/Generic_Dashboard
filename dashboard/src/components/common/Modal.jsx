@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback, useMemo } from "react";
+import React from 'react';
 import FormBuilder from "../forms/FormBuilder";
 import Button from "./Button";
 import Icon from "./Icon";
@@ -12,7 +12,7 @@ export const MODAL_WIDTHS = {
   fullscreen: "100%",
 };
 
-export const Modal = memo(
+export const Modal = React.memo(
   ({
     isOpen: controlledIsOpen,
     onClose: controlledOnClose,
@@ -26,12 +26,12 @@ export const Modal = memo(
     placement = "left",
     bodyHeight,
   }) => {
-    const [localIsOpen, setLocalIsOpen] = useState(false);
+    const [localIsOpen, setLocalIsOpen] = React.useState(false);
 
     const isControlled = controlledIsOpen !== undefined;
     const isOpen = isControlled ? controlledIsOpen : localIsOpen;
 
-    const handleClose = useCallback(() => {
+    const handleClose = React.useCallback(() => {
       if (isControlled) {
         controlledOnClose?.();
       } else {
@@ -39,7 +39,7 @@ export const Modal = memo(
       }
     }, [isControlled, controlledOnClose]);
 
-    const handleOpen = useCallback(() => {
+    const handleOpen = React.useCallback(() => {
       if (!isControlled) {
         setLocalIsOpen(true);
       }
@@ -52,7 +52,7 @@ export const Modal = memo(
       ? "flex fixed top-0 left-0 w-full h-100 z-999"
       : "flex items-center justify-center fixed top-0 left-0 w-full h-100 z-999 overflow-hidden";
 
-    const wrapperStyle = useMemo(
+    const wrapperStyle = React.useMemo(
       () =>
         isSidebar
           ? {
@@ -64,13 +64,13 @@ export const Modal = memo(
     );
 
     const cardClass = isSidebar
-      ? `bg-white relative z-99 b-shadow border-ec p-0 overflow-auto h-100 sm-w-full ${placement === "right" ? "animate-sidebar-right" : "animate-sidebar-left"
+      ? `bg-white relative z-999 b-shadow border-ec p-0 overflow-auto h-100 sm-w-full ${placement === "right" ? "animate-sidebar-right" : "animate-sidebar-left"
       }`
       : isFullscreen
-        ? "bg-white relative z-99 b-shadow border-ec p-0 overflow-auto w-full h-100 animate-modal-scale"
-        : "bg-white relative z-99 rounded-10 b-shadow border-ec p-0 overflow-auto animate-modal-scale sm-w-full";
+        ? "bg-white relative z-999 b-shadow border-ec p-0 overflow-auto w-full h-100 animate-modal-scale"
+        : "bg-white relative z-999 rounded-10 b-shadow border-ec p-0 overflow-auto animate-modal-scale sm-w-full";
 
-    const sizeStyle = useMemo(
+    const sizeStyle = React.useMemo(
       () => ({
         width: MODAL_WIDTHS[size] || size || MODAL_WIDTHS.sm,
         maxWidth: "100%",
@@ -161,7 +161,7 @@ export const Modal = memo(
 
 Modal.displayName = "Modal";
 
-export const CrudModal = memo(
+export const CrudModal = React.memo(
   ({
     title = "Form Details",
     fields = [],
@@ -181,7 +181,7 @@ export const CrudModal = memo(
 
 CrudModal.displayName = "CrudModal";
 
-export const DeleteModal = memo(
+export const DeleteModal = React.memo(
   ({
     isOpen,
     onClose,
@@ -190,9 +190,9 @@ export const DeleteModal = memo(
     message = "Are you sure you want to delete this item? This action cannot be undone.",
     ...props
   }) => {
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = React.useState(false);
 
-    const handleDelete = useCallback(async () => {
+    const handleDelete = React.useCallback(async () => {
       if (!onDelete) return;
       setLoading(true);
       try {

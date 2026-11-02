@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 const VERSION_CLASSES = {
   v0: "w-full",
@@ -9,22 +9,27 @@ const VERSION_CLASSES = {
 };
 
 const Container = React.memo(
-  ({
-    children,
-    version = "v2",
-    className = "",
-    style = {},
-    as: Component = "section",
-    ...props
-  }) => {
-    const containerClass = VERSION_CLASSES[version] || "w-full";
+  React.forwardRef(
+    (
+      {
+        children,
+        version = "v2",
+        className = "",
+        style = {},
+        as: Component = "section",
+        ...props
+      },
+      ref
+    ) => {
+      const containerClass = VERSION_CLASSES[version] || "w-full";
 
-    return (
-      <Component style={style} {...props}>
-        <div className={`${containerClass} ${className}`}>{children}</div>
-      </Component>
-    );
-  }
+      return (
+        <Component ref={ref} style={style} {...props}>
+          <div className={`${containerClass} ${className}`}>{children}</div>
+        </Component>
+      );
+    }
+  )
 );
 
 Container.displayName = "Container";
