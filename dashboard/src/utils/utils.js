@@ -134,11 +134,19 @@ const PAGE_ROUTES = {
   "/overview/cms": "CMS",
   "/overview/seo": "SEO",
   "/management/customers": "Customers",
+  "/customers": "Customers",
   "/management/leads": "Leads",
+  "/leads": "Leads",
   "/management/order": "Orders",
+  "/management/orders": "Orders",
+  "/orders": "Orders",
   "/management/transactions": "Transactions",
+  "/management/transaction": "Transactions",
+  "/transactions": "Transactions",
   "/settings/users": "System Users",
+  "/users": "System Users",
   "/settings/roles": "Roles",
+  "/roles": "Roles",
 };
 
 export const normalizePageIdentifier = (pageOrRoute = "", parentGroup = "") => {
@@ -187,12 +195,16 @@ export const canPerformAction = (roleOrUser, action = "view", entity = "") => {
   if (!ent) return true;
   const act = String(action).toLowerCase().trim();
 
+  // View actions are permitted for anyone viewing the page/data
+  if (act === "view") return true;
+
   // Resolve entity aliases to match rolesData
   let baseEnt = ent;
   const currentPath = typeof window !== "undefined" ? String(window.location?.pathname || "").toLowerCase() : "";
   if (ent.includes("blogcat") || (ent.includes("categor") && currentPath.includes("blog"))) baseEnt = "blogcategory";
   else if (ent.includes("productcat") || (ent.includes("categor") && currentPath.includes("product"))) baseEnt = "productcategory";
   else if (ent.includes("user")) baseEnt = "systemuser";
+  else if (ent.includes("role")) baseEnt = "roles";
   else if (ent.includes("article") || ent.includes("blog")) baseEnt = "blogs";
   else if (ent.includes("section") || ent.includes("cms")) baseEnt = "cms";
   else if (ent.includes("page") || ent.includes("seo")) baseEnt = "seo";
@@ -206,7 +218,6 @@ export const canPerformAction = (roleOrUser, action = "view", entity = "") => {
     return hasPermission(config, `trash_${baseEnt}`) || hasPermission(config, `delete_${baseEnt}`);
   }
   if (hasPermission(config, `${act}_${baseEnt}`)) return true;
-  if (act === "view" && (canAccessPage(config, entity) || canAccessPage(config, currentPath))) return true;
   return false;
 };
 

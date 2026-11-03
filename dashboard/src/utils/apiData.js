@@ -1,4 +1,4 @@
-import { formatDate } from "./formatDate";
+import { formatDate } from "./formatDate.js";
 
 const menuData = [
   {
@@ -195,7 +195,7 @@ const usersTableColumns = [
     header: "Actions",
     accessor: "actions",
     ui: "actions",
-    style: { minWidth: "100px", textAlign: "right" },
+    style: { minWidth: "130px" },
   },
 ];
 
@@ -253,7 +253,7 @@ const rolesTableColumns = [
     header: "Actions",
     accessor: "actions",
     ui: "actions",
-    style: { minWidth: "100px", textAlign: "right" },
+    style: { minWidth: "130px" },
   },
 ];
 
@@ -271,6 +271,20 @@ const customersTableColumns = [
     imageKey: "avatar",
     subKey: "mobile",
     style: { minWidth: "230px" },
+  },
+  {
+    header: "Customer ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "100px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "200px" },
   },
   {
     header: "Company",
@@ -324,7 +338,7 @@ const customersTableColumns = [
     header: "Actions",
     accessor: "actions",
     ui: "actions",
-    style: { minWidth: "110px", textAlign: "right" },
+    style: { minWidth: "130px" },
   },
 ];
 
@@ -348,6 +362,14 @@ const transactionsTableColumns = [
     accessor: "transactionId",
     ui: "code",
     style: { minWidth: "100px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "200px" },
   },
   {
     header: "Amount",
@@ -383,7 +405,7 @@ const transactionsTableColumns = [
     header: "Actions",
     accessor: "actions",
     ui: "actions",
-    style: { minWidth: "110px", textAlign: "right" },
+    style: { minWidth: "130px" },
   },
 ];
 
@@ -401,6 +423,20 @@ const productCategoriesTableColumns = [
     subKey: "slug",
     imageKey: "icon",
     style: { minWidth: "220px" },
+  },
+  {
+    header: "Category ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "100px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "200px" },
   },
   {
     header: "Code",
@@ -427,8 +463,14 @@ const productCategoriesTableColumns = [
     style: { minWidth: "110px" },
   },
   {
-    header: "Created Date",
+    header: "Created",
     accessor: "createdDate",
+    ui: "date",
+    style: { minWidth: "120px" },
+  },
+  {
+    header: "Updated",
+    accessor: "updatedDate",
     ui: "date",
     style: { minWidth: "120px" },
   },
@@ -436,7 +478,7 @@ const productCategoriesTableColumns = [
     header: "Actions",
     accessor: "actions",
     ui: "actions",
-    style: { minWidth: "100px", textAlign: "right" },
+    style: { minWidth: "130px" },
   },
 ];
 
@@ -454,6 +496,20 @@ const productsTableColumns = [
     subKey: "sku",
     imageKey: "image",
     style: { minWidth: "240px" },
+  },
+  {
+    header: "Product ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "100px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "200px" },
   },
   {
     header: "Category",
@@ -486,6 +542,12 @@ const productsTableColumns = [
     style: { minWidth: "90px" },
   },
   {
+    header: "Created",
+    accessor: "createdDate",
+    ui: "date",
+    style: { minWidth: "120px" },
+  },
+  {
     header: "Updated",
     accessor: "updatedDate",
     ui: "date",
@@ -495,7 +557,7 @@ const productsTableColumns = [
     header: "Actions",
     accessor: "actions",
     ui: "actions",
-    style: { minWidth: "100px", textAlign: "right" },
+    style: { minWidth: "130px" },
   },
 ];
 
@@ -513,6 +575,20 @@ const blogCategoriesTableColumns = [
     subKey: "slug",
     imageKey: "icon",
     style: { minWidth: "220px" },
+  },
+  {
+    header: "Category ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "100px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "200px" },
   },
   {
     header: "Badge Tag",
@@ -539,8 +615,14 @@ const blogCategoriesTableColumns = [
     style: { minWidth: "110px" },
   },
   {
-    header: "Created Date",
+    header: "Created",
     accessor: "createdDate",
+    ui: "date",
+    style: { minWidth: "120px" },
+  },
+  {
+    header: "Updated",
+    accessor: "updatedDate",
     ui: "date",
     style: { minWidth: "120px" },
   },
@@ -548,7 +630,7 @@ const blogCategoriesTableColumns = [
     header: "Actions",
     accessor: "actions",
     ui: "actions",
-    style: { minWidth: "100px", textAlign: "right" },
+    style: { minWidth: "130px" },
   },
 ];
 
@@ -566,6 +648,20 @@ const blogsTableColumns = [
     subKey: "author",
     imageKey: "image",
     style: { minWidth: "270px" },
+  },
+  {
+    header: "Blog ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "100px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "200px" },
   },
   {
     header: "Category",
@@ -604,16 +700,22 @@ const blogsTableColumns = [
     style: { minWidth: "110px" },
   },
   {
-    header: "Date",
-    accessor: "date",
+    header: "Created",
+    accessor: "createdDate",
     ui: "date",
-    style: { minWidth: "130px" },
+    style: { minWidth: "120px" },
+  },
+  {
+    header: "Updated",
+    accessor: "updatedDate",
+    ui: "date",
+    style: { minWidth: "120px" },
   },
   {
     header: "Actions",
     accessor: "actions",
     ui: "actions",
-    style: { minWidth: "100px", textAlign: "right" },
+    style: { minWidth: "130px" },
   },
 ];
 
@@ -631,6 +733,20 @@ const leadsTableColumns = [
     subKey: "company",
     imageKey: "avatar",
     style: { minWidth: "220px" },
+  },
+  {
+    header: "Lead ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "100px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "200px" },
   },
   {
     header: "Contact",
@@ -663,8 +779,14 @@ const leadsTableColumns = [
     style: { minWidth: "130px" },
   },
   {
-    header: "Created Date",
+    header: "Created",
     accessor: "createdDate",
+    ui: "date",
+    style: { minWidth: "120px" },
+  },
+  {
+    header: "Updated",
+    accessor: "updatedDate",
     ui: "date",
     style: { minWidth: "120px" },
   },
@@ -672,7 +794,7 @@ const leadsTableColumns = [
     header: "Actions",
     accessor: "actions",
     ui: "actions",
-    style: { minWidth: "100px", textAlign: "right" },
+    style: { minWidth: "130px" },
   },
 ];
 
@@ -696,6 +818,14 @@ const ordersTableColumns = [
     imageKey: "avatar",
     subKey: "email",
     style: { minWidth: "220px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "200px" },
   },
   {
     header: "Items",
@@ -722,8 +852,14 @@ const ordersTableColumns = [
     style: { minWidth: "120px" },
   },
   {
-    header: "Date",
-    accessor: "date",
+    header: "Created",
+    accessor: "createdDate",
+    ui: "date",
+    style: { minWidth: "120px" },
+  },
+  {
+    header: "Updated",
+    accessor: "updatedDate",
     ui: "date",
     style: { minWidth: "120px" },
   },
@@ -731,7 +867,7 @@ const ordersTableColumns = [
     header: "Actions",
     accessor: "actions",
     ui: "actions",
-    style: { minWidth: "100px", textAlign: "right" },
+    style: { minWidth: "130px" },
   },
 ];
 
@@ -748,6 +884,20 @@ const seoTableColumns = [
     ui: "profile",
     subKey: "path",
     style: { minWidth: "180px" },
+  },
+  {
+    header: "Page ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "100px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "200px" },
   },
   {
     header: "Meta Title",
@@ -798,10 +948,22 @@ const seoTableColumns = [
     style: { minWidth: "120px" },
   },
   {
+    header: "Created",
+    accessor: "createdDate",
+    ui: "date",
+    style: { minWidth: "120px" },
+  },
+  {
+    header: "Updated",
+    accessor: "updatedDate",
+    ui: "date",
+    style: { minWidth: "120px" },
+  },
+  {
     header: "Actions",
     accessor: "actions",
     ui: "actions",
-    style: { minWidth: "100px", textAlign: "right" },
+    style: { minWidth: "130px" },
   },
 ];
 
@@ -818,6 +980,20 @@ const cmsTableColumns = [
     ui: "profile",
     subKey: "slug",
     style: { minWidth: "220px" },
+  },
+  {
+    header: "CMS ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "100px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "200px" },
   },
   {
     header: "Section Area",
@@ -844,7 +1020,13 @@ const cmsTableColumns = [
     style: { minWidth: "90px" },
   },
   {
-    header: "Updated Date",
+    header: "Created",
+    accessor: "createdDate",
+    ui: "date",
+    style: { minWidth: "120px" },
+  },
+  {
+    header: "Updated",
     accessor: "updatedDate",
     ui: "date",
     style: { minWidth: "120px" },
@@ -853,7 +1035,7 @@ const cmsTableColumns = [
     header: "Actions",
     accessor: "actions",
     ui: "actions",
-    style: { minWidth: "100px", textAlign: "right" },
+    style: { minWidth: "130px" },
   },
 ];
 
@@ -1000,6 +1182,11 @@ const customersData = [
     updatedDate: "2026-09-14",
     avatar:
       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
   },
   {
     id: "CUST-002",
@@ -1016,6 +1203,12 @@ const customersData = [
     updatedDate: "2026-09-14",
     avatar:
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
   },
   {
     id: "CUST-003",
@@ -1032,6 +1225,12 @@ const customersData = [
     updatedDate: "2026-09-14",
     avatar:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80",
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
   },
   {
     id: "CUST-004",
@@ -1048,6 +1247,12 @@ const customersData = [
     updatedDate: "2026-09-14",
     avatar:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    createdby: {
+      name: "Nikhil Jaiswal",
+      mobile: "8907654321",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    },
   },
   {
     id: "CUST-005",
@@ -1064,6 +1269,11 @@ const customersData = [
     updatedDate: "2026-09-14",
     avatar:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
   },
   {
     id: "CUST-006",
@@ -1080,6 +1290,12 @@ const customersData = [
     updatedDate: "2026-09-14",
     avatar:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
   },
   {
     id: "CUST-007",
@@ -1096,6 +1312,12 @@ const customersData = [
     updatedDate: "2026-09-14",
     avatar:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
   },
   {
     id: "CUST-008",
@@ -1112,6 +1334,12 @@ const customersData = [
     updatedDate: "2026-09-14",
     avatar:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    createdby: {
+      name: "Nikhil Jaiswal",
+      mobile: "8907654321",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    },
   },
 ];
 
@@ -1125,10 +1353,17 @@ const transactionsData = [
       avatar:
         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
     },
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
     amount: "₹45,800",
     method: "Cash On Delivery",
     status: "Active",
     date: "2026-09-14",
+    createdDate: "2026-09-14",
+    updatedDate: "2026-09-15",
   },
   {
     id: "TXN-902",
@@ -1139,10 +1374,18 @@ const transactionsData = [
       avatar:
         "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80",
     },
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
     amount: "₹1,12,500",
     method: "Cash On Delivery",
     status: "Active",
     date: "2026-09-14",
+    createdDate: "2026-09-14",
+    updatedDate: "2026-09-15",
   },
   {
     id: "TXN-903",
@@ -1153,10 +1396,18 @@ const transactionsData = [
       avatar:
         "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
     },
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
     amount: "₹24,900",
     method: "UPI / NetBanking",
     status: "Active",
     date: "2026-09-13",
+    createdDate: "2026-09-13",
+    updatedDate: "2026-09-15",
   },
   {
     id: "TXN-904",
@@ -1167,10 +1418,18 @@ const transactionsData = [
       avatar:
         "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&q=80",
     },
+    createdby: {
+      name: "Nikhil Jaiswal",
+      mobile: "8907654321",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    },
     amount: "₹88,000",
     method: "Credit Card",
     status: "Inactive",
     date: "2026-09-12",
+    createdDate: "2026-09-12",
+    updatedDate: "2026-09-15",
   },
 ];
 
@@ -1457,7 +1716,13 @@ const productCategoriesData = [
     productsCount: 24,
     status: "Active",
     createdDate: "2026-01-12",
+    updatedDate: "2026-08-20",
     icon: "product/Product4.jpg",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
   },
   {
     id: "CAT-002",
@@ -1468,7 +1733,14 @@ const productCategoriesData = [
     productsCount: 18,
     status: "Active",
     createdDate: "2026-01-15",
+    updatedDate: "2026-08-20",
     icon: "product/Product7.jpg",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
   },
   {
     id: "CAT-003",
@@ -1479,7 +1751,14 @@ const productCategoriesData = [
     productsCount: 15,
     status: "Active",
     createdDate: "2026-02-01",
+    updatedDate: "2026-08-20",
     icon: "hero.png",
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
   },
   {
     id: "CAT-004",
@@ -1490,7 +1769,14 @@ const productCategoriesData = [
     productsCount: 12,
     status: "Active",
     createdDate: "2026-02-18",
+    updatedDate: "2026-08-20",
     icon: "dashimg.png",
+    createdby: {
+      name: "Nikhil Jaiswal",
+      mobile: "8907654321",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    },
   },
   {
     id: "CAT-005",
@@ -1501,7 +1787,13 @@ const productCategoriesData = [
     productsCount: 10,
     status: "Active",
     createdDate: "2026-03-05",
+    updatedDate: "2026-08-20",
     icon: "CROSY.png",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
   },
   {
     id: "CAT-006",
@@ -1512,7 +1804,14 @@ const productCategoriesData = [
     productsCount: 20,
     status: "Active",
     createdDate: "2026-03-20",
+    updatedDate: "2026-08-20",
     icon: "DSBKO.png",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
   },
   {
     id: "CAT-007",
@@ -1523,7 +1822,14 @@ const productCategoriesData = [
     productsCount: 8,
     status: "Inactive",
     createdDate: "2026-04-02",
+    updatedDate: "2026-08-20",
     icon: "SPLEDO.png",
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
   },
 ];
 
@@ -1537,8 +1843,14 @@ const productsData = [
     stock: "142 rolls",
     status: "Active",
     rating: "4.9 ★",
+    createdDate: "2026-01-10",
     updatedDate: "2026-09-15",
     image: "product/Product4.jpg",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
   },
   {
     id: "PRD-002",
@@ -1549,8 +1861,15 @@ const productsData = [
     stock: "68 rolls",
     status: "Active",
     rating: "4.8 ★",
+    createdDate: "2026-01-10",
     updatedDate: "2026-09-14",
     image: "hero.png",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
   },
   {
     id: "PRD-003",
@@ -1561,8 +1880,15 @@ const productsData = [
     stock: "320 pcs",
     status: "Active",
     rating: "5.0 ★",
+    createdDate: "2026-01-10",
     updatedDate: "2026-09-12",
     image: "product/Product7.jpg",
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
   },
   {
     id: "PRD-004",
@@ -1573,8 +1899,15 @@ const productsData = [
     stock: "12 rolls",
     status: "Active",
     rating: "4.7 ★",
+    createdDate: "2026-01-10",
     updatedDate: "2026-09-10",
     image: "dashimg.png",
+    createdby: {
+      name: "Nikhil Jaiswal",
+      mobile: "8907654321",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    },
   },
   {
     id: "PRD-005",
@@ -1585,8 +1918,14 @@ const productsData = [
     stock: "0 pcs",
     status: "Inactive",
     rating: "4.9 ★",
+    createdDate: "2026-01-10",
     updatedDate: "2026-09-08",
     image: "CROSY.png",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
   },
   {
     id: "PRD-006",
@@ -1597,8 +1936,15 @@ const productsData = [
     stock: "85 rolls",
     status: "Active",
     rating: "4.8 ★",
+    createdDate: "2026-01-10",
     updatedDate: "2026-09-06",
     image: "DSBKO.png",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
   },
   {
     id: "PRD-007",
@@ -1609,8 +1955,15 @@ const productsData = [
     stock: "8 rolls",
     status: "Active",
     rating: "4.6 ★",
+    createdDate: "2026-01-10",
     updatedDate: "2026-09-02",
     image: "SPLEDO.png",
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
   },
 ];
 
@@ -1625,7 +1978,13 @@ const blogCategoriesData = [
     views: "58.4k",
     status: "Active",
     createdDate: "2026-01-05",
+    updatedDate: "2026-09-10",
     icon: "SPLEDO.png",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
   },
   {
     id: "BCAT-002",
@@ -1637,7 +1996,14 @@ const blogCategoriesData = [
     views: "48.2k",
     status: "Active",
     createdDate: "2026-01-10",
+    updatedDate: "2026-09-10",
     icon: "hero.png",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
   },
   {
     id: "BCAT-003",
@@ -1649,7 +2015,14 @@ const blogCategoriesData = [
     views: "62.4k",
     status: "Active",
     createdDate: "2026-01-18",
+    updatedDate: "2026-09-10",
     icon: "product/Product4.jpg",
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
   },
   {
     id: "BCAT-004",
@@ -1661,7 +2034,14 @@ const blogCategoriesData = [
     views: "28.1k",
     status: "Active",
     createdDate: "2026-02-05",
+    updatedDate: "2026-09-10",
     icon: "product/Product7.jpg",
+    createdby: {
+      name: "Nikhil Jaiswal",
+      mobile: "8907654321",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    },
   },
   {
     id: "BCAT-005",
@@ -1673,7 +2053,13 @@ const blogCategoriesData = [
     views: "94.6k",
     status: "Active",
     createdDate: "2026-02-22",
+    updatedDate: "2026-09-10",
     icon: "CROSY.png",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
   },
   {
     id: "BCAT-006",
@@ -1685,20 +2071,34 @@ const blogCategoriesData = [
     views: "14.2k",
     status: "Inactive",
     createdDate: "2025-11-12",
+    updatedDate: "2026-09-10",
     icon: "DSBKO.png",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
   },
 ];
 
 const blogsData = [
   {
-    id: 1,
+    id: "BLG-001",
     title:
       "PVC Curtain Rolls in 2026: Latest Trends, Applications & Buying Guide",
     categoryId: 1,
     category: "Buying & Selection Guide",
     author: "Technical Specialist",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
     date: "October 05, 2026",
     publishedDate: "2026-10-05",
+    createdDate: "2026-10-05",
+    updatedDate: "2026-10-15",
     comments: "18 Comments",
     commentsCount: 18,
     readTime: "6 min read",
@@ -1737,13 +2137,21 @@ const blogsData = [
     views: "18,420",
   },
   {
-    id: 2,
+    id: "BLG-002",
     title: "7 Ways Polar Grade Curtains Reduce Industrial Freezer Power Bills",
     categoryId: 3,
     category: "Energy Efficiency",
     author: "Dr. Aniket Joshi",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
     date: "September 12, 2026",
     publishedDate: "2026-09-12",
+    createdDate: "2026-09-12",
+    updatedDate: "2026-10-15",
     comments: "14 Comments",
     commentsCount: 14,
     readTime: "5 min read",
@@ -1761,13 +2169,21 @@ const blogsData = [
     views: "14,820",
   },
   {
-    id: 3,
+    id: "BLG-003",
     title: "Choosing Hook-On SS304 vs Galvanized Steel Mounting Tracks",
     categoryId: 5,
     category: "Installation Guides",
     author: "Vikram Mehta",
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
     date: "September 08, 2026",
     publishedDate: "2026-09-08",
+    createdDate: "2026-09-08",
+    updatedDate: "2026-10-15",
     comments: "9 Comments",
     commentsCount: 9,
     readTime: "7 min read",
@@ -1785,13 +2201,21 @@ const blogsData = [
     views: "9,450",
   },
   {
-    id: 4,
+    id: "BLG-004",
     title: "How Anti-Insect Amber Curtains Protect Food Processing Plants",
     categoryId: 4,
     category: "Workplace Safety",
     author: "Pooja Hegde",
+    createdby: {
+      name: "Nikhil Jaiswal",
+      mobile: "8907654321",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    },
     date: "September 02, 2026",
     publishedDate: "2026-09-02",
+    createdDate: "2026-09-02",
+    updatedDate: "2026-10-15",
     comments: "22 Comments",
     commentsCount: 22,
     readTime: "4 min read",
@@ -1809,13 +2233,20 @@ const blogsData = [
     views: "18,200",
   },
   {
-    id: 5,
+    id: "BLG-005",
     title: "2026 Guide to Magnetic Hands-Free Automatic PVC Closures",
     categoryId: 2,
     category: "Cold Storage",
     author: "Suresh Pillai",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
     date: "September 28, 2026",
     publishedDate: "2026-09-28",
+    createdDate: "2026-09-28",
+    updatedDate: "2026-10-15",
     comments: "3 Comments",
     commentsCount: 3,
     readTime: "6 min read",
@@ -1833,13 +2264,21 @@ const blogsData = [
     views: "3,110",
   },
   {
-    id: 6,
+    id: "BLG-006",
     title: "Preventing Forklift Damage with Double-Ribbed PVC Strips",
     categoryId: 4,
     category: "Workplace Safety",
     author: "Vikram Mehta",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
     date: "October 05, 2026",
     publishedDate: "2026-10-05",
+    createdDate: "2026-10-05",
+    updatedDate: "2026-10-15",
     comments: "0 Comments",
     commentsCount: 0,
     readTime: "5 min read",
@@ -1869,8 +2308,14 @@ const leadsData = [
     status: "Active",
     assignedTo: "Raj Shetye",
     createdDate: "2026-09-14",
+    updatedDate: "2026-09-15",
     avatar:
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
   },
   {
     id: "LEAD-002",
@@ -1882,8 +2327,15 @@ const leadsData = [
     status: "Active",
     assignedTo: "Pooja Hegde",
     createdDate: "2026-09-13",
+    updatedDate: "2026-09-15",
     avatar:
       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
   },
   {
     id: "LEAD-003",
@@ -1895,8 +2347,15 @@ const leadsData = [
     status: "Inactive",
     assignedTo: "Unassigned",
     createdDate: "2026-09-12",
+    updatedDate: "2026-09-15",
     avatar:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
   },
   {
     id: "LEAD-004",
@@ -1908,8 +2367,15 @@ const leadsData = [
     status: "Active",
     assignedTo: "Raj Shetye",
     createdDate: "2026-09-10",
+    updatedDate: "2026-09-15",
     avatar:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80",
+    createdby: {
+      name: "Nikhil Jaiswal",
+      mobile: "8907654321",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    },
   },
   {
     id: "LEAD-005",
@@ -1921,8 +2387,14 @@ const leadsData = [
     status: "Inactive",
     assignedTo: "Vikram Mehta",
     createdDate: "2026-08-28",
+    updatedDate: "2026-09-15",
     avatar:
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
   },
 ];
 
@@ -1936,11 +2408,18 @@ const ordersData = [
       avatar:
         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
     },
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
     itemsCount: 6,
     totalAmount: "₹34,800",
     paymentMethod: "UPI / NetBanking",
     status: "Active",
     date: "2026-09-14",
+    createdDate: "2026-09-14",
+    updatedDate: "2026-09-15",
   },
   {
     id: "ORD-002",
@@ -1951,11 +2430,19 @@ const ordersData = [
       avatar:
         "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
     },
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
     itemsCount: 2,
     totalAmount: "₹12,400",
     paymentMethod: "Credit Card",
     status: "Active",
     date: "2026-09-13",
+    createdDate: "2026-09-13",
+    updatedDate: "2026-09-15",
   },
   {
     id: "ORD-003",
@@ -1966,11 +2453,19 @@ const ordersData = [
       avatar:
         "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80",
     },
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
     itemsCount: 14,
     totalAmount: "₹88,500",
     paymentMethod: "Wire Transfer",
     status: "Active",
     date: "2026-09-12",
+    createdDate: "2026-09-12",
+    updatedDate: "2026-09-15",
   },
   {
     id: "ORD-004",
@@ -1981,11 +2476,19 @@ const ordersData = [
       avatar:
         "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
     },
+    createdby: {
+      name: "Nikhil Jaiswal",
+      mobile: "8907654321",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    },
     itemsCount: 1,
     totalAmount: "₹4,850",
     paymentMethod: "Cash On Delivery",
     status: "Active",
     date: "2026-09-11",
+    createdDate: "2026-09-11",
+    updatedDate: "2026-09-15",
   },
   {
     id: "ORD-005",
@@ -1996,11 +2499,18 @@ const ordersData = [
       avatar:
         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
     },
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
     itemsCount: 3,
     totalAmount: "₹18,900",
     paymentMethod: "Credit Card",
     status: "Inactive",
     date: "2026-09-09",
+    createdDate: "2026-09-09",
+    updatedDate: "2026-09-15",
   },
 ];
 
@@ -2045,8 +2555,15 @@ const seoData = [
     breadcrumbs: [{ label: "Home", path: "/home" }],
     breadcrumbsText: "Home",
     canonical: "https://ashmitavinyls.com/home",
+    createdDate: "2026-01-15",
+    updatedDate: "2026-09-25",
     seoScore: "98 / 100",
     status: "Active",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
     lastCrawled: "2026-10-25",
   },
   {
@@ -2068,8 +2585,16 @@ const seoData = [
     ],
     breadcrumbsText: "Home / About Us",
     canonical: "https://ashmitavinyls.com/about",
+    createdDate: "2026-01-15",
+    updatedDate: "2026-09-25",
     seoScore: "92 / 100",
     status: "Active",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
     lastCrawled: "2026-10-24",
   },
   {
@@ -2091,8 +2616,16 @@ const seoData = [
     ],
     breadcrumbsText: "Home / Products",
     canonical: "https://ashmitavinyls.com/product",
+    createdDate: "2026-01-15",
+    updatedDate: "2026-09-25",
     seoScore: "96 / 100",
     status: "Active",
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
     lastCrawled: "2026-10-24",
   },
   {
@@ -2115,8 +2648,16 @@ const seoData = [
     ],
     breadcrumbsText: "Home / Products / Details",
     canonical: "https://ashmitavinyls.com/product-detail",
+    createdDate: "2026-01-15",
+    updatedDate: "2026-09-25",
     seoScore: "90 / 100",
     status: "Active",
+    createdby: {
+      name: "Nikhil Jaiswal",
+      mobile: "8907654321",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    },
     lastCrawled: "2026-10-23",
   },
   {
@@ -2138,8 +2679,15 @@ const seoData = [
     ],
     breadcrumbsText: "Home / Collection",
     canonical: "https://ashmitavinyls.com/collection",
+    createdDate: "2026-01-15",
+    updatedDate: "2026-09-25",
     seoScore: "94 / 100",
     status: "Active",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
     lastCrawled: "2026-10-22",
   },
   {
@@ -2161,8 +2709,16 @@ const seoData = [
     ],
     breadcrumbsText: "Home / Blog",
     canonical: "https://ashmitavinyls.com/blog",
+    createdDate: "2026-01-15",
+    updatedDate: "2026-09-25",
     seoScore: "93 / 100",
     status: "Active",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
     lastCrawled: "2026-10-20",
   },
   {
@@ -2185,8 +2741,16 @@ const seoData = [
     ],
     breadcrumbsText: "Home / Blog / Article",
     canonical: "https://ashmitavinyls.com/blog-detail",
+    createdDate: "2026-01-15",
+    updatedDate: "2026-09-25",
     seoScore: "78 / 100",
     status: "Inactive",
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
     lastCrawled: "2026-10-18",
   },
   {
@@ -2208,8 +2772,16 @@ const seoData = [
     ],
     breadcrumbsText: "Home / Supplier",
     canonical: "https://ashmitavinyls.com/supplier",
+    createdDate: "2026-01-15",
+    updatedDate: "2026-09-25",
     seoScore: "87 / 100",
     status: "Active",
+    createdby: {
+      name: "Nikhil Jaiswal",
+      mobile: "8907654321",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    },
     lastCrawled: "2026-10-16",
   },
   {
@@ -2231,8 +2803,15 @@ const seoData = [
     ],
     breadcrumbsText: "Home / Quality",
     canonical: "https://ashmitavinyls.com/quality",
+    createdDate: "2026-01-15",
+    updatedDate: "2026-09-25",
     seoScore: "89 / 100",
     status: "Active",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
     lastCrawled: "2026-10-15",
   },
   {
@@ -2254,8 +2833,16 @@ const seoData = [
     ],
     breadcrumbsText: "Home / Connect Us",
     canonical: "https://ashmitavinyls.com/connect",
+    createdDate: "2026-01-15",
+    updatedDate: "2026-09-25",
     seoScore: "95 / 100",
     status: "Active",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
     lastCrawled: "2026-10-12",
   },
   {
@@ -2277,8 +2864,16 @@ const seoData = [
     ],
     breadcrumbsText: "Home / FAQ",
     canonical: "https://ashmitavinyls.com/faq",
+    createdDate: "2026-01-15",
+    updatedDate: "2026-09-25",
     seoScore: "91 / 100",
     status: "Active",
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
     lastCrawled: "2026-10-10",
   },
   {
@@ -2300,8 +2895,16 @@ const seoData = [
     ],
     breadcrumbsText: "Home / Privacy Policy",
     canonical: "https://ashmitavinyls.com/privacy",
+    createdDate: "2026-01-15",
+    updatedDate: "2026-09-25",
     seoScore: "N/A",
     status: "Inactive",
+    createdby: {
+      name: "Nikhil Jaiswal",
+      mobile: "8907654321",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    },
     lastCrawled: "2026-10-01",
   },
   {
@@ -2323,8 +2926,15 @@ const seoData = [
     ],
     breadcrumbsText: "Home / Terms & Conditions",
     canonical: "https://ashmitavinyls.com/terms",
+    createdDate: "2026-01-15",
+    updatedDate: "2026-09-25",
     seoScore: "N/A",
     status: "Inactive",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
     lastCrawled: "2026-10-01",
   },
 ];
@@ -2367,7 +2977,13 @@ const cmsData = [
     author: "Raj Shetye",
     status: "Active",
     revision: "v2.4",
+    createdDate: "2026-02-10",
     updatedDate: "2026-09-14",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
   },
   {
     id: "CMS-002",
@@ -2377,7 +2993,14 @@ const cmsData = [
     author: "Pooja Hegde",
     status: "Active",
     revision: "v1.8",
+    createdDate: "2026-02-10",
     updatedDate: "2026-09-10",
+    createdby: {
+      name: "Adhiraj",
+      mobile: "1234567890",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
+    },
   },
   {
     id: "CMS-003",
@@ -2387,7 +3010,14 @@ const cmsData = [
     author: "Vikram Mehta",
     status: "Active",
     revision: "v1.2",
+    createdDate: "2026-02-10",
     updatedDate: "2026-09-05",
+    createdby: {
+      name: "Kaif Shaikh",
+      mobile: "9807654321",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
+    },
   },
   {
     id: "CMS-004",
@@ -2397,7 +3027,14 @@ const cmsData = [
     author: "Raj Shetye",
     status: "Inactive",
     revision: "v0.9",
+    createdDate: "2026-02-10",
     updatedDate: "2026-09-14",
+    createdby: {
+      name: "Nikhil Jaiswal",
+      mobile: "8907654321",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
+    },
   },
   {
     id: "CMS-005",
@@ -2407,7 +3044,13 @@ const cmsData = [
     author: "Pooja Hegde",
     status: "Inactive",
     revision: "v1.0",
+    createdDate: "2026-02-10",
     updatedDate: "2026-08-20",
+    createdby: {
+      name: "Raj Shetye",
+      mobile: "8779030638",
+      avatar: "",
+    },
   },
 ];
 

@@ -14,13 +14,14 @@ import {
     getNestedValue,
     canPerformAction,
     getCurrentRole,
-    hasPermission
+    hasPermission,
+    useCurrentUser
 } from '../../utils';
 
 export { formatDate, Badge, BadgeList };
 
-const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, actions, editTitle, deleteTitle, viewTitle, entity }) => {
-    const userRole = getCurrentRole();
+const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, actions, editTitle, deleteTitle, viewTitle, entity, currentRole }) => {
+    const activeRole = currentRole || getCurrentRole() || "admin";
     const activeEntity = col.entity || entity || (typeof window !== "undefined" ? window.location?.pathname : "");
 
     const rowActions = col.actions || actions;
@@ -29,8 +30,8 @@ const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, 
         if (Array.isArray(rowActions) && rowActions.length > 0) {
             return rowActions.filter((act) => {
                 if (!act) return false;
-                if (act.permission) return hasPermission(userRole, act.permission);
-                if (act.action) return canPerformAction(userRole, act.action, activeEntity);
+                if (act.permission) return hasPermission(activeRole, act.permission);
+                if (act.action) return canPerformAction(activeRole, act.action, activeEntity);
                 return true;
             });
         }
@@ -41,9 +42,9 @@ const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, 
         if (!editFn && !deleteFn && !viewFn) return [];
 
         const list = [];
-        const canView = col.canView !== undefined ? col.canView : canPerformAction(userRole, "view", activeEntity);
-        const canEdit = col.canEdit !== undefined ? col.canEdit : canPerformAction(userRole, "edit", activeEntity);
-        const canDelete = col.canDelete !== undefined ? col.canDelete : canPerformAction(userRole, "delete", activeEntity);
+        const canView = col.canView !== undefined ? col.canView : (viewFn ? true : canPerformAction(activeRole, "view", activeEntity));
+        const canEdit = col.canEdit !== undefined ? col.canEdit : canPerformAction(activeRole, "edit", activeEntity);
+        const canDelete = col.canDelete !== undefined ? col.canDelete : canPerformAction(activeRole, "delete", activeEntity);
 
         if (viewFn && canView) {
             list.push({
@@ -51,7 +52,7 @@ const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, 
                 bg: "light-info",
                 color: "info",
                 title: col.viewTitle || viewTitle || "View",
-                onClick: () => viewFn(row, rowIdx),
+                onClick: (r, idx) => viewFn(r || row, idx ?? rowIdx),
             });
         }
         if (editFn && canEdit) {
@@ -60,7 +61,7 @@ const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, 
                 bg: "light-primary",
                 color: "primary",
                 title: col.editTitle || editTitle || "Edit",
-                onClick: () => editFn(row, rowIdx),
+                onClick: (r, idx) => editFn(r || row, idx ?? rowIdx),
             });
         }
         if (deleteFn && canDelete) {
@@ -69,11 +70,11 @@ const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, 
                 bg: "light-danger",
                 color: "danger",
                 title: col.deleteTitle || deleteTitle || "Delete",
-                onClick: () => deleteFn(row, rowIdx),
+                onClick: (r, idx) => deleteFn(r || row, idx ?? rowIdx),
             });
         }
         return list;
-    }, [col, actions, rowActions, onEdit, onDelete, onView, userRole, activeEntity, row, rowIdx, viewTitle, editTitle, deleteTitle]);
+    }, [col, actions, rowActions, onEdit, onDelete, onView, activeRole, activeEntity, row, rowIdx, viewTitle, editTitle, deleteTitle]);
 
     if (!allowedActions.length) {
         return <span className="mini-text text-gray" style={{ display: "inline-block", minWidth: "20px", textAlign: "center" }}>-</span>;
@@ -89,7 +90,7 @@ const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, 
                     icon={act.icon}
                     bg={act.bg}
                     color={act.color}
-                    onClick={() => act.onClick(row, rowIdx)}
+                    onClick={() => act.onClick ? act.onClick(row, rowIdx) : undefined}
                     title={act.title}
                 />
             ))}
@@ -143,7 +144,8 @@ const TableCell = React.memo(({
     editTitle,
     deleteTitle,
     viewTitle,
-    itemName
+    itemName,
+    currentRole
 }) => {
     const rowId = row._id || row.id || rowIdx;
     const cellValue = col.accessor ? getNestedValue(row, col.accessor) : undefined;
@@ -224,7 +226,7 @@ const TableCell = React.memo(({
     }
 
     // Actions
-    if ((col.accessor === "actions" || col.ui === "actions") && !React.isValidElement(cellValue)) {
+    if ((col.accessor === "actions" || col.ui === "actions" || col.header === "Actions") && !React.isValidElement(cellValue)) {
         return (
             <ActionButtons
                 row={row}
@@ -238,6 +240,7 @@ const TableCell = React.memo(({
                 deleteTitle={deleteTitle}
                 viewTitle={viewTitle}
                 entity={col.entity || itemName}
+                currentRole={currentRole}
             />
         );
     }
@@ -602,6 +605,8 @@ const Table = ({
         onSearchChange(typeof val === "string" ? val : val?.target?.value ?? "");
     }, [onSearchChange]);
 
+    const { role: userRole } = useCurrentUser();
+
     const actionProps = React.useMemo(() => ({
         onEdit,
         onDelete,
@@ -610,8 +615,9 @@ const Table = ({
         editTitle,
         deleteTitle,
         viewTitle,
-        itemName
-    }), [onEdit, onDelete, onView, actions, editTitle, deleteTitle, viewTitle, itemName]);
+        itemName,
+        currentRole: userRole
+    }), [onEdit, onDelete, onView, actions, editTitle, deleteTitle, viewTitle, itemName, userRole]);
 
     return (
         <>
