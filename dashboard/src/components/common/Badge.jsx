@@ -18,6 +18,7 @@ export const getBadgeTheme = (val) => {
         case "rejected":
         case "failed":
         case "inactive":
+        case "deleted":
             return {
                 bg: "rgba(194, 27, 27, 0.12)",
                 color: "var(--danger)",

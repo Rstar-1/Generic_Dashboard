@@ -209,9 +209,11 @@ const TableCell = React.memo(({
 
     // Date columns
     if (
-        col.ui === "date" ||
+        (col.ui === "date" && col.accessor !== "isDeleted" && col.header !== "Deleted") ||
         col.header === "Created" ||
         col.header === "Updated" ||
+        col.header === "Created Date" ||
+        col.header === "Updated Date" ||
         col.accessor === "createdAt" ||
         col.accessor === "updatedAt" ||
         col.accessor === "createdDate" ||
@@ -221,7 +223,7 @@ const TableCell = React.memo(({
         const defaultUpdated = getFirstValue(row, ["updatedAt", "updatedDate", "lastActive"], "2026-08-13");
         const rawDate = cellValue !== undefined && cellValue !== null && cellValue !== ""
             ? cellValue
-            : (col.header === "Created" ? defaultCreated : defaultUpdated);
+            : (col.header === "Created" || col.header === "Created Date" ? defaultCreated : defaultUpdated);
         return <p className="text-gray mini-text font-500" style={{ margin: 0 }}>{formatDate(rawDate, col.dateFormat || col.format) || "-"}</p>;
     }
 
@@ -280,11 +282,16 @@ const TableCell = React.memo(({
                 );
             case "status": {
                 const lower = String(cellValue || "").toLowerCase();
-                const isActive = typeof cellValue === "boolean" ? cellValue : ["active", "approved", "published", "true"].includes(lower);
-                const isPending = ["pending", "review", "processing"].includes(lower);
-                const displayLabel = cellValue && typeof cellValue === "string"
-                    ? cellValue
-                    : (isActive ? "Active" : isPending ? "Pending" : "Inactive");
+                let displayLabel;
+                if (col.accessor === "isDeleted" || col.header === "Deleted") {
+                    displayLabel = cellValue === true || lower === "true" || lower === "deleted" ? "Deleted" : "Active";
+                } else {
+                    const isActive = typeof cellValue === "boolean" ? cellValue : ["active", "approved", "published", "true"].includes(lower);
+                    const isPending = ["pending", "review", "processing"].includes(lower);
+                    displayLabel = cellValue && typeof cellValue === "string"
+                        ? cellValue
+                        : (isActive ? "Active" : isPending ? "Pending" : "Inactive");
+                }
                 return (
                     <Badge
                         variant="status"
