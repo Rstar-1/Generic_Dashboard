@@ -13,7 +13,10 @@ import {
 } from "../../utils/apiData";
 
 const ITEMS_PER_PAGE = 5;
-const TABS = [{ name: "All Blog Categories", value: "all" }];
+const TABS = [
+    { name: "All Blog Categories", value: "all" },
+    { name: "Trash", value: "trash" },
+];
 
 const STATUS_OPTIONS = [
     { label: "All Statuses", value: "all" },
@@ -61,9 +64,14 @@ const CategoryBlogs = () => {
         setCurrentPage(1);
     }, []);
 
+    const activeNonDeletedCategories = React.useMemo(
+        () => categories.filter((c) => !c.isDeleted),
+        [categories]
+    );
+
     // Sidebar items with real-time dynamic count calculations
     const sidebarItems = React.useMemo(() => {
-        const counts = categories.reduce((acc, c) => {
+        const counts = activeNonDeletedCategories.reduce((acc, c) => {
             const s = c.status?.toLowerCase();
             if (s) acc[s] = (acc[s] || 0) + 1;
             return acc;
@@ -72,9 +80,9 @@ const CategoryBlogs = () => {
         return blogCategoriesSidebarData.items.map((item) => ({
             ...item,
             icon: "Clipboard",
-            count: item.status === "all" ? categories.length : (counts[item.status?.toLowerCase()] || 0),
+            count: item.status === "all" ? activeNonDeletedCategories.length : (counts[item.status?.toLowerCase()] || 0),
         }));
-    }, [categories]);
+    }, [activeNonDeletedCategories]);
 
     // Sidebar & tab navigation handlers
     const handleSidebarItemClick = React.useCallback((name) => {
@@ -87,8 +95,12 @@ const CategoryBlogs = () => {
     const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
-        const item = blogCategoriesSidebarData.items.find((i) => i.status === tabValue);
-        setSelectedCategory(item ? item.name : "All Categories");
+        if (tabValue === "trash") {
+            setSelectedCategory("Trash");
+        } else {
+            const item = blogCategoriesSidebarData.items.find((i) => i.status === tabValue);
+            setSelectedCategory(item ? item.name : "All Categories");
+        }
     }, []);
 
     const handleClearFilters = React.useCallback(() => {
@@ -109,9 +121,14 @@ const CategoryBlogs = () => {
     }, []);
 
     const handleDeleteCategory = React.useCallback((row) => {
-        setCategories((prev) => prev.filter((c) => c.id !== row.id));
-        showToast(`Blog category ${row.name} deleted!`, "danger");
-    }, []);
+        if (activeTab === "trash") {
+            setCategories((prev) => prev.filter((c) => c.id !== row.id));
+            showToast(`Blog category ${row.name} permanently removed!`, "danger");
+        } else {
+            setCategories((prev) => prev.map((c) => (c.id === row.id ? { ...c, isDeleted: true } : c)));
+            showToast(`Blog category ${row.name} moved to trash!`, "danger");
+        }
+    }, [activeTab]);
 
     const handleExportCategories = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(categories, null, 2));
@@ -126,10 +143,17 @@ const CategoryBlogs = () => {
         const targetTopic = String(topicFilter || "all").toLowerCase().trim();
 
         return categories.filter((item) => {
+            const isItemDeleted = Boolean(item.isDeleted);
+            if (activeTab === "trash") {
+                if (!isItemDeleted) return false;
+            } else {
+                if (isItemDeleted) return false;
+            }
+
             const itemStatus = String(item.status || "").toLowerCase().trim();
             const itemTopic = String(item.badge || "").toLowerCase().trim();
 
-            const matchesTab = targetTab === "all" || itemStatus === targetTab;
+            const matchesTab = targetTab === "all" || targetTab === "trash" || itemStatus === targetTab;
             const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
             const matchesTopic = targetTopic === "all" || itemTopic === targetTopic;
 
@@ -148,6 +172,13 @@ const CategoryBlogs = () => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredCategories.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredCategories, currentPage]);
+
+    const tableSubtitle = React.useMemo(() => {
+        if (activeTab === "trash") {
+            return "Archived blog categories in trash";
+        }
+        return "Categorical structures for guides, case studies, and industrial articles";
+    }, [activeTab]);
 
     const hasActiveFilters = React.useMemo(
         () => statusFilter !== "all" || topicFilter !== "all" || Boolean(searchQuery.trim()),
@@ -216,7 +247,7 @@ const CategoryBlogs = () => {
         >
             <Table
                 title="Blog Taxonomies & Topics"
-                subtitle="Categorical structures for guides, case studies, and industrial articles"
+                subtitle={tableSubtitle}
                 data={paginatedCategories}
                 columns={blogCategoriesTableColumns}
                 totalItems={filteredCategories.length}

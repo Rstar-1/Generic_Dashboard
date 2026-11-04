@@ -14,7 +14,10 @@ import {
 import { getFirstValue } from "../../utils";
 
 const ITEMS_PER_PAGE = 5;
-const TABS = [{ name: "All Products", value: "all" }];
+const TABS = [
+    { name: "All Products", value: "all" },
+    { name: "Trash", value: "trash" },
+];
 
 const STOCK_OPTIONS = [
     { label: "All Statuses", value: "all" },
@@ -61,9 +64,14 @@ const OverviewProducts = () => {
         setCurrentPage(1);
     }, []);
 
+    const activeNonDeletedProducts = React.useMemo(
+        () => products.filter((p) => !p.isDeleted),
+        [products]
+    );
+
     // Sidebar items with real-time dynamic count calculations
     const sidebarItems = React.useMemo(() => {
-        const counts = products.reduce((acc, p) => {
+        const counts = activeNonDeletedProducts.reduce((acc, p) => {
             const s = p.status?.toLowerCase();
             if (s) acc[s] = (acc[s] || 0) + 1;
             return acc;
@@ -72,9 +80,9 @@ const OverviewProducts = () => {
         return productsSidebarData.items.map((item) => ({
             ...item,
             icon: "Box",
-            count: item.status === "all" ? products.length : (counts[item.status?.toLowerCase()] || 0),
+            count: item.status === "all" ? activeNonDeletedProducts.length : (counts[item.status?.toLowerCase()] || 0),
         }));
-    }, [products]);
+    }, [activeNonDeletedProducts]);
 
     // Sidebar & tab navigation handlers
     const handleSidebarItemClick = React.useCallback((name) => {
@@ -87,8 +95,12 @@ const OverviewProducts = () => {
     const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
-        const item = productsSidebarData.items.find((i) => i.status === tabValue);
-        setSelectedCategory(item ? item.name : "All Products");
+        if (tabValue === "trash") {
+            setSelectedCategory("Trash");
+        } else {
+            const item = productsSidebarData.items.find((i) => i.status === tabValue);
+            setSelectedCategory(item ? item.name : "All Products");
+        }
     }, []);
 
     const handleClearFilters = React.useCallback(() => {
@@ -111,10 +123,15 @@ const OverviewProducts = () => {
     }, []);
 
     const handleDeleteProduct = React.useCallback((row) => {
-        setProducts((prev) => prev.filter((p) => p.id !== row.id));
         const prodLabel = getFirstValue(row, ["name", "sku", "id"], "Product");
-        showToast(`Product ${prodLabel} removed from catalog!`, "danger");
-    }, []);
+        if (activeTab === "trash") {
+            setProducts((prev) => prev.filter((p) => p.id !== row.id));
+            showToast(`Product ${prodLabel} permanently removed!`, "danger");
+        } else {
+            setProducts((prev) => prev.map((p) => (p.id === row.id ? { ...p, isDeleted: true } : p)));
+            showToast(`Product ${prodLabel} moved to trash!`, "danger");
+        }
+    }, [activeTab]);
 
     const handleExportProducts = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(products, null, 2));
@@ -129,10 +146,17 @@ const OverviewProducts = () => {
         const targetCategory = String(categoryFilter || "all").toLowerCase().trim();
 
         return products.filter((item) => {
+            const isItemDeleted = Boolean(item.isDeleted);
+            if (activeTab === "trash") {
+                if (!isItemDeleted) return false;
+            } else {
+                if (isItemDeleted) return false;
+            }
+
             const itemStatus = String(item.status || (item.inStock ? "In Stock" : "Out of Stock")).toLowerCase().trim();
             const itemCategory = String(item.category || "").toLowerCase().trim();
 
-            const matchesTab = targetTab === "all" || itemStatus === targetTab;
+            const matchesTab = targetTab === "all" || targetTab === "trash" || itemStatus === targetTab;
             const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
             const matchesCategory = targetCategory === "all" || itemCategory === targetCategory;
 
@@ -152,6 +176,13 @@ const OverviewProducts = () => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredProducts.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredProducts, currentPage]);
+
+    const tableSubtitle = React.useMemo(() => {
+        if (activeTab === "trash") {
+            return "Archived and removed products in trash";
+        }
+        return "Complete SKU inventory with live pricing, stock availability, and ratings";
+    }, [activeTab]);
 
     const hasActiveFilters = React.useMemo(
         () => statusFilter !== "all" || categoryFilter !== "all" || Boolean(searchQuery.trim()),
@@ -220,7 +251,7 @@ const OverviewProducts = () => {
         >
             <Table
                 title="Product Master Catalog"
-                subtitle="Complete SKU inventory with live pricing, stock availability, and ratings"
+                subtitle={tableSubtitle}
                 data={paginatedProducts}
                 columns={productsTableColumns}
                 totalItems={filteredProducts.length}

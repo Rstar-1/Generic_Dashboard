@@ -14,7 +14,10 @@ import {
 } from "../../utils/apiData";
 
 const ITEMS_PER_PAGE = 5;
-const TABS = [{ name: "All Pages", value: "all" }];
+const TABS = [
+    { name: "All Pages", value: "all" },
+    { name: "Trash", value: "trash" },
+];
 
 const STATUS_OPTIONS = [
     { label: "All Statuses", value: "all" },
@@ -56,9 +59,14 @@ const Seo = () => {
         setCurrentPage(1);
     }, []);
 
+    const activeNonDeletedSeo = React.useMemo(
+        () => seoPages.filter((p) => !p.isDeleted),
+        [seoPages]
+    );
+
     // Sidebar items with real-time dynamic count calculations
     const sidebarItems = React.useMemo(() => {
-        const counts = seoPages.reduce((acc, p) => {
+        const counts = activeNonDeletedSeo.reduce((acc, p) => {
             const s = p.status?.toLowerCase();
             if (s) acc[s] = (acc[s] || 0) + 1;
             return acc;
@@ -67,9 +75,9 @@ const Seo = () => {
         return seoSidebarData.items.map((item) => ({
             ...item,
             icon: "Clipboard",
-            count: item.status === "all" ? seoPages.length : (counts[item.status?.toLowerCase()] || 0),
+            count: item.status === "all" ? activeNonDeletedSeo.length : (counts[item.status?.toLowerCase()] || 0),
         }));
-    }, [seoPages]);
+    }, [activeNonDeletedSeo]);
 
     // Sidebar & tab navigation handlers
     const handleSidebarItemClick = React.useCallback((name) => {
@@ -82,8 +90,12 @@ const Seo = () => {
     const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
-        const item = seoSidebarData.items.find((i) => i.status === tabValue);
-        setSelectedCategory(item ? item.name : "All Pages");
+        if (tabValue === "trash") {
+            setSelectedCategory("Trash");
+        } else {
+            const item = seoSidebarData.items.find((i) => i.status === tabValue);
+            setSelectedCategory(item ? item.name : "All Pages");
+        }
     }, []);
 
     const handleClearFilters = React.useCallback(() => {
@@ -104,9 +116,14 @@ const Seo = () => {
     }, []);
 
     const handleDeleteSeo = React.useCallback((row) => {
-        setSeoPages((prev) => prev.filter((p) => p.id !== row.id));
-        showToast(`SEO entry for ${row.pageName} purged!`, "danger");
-    }, []);
+        if (activeTab === "trash") {
+            setSeoPages((prev) => prev.filter((p) => p.id !== row.id));
+            showToast(`SEO entry for ${row.pageName} permanently removed!`, "danger");
+        } else {
+            setSeoPages((prev) => prev.map((p) => (p.id === row.id ? { ...p, isDeleted: true } : p)));
+            showToast(`SEO entry for ${row.pageName} moved to trash!`, "danger");
+        }
+    }, [activeTab]);
 
     const handleExportSeo = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(seoPages, null, 2));
@@ -120,10 +137,17 @@ const Seo = () => {
         const targetStatus = String(statusFilter || "all").toLowerCase().trim();
 
         return seoPages.filter((item) => {
+            const isItemDeleted = Boolean(item.isDeleted);
+            if (activeTab === "trash") {
+                if (!isItemDeleted) return false;
+            } else {
+                if (isItemDeleted) return false;
+            }
+
             const itemStatus = String(item.status || "").toLowerCase().trim();
             const rawScore = parseInt(item.seoScore, 10) || 0;
 
-            const matchesTab = targetTab === "all" || itemStatus === targetTab;
+            const matchesTab = targetTab === "all" || targetTab === "trash" || itemStatus === targetTab;
             const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
 
             let matchesScore = true;
@@ -153,6 +177,13 @@ const Seo = () => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredSeoPages.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredSeoPages, currentPage]);
+
+    const tableSubtitle = React.useMemo(() => {
+        if (activeTab === "trash") {
+            return "Archived SEO page metadata entries in trash";
+        }
+        return "Live status of search engine indexing, target keywords, and on-page metadata";
+    }, [activeTab]);
 
     const hasActiveFilters = React.useMemo(
         () => statusFilter !== "all" || scoreFilter !== "all" || Boolean(searchQuery.trim()),
@@ -253,7 +284,7 @@ const Seo = () => {
             )}
             <Table
                 title="Page Metadata & Health"
-                subtitle="Live status of search engine indexing, target keywords, and on-page metadata"
+                subtitle={tableSubtitle}
                 data={paginatedSeoPages}
                 columns={seoTableColumns}
                 totalItems={filteredSeoPages.length}

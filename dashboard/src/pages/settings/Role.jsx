@@ -15,6 +15,7 @@ const ITEMS_PER_PAGE = 5;
 
 const TABS = [
     { name: "All Roles", value: "all" },
+    { name: "Trash", value: "trash" },
 ];
 
 const ROLE_OPTIONS = [
@@ -54,7 +55,9 @@ const Role = () => {
     const handleTabChange = React.useCallback((val) => {
         const nextTab = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setActiveTab(nextTab);
-        setRoleFilter(nextTab);
+        if (nextTab !== "trash") {
+            setRoleFilter(nextTab);
+        }
         setCurrentPage(1);
     }, []);
 
@@ -104,9 +107,14 @@ const Role = () => {
     }, []);
 
     const handleDeleteRole = React.useCallback((row) => {
-        setRoles((prev) => prev.filter((r) => r.id !== row.id));
-        showToast(`Role "${row.name}" revoked & archived!`, "danger");
-    }, []);
+        if (activeTab === "trash") {
+            setRoles((prev) => prev.filter((r) => r.id !== row.id));
+            showToast(`Role "${row.name}" permanently removed!`, "danger");
+        } else {
+            setRoles((prev) => prev.map((r) => (r.id === row.id ? { ...r, isDeleted: true } : r)));
+            showToast(`Role "${row.name}" moved to trash!`, "danger");
+        }
+    }, [activeTab]);
 
     // Multi-criteria filtering with case-insensitive role, tab, status, and permissions
     const filteredRoles = React.useMemo(() => {
@@ -117,12 +125,19 @@ const Role = () => {
         const targetPermission = String(permissionFilter || "all").trim();
 
         return roles.filter((item) => {
+            const isItemDeleted = Boolean(item.isDeleted);
+            if (activeTab === "trash") {
+                if (!isItemDeleted) return false;
+            } else {
+                if (isItemDeleted) return false;
+            }
+
             const itemRole = String(getFirstValue(item, ["role", "name"])).toLowerCase().trim();
             const rawStatus = item.status;
             const itemStatus = (typeof rawStatus === "boolean" ? (rawStatus ? "active" : "inactive") : String(rawStatus || "")).toLowerCase().trim();
 
-            const matchesTab = targetTab === "all" || itemRole === targetTab;
-            const matchesRole = targetRole === "all" || itemRole === targetRole;
+            const matchesTab = targetTab === "all" || targetTab === "trash" || itemRole === targetTab;
+            const matchesRole = targetRole === "all" || targetRole === "trash" || itemRole === targetRole;
             const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
             const matchesPermission =
                 targetPermission === "all" ||
@@ -146,6 +161,13 @@ const Role = () => {
     }, [filteredRoles, currentPage]);
 
     const hasActiveFilters = activeTab !== "all" || roleFilter !== "all" || statusFilter !== "all" || permissionFilter !== "all" || Boolean(searchQuery);
+
+    const tableSubtitle = React.useMemo(() => {
+        if (activeTab === "trash") {
+            return "Revoked security roles in trash";
+        }
+        return "Role-based access control matrix with permission grants and assigned operators";
+    }, [activeTab]);
 
     const filterInputsNode = React.useMemo(
         () => (
@@ -214,7 +236,7 @@ const Role = () => {
             <div className="bg-white p-14 rounded-10">
                 <Table
                     title="Access Roles & Policies"
-                    subtitle="Role-based access control matrix with permission grants and assigned operators"
+                    subtitle={tableSubtitle}
                     data={paginatedRoles}
                     columns={rolesTableColumns}
                     totalItems={filteredRoles.length}

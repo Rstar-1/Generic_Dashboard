@@ -13,7 +13,10 @@ import {
 } from "../../utils/apiData";
 
 const ITEMS_PER_PAGE = 5;
-const TABS = [{ name: "All Articles", value: "all" }];
+const TABS = [
+    { name: "All Articles", value: "all" },
+    { name: "Trash", value: "trash" },
+];
 
 const STATUS_OPTIONS = [
     { label: "All Statuses", value: "all" },
@@ -57,9 +60,14 @@ const OverviewBlogs = () => {
         setCurrentPage(1);
     }, []);
 
+    const activeNonDeletedBlogs = React.useMemo(
+        () => blogs.filter((b) => !b.isDeleted),
+        [blogs]
+    );
+
     // Sidebar items with real-time dynamic count calculations
     const sidebarItems = React.useMemo(() => {
-        const counts = blogs.reduce((acc, b) => {
+        const counts = activeNonDeletedBlogs.reduce((acc, b) => {
             const s = b.status?.toLowerCase();
             if (s) acc[s] = (acc[s] || 0) + 1;
             return acc;
@@ -68,9 +76,9 @@ const OverviewBlogs = () => {
         return blogsSidebarData.items.map((item) => ({
             ...item,
             icon: "Clipboard",
-            count: item.status === "all" ? blogs.length : (counts[item.status?.toLowerCase()] || 0),
+            count: item.status === "all" ? activeNonDeletedBlogs.length : (counts[item.status?.toLowerCase()] || 0),
         }));
-    }, [blogs]);
+    }, [activeNonDeletedBlogs]);
 
     // Sidebar & tab navigation handlers
     const handleSidebarItemClick = React.useCallback((name) => {
@@ -83,8 +91,12 @@ const OverviewBlogs = () => {
     const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
-        const item = blogsSidebarData.items.find((i) => i.status === tabValue);
-        setSelectedCategory(item ? item.name : "All Articles");
+        if (tabValue === "trash") {
+            setSelectedCategory("Trash");
+        } else {
+            const item = blogsSidebarData.items.find((i) => i.status === tabValue);
+            setSelectedCategory(item ? item.name : "All Articles");
+        }
     }, []);
 
     const handleClearFilters = React.useCallback(() => {
@@ -105,9 +117,14 @@ const OverviewBlogs = () => {
     }, []);
 
     const handleDeleteBlog = React.useCallback((row) => {
-        setBlogs((prev) => prev.filter((b) => b.id !== row.id));
-        showToast(`Article "${row.title}" deleted!`, "danger");
-    }, []);
+        if (activeTab === "trash") {
+            setBlogs((prev) => prev.filter((b) => b.id !== row.id));
+            showToast(`Article "${row.title}" permanently removed!`, "danger");
+        } else {
+            setBlogs((prev) => prev.map((b) => (b.id === row.id ? { ...b, isDeleted: true } : b)));
+            showToast(`Article "${row.title}" moved to trash!`, "danger");
+        }
+    }, [activeTab]);
 
     const handleExportBlogs = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(blogs, null, 2));
@@ -122,11 +139,18 @@ const OverviewBlogs = () => {
         const targetCategory = String(categoryFilter || "all").toLowerCase().trim();
 
         return blogs.filter((item) => {
+            const isItemDeleted = Boolean(item.isDeleted);
+            if (activeTab === "trash") {
+                if (!isItemDeleted) return false;
+            } else {
+                if (isItemDeleted) return false;
+            }
+
             const itemStatus = String(item.status || "").toLowerCase().trim();
             const itemCategory = String(item.category || "").toLowerCase().trim();
             const tagsString = Array.isArray(item.tags) ? item.tags.join(" ").toLowerCase() : "";
 
-            const matchesTab = targetTab === "all" || itemStatus === targetTab;
+            const matchesTab = targetTab === "all" || targetTab === "trash" || itemStatus === targetTab;
             const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
             const matchesCategory = targetCategory === "all" || itemCategory === targetCategory;
 
@@ -148,6 +172,13 @@ const OverviewBlogs = () => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredBlogs.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredBlogs, currentPage]);
+
+    const tableSubtitle = React.useMemo(() => {
+        if (activeTab === "trash") {
+            return "Archived and removed blog articles in trash";
+        }
+        return "Live editorial inventory with publication metrics and view statistics";
+    }, [activeTab]);
 
     const hasActiveFilters = React.useMemo(
         () => statusFilter !== "all" || categoryFilter !== "all" || Boolean(searchQuery.trim()),
@@ -216,7 +247,7 @@ const OverviewBlogs = () => {
         >
             <Table
                 title="Blog Articles & Insights"
-                subtitle="Live editorial inventory with publication metrics and view statistics"
+                subtitle={tableSubtitle}
                 data={paginatedBlogs}
                 columns={blogsTableColumns}
                 totalItems={filteredBlogs.length}

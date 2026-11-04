@@ -14,7 +14,10 @@ import {
 import { getFirstValue } from "../../utils";
 
 const ITEMS_PER_PAGE = 5;
-const TABS = [{ name: "All Customers", value: "all" }];
+const TABS = [
+    { name: "All Customers", value: "all" },
+    { name: "Trash", value: "trash" },
+];
 
 const STATUS_OPTIONS = [
     { label: "All Statuses", value: "all" },
@@ -59,9 +62,14 @@ const Customer = () => {
         setCurrentPage(1);
     }, []);
 
+    const activeNonDeletedCustomers = React.useMemo(
+        () => customers.filter((c) => !c.isDeleted),
+        [customers]
+    );
+
     // Sidebar items with real-time dynamic count calculations
     const sidebarItems = React.useMemo(() => {
-        const counts = customers.reduce((acc, c) => {
+        const counts = activeNonDeletedCustomers.reduce((acc, c) => {
             const typeKey = c.type?.toLowerCase();
             if (typeKey) acc[typeKey] = (acc[typeKey] || 0) + 1;
             return acc;
@@ -70,9 +78,9 @@ const Customer = () => {
         return customersSidebarData.items.map((item) => ({
             ...item,
             icon: "Users",
-            count: item.status === "all" ? customers.length : (counts[item.status?.toLowerCase()] || 0),
+            count: item.status === "all" ? activeNonDeletedCustomers.length : (counts[item.status?.toLowerCase()] || 0),
         }));
-    }, [customers]);
+    }, [activeNonDeletedCustomers]);
 
     // Sidebar & tab navigation handlers
     const handleSidebarItemClick = React.useCallback((name) => {
@@ -85,8 +93,12 @@ const Customer = () => {
     const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
-        const item = customersSidebarData.items.find((i) => i.status === tabValue);
-        setSelectedCategory(item ? item.name : "All Type");
+        if (tabValue === "trash") {
+            setSelectedCategory("Trash");
+        } else {
+            const item = customersSidebarData.items.find((i) => i.status === tabValue);
+            setSelectedCategory(item ? item.name : "All Type");
+        }
     }, []);
 
     const handleClearFilters = React.useCallback(() => {
@@ -107,9 +119,14 @@ const Customer = () => {
     }, []);
 
     const handleDeleteCustomer = React.useCallback((row) => {
-        setCustomers((prev) => prev.filter((c) => c.id !== row.id));
-        showToast(`Customer ${row.name} removed successfully!`, "danger");
-    }, []);
+        if (activeTab === "trash") {
+            setCustomers((prev) => prev.filter((c) => c.id !== row.id));
+            showToast(`Customer ${row.name} permanently removed!`, "danger");
+        } else {
+            setCustomers((prev) => prev.map((c) => (c.id === row.id ? { ...c, isDeleted: true } : c)));
+            showToast(`Customer ${row.name} moved to trash!`, "danger");
+        }
+    }, [activeTab]);
 
     const handleAddCustomer = React.useCallback(() => {
         showToast("Add Customer modal trigger activated!", "success");
@@ -128,11 +145,18 @@ const Customer = () => {
         const targetTab = String(activeTab || "all").toLowerCase().trim();
 
         return customers.filter((item) => {
+            const isItemDeleted = Boolean(item.isDeleted);
+            if (activeTab === "trash") {
+                if (!isItemDeleted) return false;
+            } else {
+                if (isItemDeleted) return false;
+            }
+
             const rawStatus = item.status;
             const itemStatus = (typeof rawStatus === "boolean" ? (rawStatus ? "active" : "inactive") : String(rawStatus || "")).toLowerCase().trim();
             const itemType = String(item.type || "").toLowerCase().trim();
 
-            const matchesTab = targetTab === "all" || itemType === targetTab;
+            const matchesTab = targetTab === "all" || targetTab === "trash" || itemType === targetTab;
             const matchesType = targetType === "all" || itemType === targetType;
             const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
             const matchesSearch =
@@ -151,6 +175,13 @@ const Customer = () => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredCustomers.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredCustomers, currentPage]);
+
+    const tableSubtitle = React.useMemo(() => {
+        if (activeTab === "trash") {
+            return "Archived customer accounts in trash";
+        }
+        return "Comprehensive list of verified enterprise, partner, and retail clients";
+    }, [activeTab]);
 
     const hasActiveFilters = statusFilter !== "all" || typeFilter !== "all" || Boolean(searchQuery);
 
@@ -219,7 +250,7 @@ const Customer = () => {
             <div className="bg-white p-14 rounded-10">
                 <Table
                     title="Customer Directory"
-                    subtitle="Comprehensive list of verified enterprise, partner, and retail clients"
+                    subtitle={tableSubtitle}
                     data={paginatedCustomers}
                     columns={customersTableColumns}
                     totalItems={filteredCustomers.length}

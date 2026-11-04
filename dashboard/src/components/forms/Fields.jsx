@@ -499,11 +499,15 @@ const Fields = React.memo(
       const isMulti = type === "multiselect";
       if (isMulti) {
         if (!value || !value.length) return "Select";
-        const labels = value.slice(0, 2).map((val) => {
+        if (options.length > 0 && Array.isArray(value) && value.length >= options.length) {
+          return `All Selected (${value.length})`;
+        }
+        const labels = (Array.isArray(value) ? value : [value]).slice(0, 2).map((val) => {
           const opt = options.find((o) => getOptValue(o) === val);
           return opt ? getOptLabel(opt) : val;
         });
-        return labels.join(", ") + (value.length > 2 ? ` +${value.length - 2}` : "");
+        const count = Array.isArray(value) ? value.length : 1;
+        return labels.join(", ") + (count > 2 ? ` +${count - 2}` : "");
       }
       const opt = options.find((o) => getOptValue(o) === value);
       return opt ? getOptLabel(opt) : value || "Select";
@@ -1005,6 +1009,19 @@ const Fields = React.memo(
         case "select":
         case "multiselect": {
           const isMulti = type === "multiselect";
+          const allOptionValues = isMulti ? options.map((opt) => getOptValue(opt)) : [];
+          const isAllSelected = isMulti && allOptionValues.length > 0 && allOptionValues.every((val) => Array.isArray(value) && value.includes(val));
+
+          const handleToggleSelectAll = (e) => {
+            e?.stopPropagation?.();
+            setLocalError("");
+            if (isAllSelected) {
+              onChange?.([]);
+            } else {
+              onChange?.([...allOptionValues]);
+            }
+          };
+
           return (
             <div className={`dropdown-box ${className}`} style={{ ...computedBoxStyle, zIndex: isOpen ? 50 : 1, ...style }}>
               <div className="flex items-center justify-between h-full px-14 cursor-pointer" onClick={toggleOpen}>
@@ -1035,8 +1052,31 @@ const Fields = React.memo(
               {isOpen && (
                 <div
                   className="absolute z-10 mt-4 w-full bg-white rounded-5 overflow-auto border-ec"
-                  style={{ maxHeight: 138, top: "100%", left: 0 }}
+                  style={{ maxHeight: 180, top: "100%", left: 0 }}
                 >
+                  {isMulti && options.length > 0 && (
+                    <div
+                      className="flex items-center gap-8 p-12 cursor-pointer mini-text text-dark bordb sticky top-0 bg-white z-10"
+                      style={{ userSelect: "none", borderBottom: "1px solid #e5e7eb", backgroundColor: "#f8fafc", transition: "background-color 0.15s ease" }}
+                      onClick={handleToggleSelectAll}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#edf2f7"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#f8fafc"; }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        onChange={handleToggleSelectAll}
+                        onClick={(e) => e.stopPropagation()}
+                        className="cursor-pointer"
+                      />
+                      <span className="flex-1 cursor-pointer font-600 text-dark">
+                        {isAllSelected ? "Deselect All" : "Select All"}
+                      </span>
+                      <span className="mini-text text-gray">
+                        ({Array.isArray(value) ? value.length : 0}/{options.length})
+                      </span>
+                    </div>
+                  )}
                   {options.map((opt) => {
                     const optVal = getOptValue(opt);
                     const optLabel = getOptLabel(opt);

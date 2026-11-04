@@ -13,7 +13,10 @@ import {
 } from "../../utils/apiData";
 
 const ITEMS_PER_PAGE = 5;
-const TABS = [{ name: "All Leads", value: "all" }];
+const TABS = [
+    { name: "All Leads", value: "all" },
+    { name: "Trash", value: "trash" },
+];
 
 const STATUS_OPTIONS = [
     { label: "All Statuses", value: "all" },
@@ -61,9 +64,14 @@ const Leads = () => {
         setCurrentPage(1);
     }, []);
 
+    const activeNonDeletedLeads = React.useMemo(
+        () => leads.filter((l) => !l.isDeleted),
+        [leads]
+    );
+
     // Sidebar items with real-time dynamic count calculations
     const sidebarItems = React.useMemo(() => {
-        const counts = leads.reduce((acc, l) => {
+        const counts = activeNonDeletedLeads.reduce((acc, l) => {
             const s = l.status?.toLowerCase();
             if (s) acc[s] = (acc[s] || 0) + 1;
             return acc;
@@ -72,9 +80,9 @@ const Leads = () => {
         return leadsSidebarData.items.map((item) => ({
             ...item,
             icon: "CMS",
-            count: item.status === "all" ? leads.length : (counts[item.status?.toLowerCase()] || 0),
+            count: item.status === "all" ? activeNonDeletedLeads.length : (counts[item.status?.toLowerCase()] || 0),
         }));
-    }, [leads]);
+    }, [activeNonDeletedLeads]);
 
     // Sidebar & tab navigation handlers
     const handleSidebarItemClick = React.useCallback((name) => {
@@ -87,8 +95,12 @@ const Leads = () => {
     const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
-        const item = leadsSidebarData.items.find((i) => i.status === tabValue);
-        setSelectedCategory(item ? item.name : "All Leads");
+        if (tabValue === "trash") {
+            setSelectedCategory("Trash");
+        } else {
+            const item = leadsSidebarData.items.find((i) => i.status === tabValue);
+            setSelectedCategory(item ? item.name : "All Leads");
+        }
     }, []);
 
     const handleClearFilters = React.useCallback(() => {
@@ -109,9 +121,14 @@ const Leads = () => {
     }, []);
 
     const handleDeleteLead = React.useCallback((row) => {
-        setLeads((prev) => prev.filter((l) => l.id !== row.id));
-        showToast(`Lead ${row.name} archived!`, "danger");
-    }, []);
+        if (activeTab === "trash") {
+            setLeads((prev) => prev.filter((l) => l.id !== row.id));
+            showToast(`Lead ${row.name} permanently removed!`, "danger");
+        } else {
+            setLeads((prev) => prev.map((l) => (l.id === row.id ? { ...l, isDeleted: true } : l)));
+            showToast(`Lead ${row.name} moved to trash!`, "danger");
+        }
+    }, [activeTab]);
 
     const handleExportLeads = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(leads, null, 2));
@@ -126,10 +143,17 @@ const Leads = () => {
         const targetSource = String(sourceFilter || "all").toLowerCase().trim();
 
         return leads.filter((item) => {
+            const isItemDeleted = Boolean(item.isDeleted);
+            if (activeTab === "trash") {
+                if (!isItemDeleted) return false;
+            } else {
+                if (isItemDeleted) return false;
+            }
+
             const itemStatus = String(item.status || "").toLowerCase().trim();
             const itemSource = String(item.source || "").toLowerCase().trim();
 
-            const matchesTab = targetTab === "all" || itemStatus === targetTab;
+            const matchesTab = targetTab === "all" || targetTab === "trash" || itemStatus === targetTab;
             const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
             const matchesSource = targetSource === "all" || itemSource === targetSource;
 
@@ -151,6 +175,13 @@ const Leads = () => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredLeads.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredLeads, currentPage]);
+
+    const tableSubtitle = React.useMemo(() => {
+        if (activeTab === "trash") {
+            return "Archived sales leads in trash";
+        }
+        return "Commercial client enquiries, expected deal values, and assigned account executives";
+    }, [activeTab]);
 
     const hasActiveFilters = React.useMemo(
         () => statusFilter !== "all" || sourceFilter !== "all" || Boolean(searchQuery.trim()),
@@ -219,7 +250,7 @@ const Leads = () => {
         >
             <Table
                 title="Sales Leads Pipeline"
-                subtitle="Commercial client enquiries, expected deal values, and assigned account executives"
+                subtitle={tableSubtitle}
                 data={paginatedLeads}
                 columns={leadsTableColumns}
                 totalItems={filteredLeads.length}

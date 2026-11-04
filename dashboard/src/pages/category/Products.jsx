@@ -13,7 +13,10 @@ import {
 } from "../../utils/apiData";
 
 const ITEMS_PER_PAGE = 5;
-const TABS = [{ name: "All Categories", value: "all" }];
+const TABS = [
+    { name: "All Categories", value: "all" },
+    { name: "Trash", value: "trash" },
+];
 
 const STATUS_OPTIONS = [
     { label: "All Statuses", value: "all" },
@@ -60,9 +63,14 @@ const CategoryProducts = () => {
         setCurrentPage(1);
     }, []);
 
+    const activeNonDeletedCategories = React.useMemo(
+        () => categories.filter((c) => !c.isDeleted),
+        [categories]
+    );
+
     // Sidebar items with real-time dynamic count calculations
     const sidebarItems = React.useMemo(() => {
-        const counts = categories.reduce((acc, cat) => {
+        const counts = activeNonDeletedCategories.reduce((acc, cat) => {
             const s = cat.status?.toLowerCase();
             if (s) acc[s] = (acc[s] || 0) + 1;
             return acc;
@@ -71,9 +79,9 @@ const CategoryProducts = () => {
         return productCategoriesSidebarData.items.map((item) => ({
             ...item,
             icon: "Box",
-            count: item.status === "all" ? categories.length : (counts[item.status?.toLowerCase()] || 0),
+            count: item.status === "all" ? activeNonDeletedCategories.length : (counts[item.status?.toLowerCase()] || 0),
         }));
-    }, [categories]);
+    }, [activeNonDeletedCategories]);
 
     // Sidebar & tab navigation handlers
     const handleSidebarItemClick = React.useCallback((name) => {
@@ -86,8 +94,12 @@ const CategoryProducts = () => {
     const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
-        const item = productCategoriesSidebarData.items.find((i) => i.status === tabValue);
-        setSelectedCategory(item ? item.name : "All Categories");
+        if (tabValue === "trash") {
+            setSelectedCategory("Trash");
+        } else {
+            const item = productCategoriesSidebarData.items.find((i) => i.status === tabValue);
+            setSelectedCategory(item ? item.name : "All Categories");
+        }
     }, []);
 
     const handleClearFilters = React.useCallback(() => {
@@ -108,9 +120,14 @@ const CategoryProducts = () => {
     }, []);
 
     const handleDeleteCategory = React.useCallback((row) => {
-        setCategories((prev) => prev.filter((c) => c.id !== row.id));
-        showToast(`Category ${row.name} removed!`, "danger");
-    }, []);
+        if (activeTab === "trash") {
+            setCategories((prev) => prev.filter((c) => c.id !== row.id));
+            showToast(`Category ${row.name} permanently removed!`, "danger");
+        } else {
+            setCategories((prev) => prev.map((c) => (c.id === row.id ? { ...c, isDeleted: true } : c)));
+            showToast(`Category ${row.name} moved to trash!`, "danger");
+        }
+    }, [activeTab]);
 
     const handleExportCategories = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(categories, null, 2));
@@ -125,10 +142,17 @@ const CategoryProducts = () => {
         const targetCode = String(codeFilter || "all").toLowerCase().trim();
 
         return categories.filter((item) => {
+            const isItemDeleted = Boolean(item.isDeleted);
+            if (activeTab === "trash") {
+                if (!isItemDeleted) return false;
+            } else {
+                if (isItemDeleted) return false;
+            }
+
             const itemStatus = String(item.status || "").toLowerCase().trim();
             const itemCode = String(item.categoryCode || "").toLowerCase().trim();
 
-            const matchesTab = targetTab === "all" || itemStatus === targetTab;
+            const matchesTab = targetTab === "all" || targetTab === "trash" || itemStatus === targetTab;
             const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
             const matchesCode = targetCode === "all" || itemCode === targetCode;
 
@@ -147,6 +171,13 @@ const CategoryProducts = () => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredCategories.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredCategories, currentPage]);
+
+    const tableSubtitle = React.useMemo(() => {
+        if (activeTab === "trash") {
+            return "Archived product categories in trash";
+        }
+        return "Complete list of product categories with subcategory counts and catalog statuses";
+    }, [activeTab]);
 
     const hasActiveFilters = React.useMemo(
         () => statusFilter !== "all" || codeFilter !== "all" || Boolean(searchQuery.trim()),
@@ -215,7 +246,7 @@ const CategoryProducts = () => {
         >
             <Table
                 title="Product Category Hierarchy"
-                subtitle="Complete list of product categories with subcategory counts and catalog statuses"
+                subtitle={tableSubtitle}
                 data={paginatedCategories}
                 columns={productCategoriesTableColumns}
                 totalItems={filteredCategories.length}

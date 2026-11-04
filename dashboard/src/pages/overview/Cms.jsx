@@ -13,7 +13,10 @@ import {
 } from "../../utils/apiData";
 
 const ITEMS_PER_PAGE = 5;
-const TABS = [{ name: "All Sections", value: "all" }];
+const TABS = [
+    { name: "All Sections", value: "all" },
+    { name: "Trash", value: "trash" },
+];
 
 const STATUS_OPTIONS = [
     { label: "All Statuses", value: "all" },
@@ -57,9 +60,14 @@ const Cms = () => {
         setCurrentPage(1);
     }, []);
 
+    const activeNonDeletedCms = React.useMemo(
+        () => cmsSections.filter((c) => !c.isDeleted),
+        [cmsSections]
+    );
+
     // Sidebar items with real-time dynamic count calculations
     const sidebarItems = React.useMemo(() => {
-        const counts = cmsSections.reduce((acc, c) => {
+        const counts = activeNonDeletedCms.reduce((acc, c) => {
             const s = c.status?.toLowerCase();
             if (s) acc[s] = (acc[s] || 0) + 1;
             return acc;
@@ -68,9 +76,9 @@ const Cms = () => {
         return cmsSidebarData.items.map((item) => ({
             ...item,
             icon: "Clipboard",
-            count: item.status === "all" ? cmsSections.length : (counts[item.status?.toLowerCase()] || 0),
+            count: item.status === "all" ? activeNonDeletedCms.length : (counts[item.status?.toLowerCase()] || 0),
         }));
-    }, [cmsSections]);
+    }, [activeNonDeletedCms]);
 
     // Sidebar & tab navigation handlers
     const handleSidebarItemClick = React.useCallback((name) => {
@@ -83,8 +91,12 @@ const Cms = () => {
     const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
-        const item = cmsSidebarData.items.find((i) => i.status === tabValue);
-        setSelectedCategory(item ? item.name : "All Sections");
+        if (tabValue === "trash") {
+            setSelectedCategory("Trash");
+        } else {
+            const item = cmsSidebarData.items.find((i) => i.status === tabValue);
+            setSelectedCategory(item ? item.name : "All Sections");
+        }
     }, []);
 
     const handleClearFilters = React.useCallback(() => {
@@ -105,9 +117,14 @@ const Cms = () => {
     }, []);
 
     const handleDeleteCms = React.useCallback((row) => {
-        setCmsSections((prev) => prev.filter((c) => c.id !== row.id));
-        showToast(`Content block "${row.title}" removed!`, "danger");
-    }, []);
+        if (activeTab === "trash") {
+            setCmsSections((prev) => prev.filter((c) => c.id !== row.id));
+            showToast(`Content block "${row.title}" permanently removed!`, "danger");
+        } else {
+            setCmsSections((prev) => prev.map((c) => (c.id === row.id ? { ...c, isDeleted: true } : c)));
+            showToast(`Content block "${row.title}" moved to trash!`, "danger");
+        }
+    }, [activeTab]);
 
     const handleExportCms = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(cmsSections, null, 2));
@@ -122,10 +139,17 @@ const Cms = () => {
         const targetArea = String(areaFilter || "all").toLowerCase().trim();
 
         return cmsSections.filter((item) => {
+            const isItemDeleted = Boolean(item.isDeleted);
+            if (activeTab === "trash") {
+                if (!isItemDeleted) return false;
+            } else {
+                if (isItemDeleted) return false;
+            }
+
             const itemStatus = String(item.status || "").toLowerCase().trim();
             const itemArea = String(item.sectionArea || "").toLowerCase().trim();
 
-            const matchesTab = targetTab === "all" || itemStatus === targetTab;
+            const matchesTab = targetTab === "all" || targetTab === "trash" || itemStatus === targetTab;
             const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
             const matchesArea = targetArea === "all" || itemArea === targetArea;
 
@@ -145,6 +169,13 @@ const Cms = () => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredCms.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredCms, currentPage]);
+
+    const tableSubtitle = React.useMemo(() => {
+        if (activeTab === "trash") {
+            return "Archived website content blocks in trash";
+        }
+        return "Live inventory of landing page sections with revision tracking and author credits";
+    }, [activeTab]);
 
     const hasActiveFilters = React.useMemo(
         () => statusFilter !== "all" || areaFilter !== "all" || Boolean(searchQuery.trim()),
@@ -213,7 +244,7 @@ const Cms = () => {
         >
             <Table
                 title="Website Content Blocks"
-                subtitle="Live inventory of landing page sections with revision tracking and author credits"
+                subtitle={tableSubtitle}
                 data={paginatedCms}
                 columns={cmsTableColumns}
                 totalItems={filteredCms.length}

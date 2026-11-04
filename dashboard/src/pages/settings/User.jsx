@@ -6,6 +6,7 @@ import Icon from "../../components/common/Icon";
 import Fields from "../../components/forms/Fields";
 import FilterForm from "../../components/forms/sections/FilterForm";
 import { showToast } from "../../components/common/Toast";
+import { useCurrentUser } from "../../utils";
 import {
     usersSidebarData,
     usersTableColumns,
@@ -13,7 +14,10 @@ import {
 } from "../../utils/apiData";
 
 const ITEMS_PER_PAGE = 5;
-const TABS = [{ name: "All Users", value: "all" }];
+const TABS = [
+    { name: "All Users", value: "all" },
+    { name: "Trash", value: "trash" },
+];
 
 const STATUS_OPTIONS = [
     { label: "All Statuses", value: "all" },
@@ -22,12 +26,40 @@ const STATUS_OPTIONS = [
 ];
 
 const User = () => {
+    // Current authenticated user role
+    const { role: authRole } = useCurrentUser();
+    const loggedInRole = React.useMemo(() => String(authRole || "admin").toLowerCase().trim(), [authRole]);
+    const isAdmin = loggedInRole === "admin";
+
     const [users, setUsers] = React.useState(initialUsersData);
     const [activeTab, setActiveTab] = React.useState("all");
     const [selectedCategory, setSelectedCategory] = React.useState("All Users");
     const [searchQuery, setSearchQuery] = React.useState("");
     const [statusFilter, setStatusFilter] = React.useState("all");
     const [currentPage, setCurrentPage] = React.useState(1);
+
+    // Sync active category and tab when role changes
+    React.useEffect(() => {
+        if (!isAdmin) {
+            const matchedItem = usersSidebarData.items.find(
+                (i) => i.role?.toLowerCase() === loggedInRole
+            );
+            setActiveTab(matchedItem?.role || loggedInRole);
+            setSelectedCategory(matchedItem?.name || "All Users");
+        } else {
+            setActiveTab("all");
+            setSelectedCategory("All Users");
+        }
+        setCurrentPage(1);
+    }, [isAdmin, loggedInRole]);
+
+    // Base visible users pool: Admin sees all users, non-admin sees only users matching their logged-in role
+    const visibleUsersPool = React.useMemo(() => {
+        if (isAdmin) return users;
+        return users.filter(
+            (u) => String(u.role || "").toLowerCase().trim() === loggedInRole
+        );
+    }, [users, isAdmin, loggedInRole]);
 
     const handleSearchChange = React.useCallback((val) => {
         const nextQuery = typeof val === "string" ? val : (val?.target?.value ?? "");
@@ -41,20 +73,32 @@ const User = () => {
         setCurrentPage(1);
     }, []);
 
+    const activeNonDeletedUsers = React.useMemo(
+        () => visibleUsersPool.filter((u) => !u.isDeleted),
+        [visibleUsersPool]
+    );
+
     // Sidebar items with dynamic role count in a single O(N) pass
     const sidebarItems = React.useMemo(() => {
-        const counts = users.reduce((acc, u) => {
+        const counts = activeNonDeletedUsers.reduce((acc, u) => {
             const roleKey = u.role?.toLowerCase();
             if (roleKey) acc[roleKey] = (acc[roleKey] || 0) + 1;
             return acc;
         }, {});
 
-        return usersSidebarData.items.map((item) => ({
+        // If admin, show all sidebar items; if non-admin, restrict to their own role and "All Users"
+        const itemsToDisplay = isAdmin
+            ? usersSidebarData.items
+            : usersSidebarData.items.filter(
+                (item) => item.role === "all" || item.role?.toLowerCase() === loggedInRole
+            );
+
+        return itemsToDisplay.map((item) => ({
             ...item,
             icon: "Users",
-            count: item.role === "all" ? users.length : (counts[item.role?.toLowerCase()] || 0),
+            count: item.role === "all" ? activeNonDeletedUsers.length : (counts[item.role?.toLowerCase()] || 0),
         }));
-    }, [users]);
+    }, [activeNonDeletedUsers, isAdmin, loggedInRole]);
 
     // Sidebar & tab navigation handlers
     const handleSidebarItemClick = React.useCallback((name) => {
@@ -67,8 +111,12 @@ const User = () => {
     const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
-        const item = usersSidebarData.items.find((i) => i.role === tabValue);
-        setSelectedCategory(item ? item.name : "All Users");
+        if (tabValue === "trash") {
+            setSelectedCategory("Trash");
+        } else {
+            const item = usersSidebarData.items.find((i) => i.role === tabValue);
+            setSelectedCategory(item ? item.name : "All Users");
+        }
     }, []);
 
     const handleClearFilters = React.useCallback(() => {
@@ -88,14 +136,21 @@ const User = () => {
     }, []);
 
     const handleDeleteUser = React.useCallback((row) => {
-        setUsers((prev) => prev.filter((u) => u.id !== row.id));
-        showToast(`User ${row.name} deactivated & removed!`, "danger");
-    }, []);
+        if (activeTab === "trash") {
+            setUsers((prev) => prev.filter((u) => u.id !== row.id));
+            showToast(`User ${row.name} permanently removed!`, "danger");
+        } else {
+            setUsers((prev) =>
+                prev.map((u) => (u.id === row.id ? { ...u, isDeleted: true } : u))
+            );
+            showToast(`User ${row.name} moved to trash!`, "danger");
+        }
+    }, [activeTab]);
 
     const handleExportUsers = React.useCallback(() => {
-        navigator.clipboard?.writeText(JSON.stringify(users, null, 2));
+        navigator.clipboard?.writeText(JSON.stringify(visibleUsersPool, null, 2));
         showToast("System user directory exported to clipboard!", "success");
-    }, [users]);
+    }, [visibleUsersPool]);
 
     // Multi-criteria filtering with case-insensitive role & status matching
     const filteredUsers = React.useMemo(() => {
@@ -103,12 +158,19 @@ const User = () => {
         const targetStatus = String(statusFilter || "all").toLowerCase().trim();
         const targetRole = String(activeTab || "all").toLowerCase().trim();
 
-        return users.filter((item) => {
+        return visibleUsersPool.filter((item) => {
+            const isItemDeleted = Boolean(item.isDeleted);
+            if (activeTab === "trash") {
+                if (!isItemDeleted) return false;
+            } else {
+                if (isItemDeleted) return false;
+            }
+
             const rawStatus = item.status;
             const itemStatus = (typeof rawStatus === "boolean" ? (rawStatus ? "active" : "inactive") : String(rawStatus || "")).toLowerCase().trim();
             const itemRole = String(item.role || "").toLowerCase().trim();
 
-            const matchesRole = targetRole === "all" || itemRole === targetRole;
+            const matchesRole = targetRole === "all" || targetRole === "trash" || itemRole === targetRole;
             const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
             const matchesSearch =
                 !q ||
@@ -119,7 +181,7 @@ const User = () => {
 
             return matchesRole && matchesStatus && matchesSearch;
         });
-    }, [users, activeTab, statusFilter, searchQuery]);
+    }, [visibleUsersPool, activeTab, statusFilter, searchQuery]);
 
     const paginatedUsers = React.useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -127,6 +189,17 @@ const User = () => {
     }, [filteredUsers, currentPage]);
 
     const hasActiveFilters = statusFilter !== "all" || Boolean(searchQuery);
+
+    const tableSubtitle = React.useMemo(() => {
+        if (activeTab === "trash") {
+            return "Deactivated system users in trash";
+        }
+        if (isAdmin) {
+            return "Authenticated platform operators, administrators, and vendor partners";
+        }
+        const formattedRole = loggedInRole.charAt(0).toUpperCase() + loggedInRole.slice(1);
+        return `Authenticated platform operators for ${formattedRole} role`;
+    }, [isAdmin, loggedInRole, activeTab]);
 
     const filterInputsNode = React.useMemo(
         () => (
@@ -186,7 +259,7 @@ const User = () => {
             <div className="bg-white p-14 rounded-10">
                 <Table
                     title="User Directory"
-                    subtitle="Authenticated platform operators, administrators, and vendor partners"
+                    subtitle={tableSubtitle}
                     data={paginatedUsers}
                     columns={usersTableColumns}
                     totalItems={filteredUsers.length}
