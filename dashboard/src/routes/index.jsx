@@ -8,8 +8,19 @@ import Loader from '../components/common/generic/Loader';
 
 // 🛡️ Route Guard
 const ProtectedRoute = React.memo(({ page, children }) => {
-    const { role } = useCurrentUser();
-    if (!canAccessPage(role, page)) {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const isLoggedIn = Boolean(token && token !== "null" && token !== "undefined");
+
+    // When user is not logged in, NO route except Dashboard is accessible
+    if (!isLoggedIn) {
+        if (page === "Dashboard") {
+            return children;
+        }
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    const { user, role } = useCurrentUser();
+    if (!canAccessPage(user || role, page)) {
         return <Navigate to="/dashboard" replace />;
     }
     return children;
@@ -41,6 +52,7 @@ const Transaction = React.lazy(() => import('../pages/orderandpayment/Transactio
 // Settings Pages
 const User = React.lazy(() => import('../pages/settings/User'));
 const Role = React.lazy(() => import('../pages/settings/Role'));
+const Profile = React.lazy(() => import('../pages/settings/Profile'));
 
 function AppRoutes() {
     return (
@@ -48,6 +60,8 @@ function AppRoutes() {
             <Routes>
                 <Route path="/" element={<Layout />}>
                     <Route index element={<Navigate to="/dashboard" replace />} />
+                    <Route path="profile" element={<ProtectedRoute page="Profile"><Profile /></ProtectedRoute>} />
+                    <Route path="settings/profile" element={<ProtectedRoute page="Profile"><Profile /></ProtectedRoute>} />
                     <Route path="dashboard" element={<ProtectedRoute page="Dashboard"><Dashboard /></ProtectedRoute>} />
                     <Route path="analytics" element={<ProtectedRoute page="Analytics"><Analytics /></ProtectedRoute>} />
 

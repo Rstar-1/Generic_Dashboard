@@ -1,6 +1,9 @@
 import React from "react";
 
 import Icon from "./../common/Icon";
+import Image from "./../common/Image";
+import Button from "./../common/Button";
+import { resolveImagePath } from "../../utils/imageResolver";
 import {
   MONTH_NAMES,
   DAY_NAMES_MON,
@@ -371,6 +374,312 @@ const OtpGroup = React.memo(
   }
 );
 OtpGroup.displayName = "OtpGroup";
+
+const BulkImageField = React.memo(
+  ({
+    value,
+    onChange,
+    cols = 3,
+    max = 5,
+    helperText,
+    accept = "image/*",
+    className = "",
+  }) => {
+    const rawImages = React.useMemo(() => {
+      if (Array.isArray(value)) return value;
+      return value ? [value] : [];
+    }, [value]);
+
+    const getPreviewSrc = (item) => {
+      if (!item) return "";
+      if (typeof item === "string") return resolveImagePath(item);
+      if (item instanceof File || item instanceof Blob) {
+        try {
+          return URL.createObjectURL(item);
+        } catch {
+          return "";
+        }
+      }
+      return resolveImagePath(item?.url || item?.path || item?.preview || item?.src || "");
+    };
+
+    const handleImageAdd = (e) => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      Promise.all(
+        files.map((file) =>
+          file instanceof File
+            ? new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onload = (ev) => resolve(ev.target.result);
+              reader.onerror = () => resolve("");
+              reader.readAsDataURL(file);
+            })
+            : Promise.resolve(file)
+        )
+      ).then((newItems) => {
+        const valid = newItems.filter(Boolean);
+        onChange?.([...rawImages, ...valid].slice(0, max));
+      });
+    };
+
+    const handleImageDelete = (idx) => {
+      onChange?.(rawImages.filter((_, i) => i !== idx));
+    };
+
+    return (
+      <div className={`border-tertiary rounded-5 bg-white p-14 ${className}`.trim()}>
+        <div className={`grid-cols-${cols} gap-12 items-center`}>
+          {rawImages.map((item, idx) => {
+            const src = getPreviewSrc(item);
+            if (!src) return null;
+            return (
+              <div
+                key={idx}
+                className="relative rounded-5 overflow-hidden border-tertiary h-100px w-full bg-white"
+              >
+                <Image src={src} alt={`Preview ${idx + 1}`} className="w-full h-full object-contain" />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleImageDelete(idx);
+                  }}
+                  className="bg-danger text-white rounded-full flex items-center justify-center border-0 cursor-pointer shadow-md"
+                  style={{
+                    position: "absolute",
+                    top: "4px",
+                    right: "4px",
+                    width: "18px",
+                    height: "18px",
+                    padding: 0,
+                    zIndex: 10,
+                  }}
+                  title="Remove Image"
+                >
+                  <Icon name="Close" width="10" height="10" stroke="white" strokeWidth="2.5" />
+                </button>
+              </div>
+            );
+          })}
+          {rawImages.length < max && (
+            <label className="border-dashed border-tertiary rounded-5 flex flex-column items-center justify-center cursor-pointer h-100px w-full">
+              <input
+                type="file"
+                accept={accept}
+                multiple
+                onChange={handleImageAdd}
+                className="hidden"
+              />
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="gray"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mb-4"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              <p className="mini-text text-gray font-500">Add Image</p>
+            </label>
+          )}
+        </div>
+        <p className="mini-text text-gray mt-8">
+          {helperText || `Max ${max} images. JPG, PNG, WEBP up to 5MB`}
+        </p>
+      </div>
+    );
+  }
+);
+BulkImageField.displayName = "BulkImageField";
+
+const BulkInputsField = React.memo(
+  ({
+    value,
+    onChange,
+    firstInputName = "name",
+    firstInputLabel = "Name",
+    secondInputName = "value",
+    secondInputLabel = "Value",
+    addText = "Add Item",
+    className = "",
+    clsInput = "text-gray w-full mini-text",
+    style = {},
+  }) => {
+    const items = React.useMemo(() => {
+      if (!Array.isArray(value)) return [{ [firstInputName]: "", [secondInputName]: "" }];
+      return value.map((it) => {
+        if (typeof it === "string") {
+          const idx = it.indexOf(":");
+          return idx !== -1
+            ? { [firstInputName]: it.slice(0, idx).trim(), [secondInputName]: it.slice(idx + 1).trim() }
+            : { [firstInputName]: it.trim(), [secondInputName]: "" };
+        }
+        return it && typeof it === "object" ? it : { [firstInputName]: "", [secondInputName]: "" };
+      });
+    }, [value, firstInputName, secondInputName]);
+
+    const handleSpecChange = (idx, keyName, newVal) => {
+      const updated = [...items];
+      if (!updated[idx]) updated[idx] = { [firstInputName]: "", [secondInputName]: "" };
+      updated[idx] = { ...updated[idx], [keyName]: newVal };
+      onChange?.(updated);
+    };
+
+    const handleSpecAdd = () => {
+      onChange?.([...items, { [firstInputName]: "", [secondInputName]: "" }]);
+    };
+
+    const handleSpecDelete = (idx) => {
+      onChange?.(items.filter((_, i) => i !== idx));
+    };
+
+    return (
+      <div className={`border-tertiary rounded-5 bg-white p-14 ${className}`.trim()}>
+        <div className="grid-cols-1 gap-8 mb-12">
+          <div className="flex items-center gap-8 mini-text text-gray font-600">
+            <div className="w-50">{firstInputLabel}</div>
+            <div className="w-50">{secondInputLabel}</div>
+            <div style={{ width: 30 }} />
+          </div>
+          {items.map((item, idx) => (
+            <div key={idx} className="flex items-center gap-8">
+              <input
+                type="text"
+                placeholder={firstInputLabel}
+                value={item[firstInputName] || ""}
+                onChange={(e) => handleSpecChange(idx, firstInputName, e.target.value)}
+                className={clsInput}
+                style={{ ...style, width: "50%" }}
+              />
+              <input
+                type="text"
+                placeholder={secondInputLabel}
+                value={item[secondInputName] || ""}
+                onChange={(e) => handleSpecChange(idx, secondInputName, e.target.value)}
+                className={clsInput}
+                style={{ ...style, width: "50%" }}
+              />
+              <Button
+                type="button"
+                version="icon"
+                icon="Trash"
+                bg="white"
+                onClick={() => handleSpecDelete(idx)}
+                style={{ color: "var(--danger)" }}
+                title="Remove Item"
+              />
+            </div>
+          ))}
+        </div>
+        <Button
+          text={addText}
+          type="button"
+          variant="outline"
+          bg="primary"
+          version="v2"
+          icon="Plus"
+          onClick={handleSpecAdd}
+        />
+      </div>
+    );
+  }
+);
+BulkInputsField.displayName = "BulkInputsField";
+
+const BulkBadgeField = React.memo(
+  ({
+    value,
+    onChange,
+    label,
+    placeholder,
+    addText = "Add",
+    padding,
+    className = "",
+    clsInput = "text-gray w-full mini-text",
+    style = {},
+  }) => {
+    const [tagInput, setTagInput] = React.useState("");
+    const tags = React.useMemo(() => {
+      if (Array.isArray(value)) return value;
+      if (typeof value === "string" && value.trim()) {
+        return value.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+      return [];
+    }, [value]);
+
+    const handleTagAdd = () => {
+      const val = tagInput.trim();
+      if (!val) return;
+      const newItems = val.split(",").map((s) => s.trim()).filter(Boolean);
+      onChange?.([...tags, ...newItems]);
+      setTagInput("");
+    };
+
+    const handleTagDelete = (idx) => {
+      onChange?.(tags.filter((_, i) => i !== idx));
+    };
+
+    const paddingClass = padding === 0 || padding === "0" ? "p-0" : "p-14";
+
+    return (
+      <div className={`rounded-5 bg-white border-tertiary ${paddingClass} ${className}`.trim()}>
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-6 mb-12">
+            {tags.map((tag, idx) => (
+              <div
+                key={idx}
+                className="bg-forth rounded-5 px-10 py-6 flex items-center gap-6 border border-tertiary"
+              >
+                <p className="mini-text font-500 text-gray">{tag}</p>
+                <Icon
+                  name="Close"
+                  width="12"
+                  height="12"
+                  onClick={() => handleTagDelete(idx)}
+                  className="cursor-pointer text-gray hover-text-dark ml-4"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="grid-cols-1 gap-7">
+          <input
+            type="text"
+            placeholder={placeholder || `Add new ${label?.toLowerCase() || "item"}...`}
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleTagAdd();
+              }
+            }}
+            style={style}
+            className={clsInput}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            bg="primary"
+            version="v2"
+            icon="Plus"
+            onClick={handleTagAdd}
+            className='w-max'
+          >
+            {addText}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+);
+BulkBadgeField.displayName = "BulkBadgeField";
 
 const Fields = React.memo(
   ({
@@ -936,6 +1245,8 @@ const Fields = React.memo(
             setIsDragging(activeState);
           };
 
+          const isMultiple = props.multiple !== undefined ? props.multiple : true;
+
           return (
             <div
               onDragEnter={(e) => handleDrag(e, true)}
@@ -943,7 +1254,10 @@ const Fields = React.memo(
               onDragLeave={(e) => handleDrag(e, false)}
               onDrop={(e) => {
                 handleDrag(e, false);
-                if (e.dataTransfer.files?.length) onChange?.([...e.dataTransfer.files]);
+                if (e.dataTransfer.files?.length) {
+                  const filesArr = [...e.dataTransfer.files];
+                  onChange?.(isMultiple ? filesArr : filesArr.slice(0, 1));
+                }
               }}
               onClick={() => fileInputRef.current?.click()}
               style={{ ...getDragDropStyle(isDragging), ...style }}
@@ -958,9 +1272,13 @@ const Fields = React.memo(
               <input
                 type="file"
                 ref={fileInputRef}
-                multiple
+                multiple={isMultiple}
+                accept={props.accept}
                 onChange={(e) => {
-                  if (e.target.files?.length) onChange?.([...e.target.files]);
+                  if (e.target.files?.length) {
+                    const filesArr = [...e.target.files];
+                    onChange?.(isMultiple ? filesArr : filesArr.slice(0, 1));
+                  }
                 }}
                 style={{ display: "none" }}
                 aria-label={label || "Drag and drop file upload"}
@@ -974,32 +1292,88 @@ const Fields = React.memo(
                   <div className="font-600" style={{ fontSize: "12px", color: "#4b5563" }}>
                     Selected Files ({value.length})
                   </div>
-                  {value.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between bg-white mini-text"
-                      style={{ border: "1px solid #e5e7eb", borderRadius: "8px", padding: "8px 12px", color: "#1f2937" }}
-                    >
-                      <div className="flex items-center gap-8" style={{ overflow: "hidden" }}>
-                        <Icon name="File" width="16" height="16" stroke="currentColor" style={{ color: "#6b7280", flexShrink: 0 }} />
-                        <span style={{ textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{file.name}</span>
-                        <span style={{ color: "#9ca3af", fontSize: "11px", flexShrink: 0 }}>({(file.size / 1024).toFixed(1)} KB)</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newFiles = [...value];
-                          newFiles.splice(index, 1);
-                          onChange?.(newFiles);
-                        }}
-                        className="flex items-center justify-center cursor-pointer border-0"
-                        style={{ background: "none", color: "#9ca3af", padding: "4px", borderRadius: "4px" }}
-                        title="Remove file"
+                  {value.map((file, index) => {
+                    const isImg = file instanceof File && file.type?.startsWith("image/");
+                    const previewUrl = isImg ? URL.createObjectURL(file) : null;
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between bg-white mini-text"
+                        style={{ border: "1px solid #e5e7eb", borderRadius: "8px", padding: "8px 12px", color: "#1f2937" }}
                       >
-                        <Icon name="Close" width="14" height="14" stroke="currentColor" />
-                      </button>
+                        <div className="flex items-center gap-8" style={{ overflow: "hidden" }}>
+                          {previewUrl ? (
+                            <img
+                              src={previewUrl}
+                              alt="preview"
+                              style={{ width: "28px", height: "28px", borderRadius: "4px", objectFit: "cover" }}
+                            />
+                          ) : (
+                            <Icon name="File" width="16" height="16" stroke="currentColor" style={{ color: "#6b7280", flexShrink: 0 }} />
+                          )}
+                          <span style={{ textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                            {file.name || "Uploaded file"}
+                          </span>
+                          {file.size ? (
+                            <span style={{ color: "#9ca3af", fontSize: "11px", flexShrink: 0 }}>
+                              ({(file.size / 1024).toFixed(1)} KB)
+                            </span>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newFiles = [...value];
+                            newFiles.splice(index, 1);
+                            onChange?.(newFiles);
+                          }}
+                          className="flex items-center justify-center cursor-pointer border-0"
+                          style={{ background: "none", color: "#9ca3af", padding: "4px", borderRadius: "4px" }}
+                          title="Remove file"
+                        >
+                          <Icon name="Close" width="14" height="14" stroke="currentColor" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {value && typeof value === "string" && value.trim() && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex flex-column gap-8"
+                  style={{ marginTop: "16px", textAlign: "left", pointerEvents: "auto" }}
+                >
+                  <div className="font-600" style={{ fontSize: "12px", color: "#4b5563" }}>
+                    Current Image
+                  </div>
+                  <div
+                    className="flex items-center justify-between bg-white mini-text"
+                    style={{ border: "1px solid #e5e7eb", borderRadius: "8px", padding: "8px 12px", color: "#1f2937" }}
+                  >
+                    <div className="flex items-center gap-8" style={{ overflow: "hidden" }}>
+                      <img
+                        src={value}
+                        alt="Current"
+                        style={{ width: "28px", height: "28px", borderRadius: "4px", objectFit: "cover" }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                      <span style={{ textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                        {value.length > 35 ? value.substring(0, 35) + "..." : value}
+                      </span>
                     </div>
-                  ))}
+                    <button
+                      type="button"
+                      onClick={() => onChange?.([])}
+                      className="flex items-center justify-center cursor-pointer border-0"
+                      style={{ background: "none", color: "#9ca3af", padding: "4px", borderRadius: "4px" }}
+                      title="Remove image"
+                    >
+                      <Icon name="Close" width="14" height="14" stroke="currentColor" />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1264,6 +1638,53 @@ const Fields = React.memo(
             </div>
           );
         }
+
+        case "bulk-image":
+        case "bulk-images":
+          return (
+            <BulkImageField
+              value={value}
+              onChange={onChange}
+              cols={props.cols || props.columns || 3}
+              max={props.max || props.maxCount || 5}
+              helperText={props.helperText}
+              accept={props.accept}
+              className={className}
+            />
+          );
+
+        case "bulk-inputs":
+        case "bulk-input":
+          return (
+            <BulkInputsField
+              value={value}
+              onChange={onChange}
+              firstInputName={props.firstInputName}
+              firstInputLabel={props.firstInputLabel}
+              secondInputName={props.secondInputName}
+              secondInputLabel={props.secondInputLabel}
+              addText={props.addText}
+              clsInput={clsInput}
+              className={className}
+              style={commonProps.style}
+            />
+          );
+
+        case "bulk-badge":
+        case "bulk-badges":
+          return (
+            <BulkBadgeField
+              value={value}
+              onChange={onChange}
+              label={label}
+              placeholder={props.placeholder}
+              addText={props.addText}
+              padding={props.padding}
+              clsInput={clsInput}
+              className={className}
+              style={commonProps.style}
+            />
+          );
 
         default:
           return null;

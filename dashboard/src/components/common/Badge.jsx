@@ -34,6 +34,14 @@ export const getBadgeTheme = (val) => {
                 dot: "var(--warning)",
             };
 
+        case "processing":
+            return {
+                bg: "rgba(30, 116, 219, 0.12)",
+                color: "var(--primary, #1e74db)",
+                border: "var(--primary, #1e74db)",
+                dot: "var(--primary, #1e74db)",
+            };
+
         default:
             return {
                 bg: "var(--forth)",

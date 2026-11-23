@@ -1,8 +1,11 @@
 import React from "react";
 import Chart from "react-apexcharts";
 import Container from "../../components/common/Container";
+import Button from "../../components/common/Button";
 import Image from "../../components/common/Image";
 import Icon from "../../components/common/Icon";
+import Accordion from "../../components/common/Accordion";
+import { showToast } from "../../components/common/Toast";
 import DashImg from "../../assets/dashimg.png";
 
 /* ==========================================================================
@@ -82,111 +85,6 @@ const SPARKLINE_BAR_OPTIONS = {
     tooltip: { enabled: true }
 };
 
-const REVENUE_CHART_OPTIONS = {
-    chart: {
-        toolbar: { show: false },
-        sparkline: { enabled: false }
-    },
-    colors: ["#7c69ef"],
-    plotOptions: {
-        bar: {
-            borderRadius: 6,
-            columnWidth: "60%",
-            distributed: false,
-            dataLabels: {
-                position: "top"
-            }
-        }
-    },
-    dataLabels: {
-        enabled: true,
-        offsetY: -26,
-        style: {
-            fontSize: "13px",
-            fontWeight: "600",
-            colors: ["#5d596c"]
-        },
-        background: {
-            enabled: false
-        },
-        formatter: (val) => {
-            if (!val || val === 0) return "";
-            if (val >= 1000000) return `${(val / 1000000).toFixed(1).replace(/\.0$/, "")}M`;
-            if (val >= 1000) return `${Math.round(val / 1000)}K`;
-            return `${val}`;
-        }
-    },
-    fill: {
-        type: "solid",
-        opacity: 1
-    },
-    stroke: {
-        show: false
-    },
-    xaxis: {
-        categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-        tickPlacement: "on",
-        axisBorder: { show: false },
-        axisTicks: { show: false },
-        labels: {
-            style: {
-                colors: "#a5a3ae",
-                fontSize: "12px",
-                fontFamily: "Poppins, sans-serif"
-            }
-        }
-    },
-    yaxis: {
-        axisBorder: { show: false },
-        axisTicks: { show: false },
-        labels: {
-            style: {
-                colors: "#a5a3ae",
-                fontSize: "12px",
-                fontFamily: "Poppins, sans-serif"
-            },
-            formatter: (val) => {
-                if (val === 0) return "0k";
-                if (val >= 1000000) return `${(val / 1000000).toFixed(0)}m`;
-                if (val >= 1000) return `${Math.round(val / 1000)}k`;
-                return `${val}`;
-            }
-        }
-    },
-    grid: {
-        show: true,
-        borderColor: "#f1f1f2",
-        strokeDashArray: 4,
-        xaxis: { lines: { show: false } },
-        yaxis: { lines: { show: true } },
-        padding: { top: 30, right: 10, bottom: 0, left: 10 }
-    },
-    tooltip: {
-        enabled: true,
-        y: {
-            formatter: (val) => `₹${val.toLocaleString()}`
-        }
-    },
-    states: {
-        hover: {
-            filter: {
-                type: "darken",
-                value: 0.9
-            }
-        }
-    },
-    responsive: [
-        {
-            breakpoint: 768,
-            options: {
-                plotOptions: {
-                    bar: { columnWidth: "55%" }
-                }
-            }
-        }
-    ]
-};
-
 /* ==========================================================================
    STATIC MOCK DATA
    ========================================================================== */
@@ -214,9 +112,8 @@ const STATIC_DATA = {
         { id: 5, name: "Standard Ribbed Clear Strips", category: "Standard", price: 2900, stock: 350 }
     ],
     dashboardCounts: [
-        { title: "Total Sales", value: "4,89,000", prefix: "₹ ", change: "+12.5%", isPositive: true, icon: "Trending" },
-        { title: "Total Orders", value: "1,248", prefix: "", change: "+8.2%", isPositive: true, icon: "Bag" },
-        { title: "Total Revenue", value: "8,65,400", prefix: "₹ ", change: "+15.3%", isPositive: true, icon: "Analytic" }
+        { title: "Total Users", value: "12", prefix: "", change: "+12.5%", isPositive: true, icon: "Trending" },
+        { title: "Total Leads", value: "1,248", prefix: "", change: "+8.2%", isPositive: true, icon: "Bag" },
     ],
     earningsBreakdown: [
         { label: "Earnings", value: "₹84,250", color: "var(--primary)" },
@@ -313,7 +210,7 @@ const TopProductsCard = React.memo(({ products }) => (
 TopProductsCard.displayName = "TopProductsCard";
 
 const StatCards = React.memo(({ stats }) => (
-    <div className="grid-cols-3 gap-12">
+    <div className="grid-cols-2 gap-12">
         {stats.map((item, index) => (
             <div key={index} className="px-15 py-10 rounded-5 bg-white">
                 <div className="flex items-center justify-between bordb pb-3" style={{ borderColor: "var(--tertiary)" }}>
@@ -387,15 +284,273 @@ const TotalLeadsCard = React.memo(({ leadsWeeklyData, formattedLeadsCount }) => 
 ));
 TotalLeadsCard.displayName = "TotalLeadsCard";
 
-const YearlyRevenueCard = React.memo(({ series, options }) => (
-    <div className="bg-white rounded-5">
-        <CardHeader title="Yearly Revenue Insights" />
-        <div className="px-15 pb-10">
-            <GenericChart type="bar" series={series} height={380} options={options} />
+const EarningCard = React.memo(() => {
+    const series = React.useMemo(
+        () => [
+            {
+                name: "Qualified Leads",
+                data: [26, 80, 41, 65, 54, 46, 70, 46, 65, 20, 46, 62],
+            },
+        ],
+        []
+    );
+
+    const options = React.useMemo(() => {
+        const addTopBorders = (chart) => {
+            try {
+                const el = chart?.el;
+                if (!el) return;
+                const bars = el.querySelectorAll(".apexcharts-bar-area");
+                const existingCaps = el.querySelectorAll(".custom-bar-top-cap");
+                existingCaps.forEach((c) => c.remove());
+
+                bars.forEach((bar, index) => {
+                    const bbox = bar.getBBox();
+                    if (!bbox || bbox.width === 0) return;
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("class", "custom-bar-top-cap");
+                    line.setAttribute("x1", bbox.x);
+                    line.setAttribute("y1", bbox.y);
+                    line.setAttribute("x2", bbox.x + bbox.width);
+                    line.setAttribute("y2", bbox.y);
+                    line.setAttribute("stroke", index === 6 ? "#ff5200" : "#cbd5e1");
+                    line.setAttribute("stroke-width", "2.5");
+                    line.setAttribute("stroke-linecap", "butt");
+                    line.style.pointerEvents = "none";
+                    bar.parentNode.appendChild(line);
+                });
+            } catch (e) {
+                // Safe fallback
+            }
+        };
+
+        return {
+            chart: {
+                type: "bar",
+                height: 220,
+                toolbar: { show: false },
+                fontFamily: "inherit",
+                events: {
+                    mounted: (chart) => setTimeout(() => addTopBorders(chart), 20),
+                    updated: (chart) => setTimeout(() => addTopBorders(chart), 20),
+                    animationEnd: (chart) => setTimeout(() => addTopBorders(chart), 10),
+                },
+            },
+            plotOptions: {
+                bar: {
+                    columnWidth: "100%",
+                    borderRadius: 0,
+                    distributed: true,
+                },
+            },
+            fill: {
+                type: "gradient",
+                gradient: {
+                    type: "vertical",
+                    shadeIntensity: 0,
+                    opacityFrom: 0.28,
+                    opacityTo: 0.02,
+                    stops: [0, 100],
+                },
+            },
+            colors: [
+                "#94a3b8", "#94a3b8", "#94a3b8", "#94a3b8", "#94a3b8", "#94a3b8",
+                "#ff5200",
+                "#94a3b8", "#94a3b8", "#94a3b8", "#94a3b8", "#94a3b8",
+            ],
+            dataLabels: {
+                enabled: false,
+            },
+            legend: {
+                show: false,
+            },
+            grid: {
+                borderColor: "#f1f5f9",
+                strokeDashArray: 3,
+                yaxis: { lines: { show: true } },
+                xaxis: { lines: { show: false } },
+                padding: { top: 10, right: 8, bottom: 0, left: 8 },
+            },
+            xaxis: {
+                categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+                axisBorder: { show: false },
+                axisTicks: { show: false },
+                labels: {
+                    style: {
+                        colors: [
+                            "#9ca3af", "#9ca3af", "#9ca3af", "#9ca3af", "#9ca3af", "#9ca3af",
+                            "#4b5563",
+                            "#9ca3af", "#9ca3af", "#9ca3af", "#9ca3af", "#9ca3af",
+                        ],
+                        fontSize: "11px",
+                        fontWeight: [400, 400, 400, 400, 400, 400, 600, 400, 400, 400, 400, 400],
+                    },
+                },
+            },
+            yaxis: {
+                min: 0,
+                max: 100,
+                tickAmount: 5,
+                labels: {
+                    formatter: (val) => `${Math.round(val)}k`,
+                    style: {
+                        colors: "#9ca3af",
+                        fontSize: "11px",
+                    },
+                },
+            },
+            tooltip: {
+                theme: "light",
+                y: {
+                    formatter: (val) => `${val}k Leads`,
+                },
+            },
+            annotations: {
+                points: [
+                    {
+                        x: "Jul",
+                        y: 70,
+                        marker: { size: 0 },
+                        label: {
+                            borderColor: "transparent",
+                            borderWidth: 0,
+                            style: {
+                                color: "#ff5200",
+                                background: "transparent",
+                                fontSize: "11px",
+                                fontWeight: 600,
+                                padding: { left: 0, right: 0, top: 0, bottom: 0 },
+                            },
+                            offsetY: -6,
+                            text: "76.3k",
+                        },
+                    },
+                ],
+            },
+        };
+    }, []);
+
+    return (
+        <div className="bg-white rounded-10 p-20">
+            <div className="flex items-center gap-10 bordb pb-15">
+                <div className="icon-lg bg-tertiary rounded-5">
+                    <Icon name="Trending" width="20" height="20" stroke="var(--dark)" />
+                </div>
+                <div>
+                    <h4 className="mid-text font-600 text-dark">Inbound Lead Generation</h4>
+                    <p className="mini-text font-400 text-gray">SEO + Meta Ads Multi-Touch Pipeline</p>
+                </div>
+            </div>
+            <Chart options={options} series={series} type="bar" height={250} />
+        </div>
+    );
+});
+EarningCard.displayName = "EarningCard";
+
+const BalanceCard = React.memo(({ onAction }) => (
+    <div className="bg-white rounded-10 p-20 relative">
+        <div className="flex items-center gap-10 bordb pb-15">
+            <div className="icon-lg bg-tertiary rounded-5">
+                <Icon name="Rocket" width="20" height="20" stroke="var(--dark)" />
+            </div>
+            <div>
+                <h4 className="mid-text font-600 text-dark">Ashmita Digital Marketing Suite</h4>
+                <p className="mini-text font-400 text-gray">Website Performance & Inbound Lead Engine</p>
+            </div>
+        </div>
+        <p className="small-text font-400 text-gray py-16">
+            Empower your website with Ashmita digital marketing intelligence. We seamlessly combine advanced technical SEO, high-intent Meta ad campaigns, and Microsoft Clarity behavioral heatmaps to maximize inbound leads while ensuring 100% GDPR and CCPA privacy compliance.
+        </p>
+        <div className="flex items-center gap-10">
+            <Button
+                version="v2"
+                bg="#18181b"
+                color="white"
+                icon="Search"
+                iconWidth="14"
+                iconHeight="14"
+                onClick={() => onAction?.("SEO Audit")}
+                text="SEO Audit"
+                className="rounded-30 flex-1 font-500 shadow-sm"
+            />
+            <Button
+                version="v2"
+                bg="forth"
+                color="dark"
+                icon="Meta"
+                iconWidth="14"
+                iconHeight="14"
+                onClick={() => onAction?.("Meta Ads")}
+                text="Meta Ads"
+                className="rounded-30 flex-1 font-500"
+            />
+            <Button
+                version="v2"
+                bg="forth"
+                color="dark"
+                icon="ShieldCheck"
+                iconWidth="14"
+                iconHeight="14"
+                onClick={() => onAction?.("Clarity & Privacy")}
+                text="Clarity & Privacy"
+                className="rounded-30 flex-1 font-500"
+            />
         </div>
     </div>
 ));
-YearlyRevenueCard.displayName = "YearlyRevenueCard";
+BalanceCard.displayName = "BalanceCard";
+
+const GROWTH_COMPLIANCE_ITEMS = [
+    {
+        id: "seo",
+        title: <span className="text-white font-500">1. Technical SEO & Search Visibility</span>,
+        content: (
+            <p className="mini-text text-white opacity-80 font-400">
+                Automated schema markup, real-time canonical validation, and XML sitemap synchronization ensuring search engines index high-value commercial landing pages instantly.
+            </p>
+        ),
+    },
+    {
+        id: "meta-ads",
+        title: <span className="text-white font-500">2. Meta Conversion Tracking & Retargeting</span>,
+        content: (
+            <p className="mini-text text-white opacity-80 font-400">
+                Server-side Conversions API (CAPI) pipeline connected to high-intent customer acquisition ad sets across Meta networks with live ROAS optimization.
+            </p>
+        ),
+    },
+    {
+        id: "privacy",
+        title: <span className="text-white font-500">3. Privacy Compliance & User Behavior Audits</span>,
+        content: (
+            <p className="mini-text text-white opacity-80 font-400">
+                Full adherence to GDPR, CCPA, and global privacy standards paired with Microsoft Clarity heatmaps to diagnose user friction points without collecting PII.
+            </p>
+        ),
+    },
+];
+
+const SavingsGoalsCard = React.memo(({ accordionItems = GROWTH_COMPLIANCE_ITEMS }) => (
+    <div className="rounded-10 p-20 bg-dark">
+        <div className="flex items-center gap-10 bordb pb-15" style={{ borderColor: "rgba(255, 255, 255, 0.12)" }}>
+            <div className="icon-lg bg-white rounded-5">
+                <Icon name="ShieldCheck" width="20" height="20" stroke="var(--dark)" />
+            </div>
+            <div>
+                <h4 className="mid-text font-600 text-white">Growth & Compliance Pillars</h4>
+                <p className="mini-text font-400 text-white text-muted">Ashmita Marketing Tool Integration</p>
+            </div>
+        </div>
+        <Accordion
+            items={accordionItems || GROWTH_COMPLIANCE_ITEMS}
+            version="v2"
+            allowMultiple={false}
+            defaultOpenIndex={0}
+            itemClassName=""
+        />
+    </div>
+));
+SavingsGoalsCard.displayName = "SavingsGoalsCard";
 
 /* ==========================================================================
    MAIN DASHBOARD COMPONENT (MEMOIZED)
@@ -406,6 +561,12 @@ const Dashboard = () => {
     const handleViewSales = React.useCallback(() => {
         alert("Viewing sales reports for Administrator");
     }, []);
+
+    const handleSuiteAction = React.useCallback((action) => {
+        showToast(`Action: ${action}`, "info");
+    }, []);
+
+    const accordionItems = React.useMemo(() => GROWTH_COMPLIANCE_ITEMS, []);
 
     const donutOptions = React.useMemo(() => ({
         ...DONUT_CHART_OPTIONS,
@@ -431,52 +592,19 @@ const Dashboard = () => {
         }
     }), [data.totalRevenue]);
 
-    const yearlyRevenueSeries = React.useMemo(() => [{ name: "Revenue", data: data.yearlyRevenueData }], [data.yearlyRevenueData]);
-
     return (
         <Container version="v4" style={{ background: "var(--forth)" }}>
             <div className="flex items-start w-full gap-12">
                 {/* Left Column - 30% */}
-                <div className="w-30 grid-cols-1 gap-12">
-                    <BestSellerCard
-                        role={data.profile.role}
-                        formattedSales={data.profile.formattedSales}
-                        onViewSales={handleViewSales}
-                    />
-                    <OrderManagementCard
-                        totalOrders={data.totalOrders}
-                        totalRevenue={data.totalRevenue}
-                        series={data.orderManagementData}
-                        options={donutOptions}
-                    />
-                    <TopProductsCard products={data.topProducts} />
+                <div className="w-55 grid-cols-1 gap-12">
+                    <BalanceCard onAction={handleSuiteAction} />
+                    <EarningCard />
                 </div>
 
                 {/* Right Column - 70% */}
-                <div className="w-70 grid-cols-1 gap-12">
-                    {/* Stat Cards Grid */}
+                <div className="w-45 grid-cols-1 gap-12">
                     <StatCards stats={data.dashboardCounts} />
-
-                    {/* Earnings & Leads Middle Row */}
-                    <div className="flex items-start w-full gap-12">
-                        <div className="w-70">
-                            <EarningsReportCard
-                                formattedWeeklyTotal={data.formattedWeeklyTotal}
-                                weeklyEarningsData={data.weeklyEarningsData}
-                                breakdown={data.earningsBreakdown}
-                            />
-                        </div>
-
-                        <div className="w-30">
-                            <TotalLeadsCard
-                                leadsWeeklyData={data.leadsWeeklyData}
-                                formattedLeadsCount={data.formattedLeadsCount}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Yearly Revenue Insights */}
-                    <YearlyRevenueCard series={yearlyRevenueSeries} options={REVENUE_CHART_OPTIONS} />
+                    <SavingsGoalsCard accordionItems={accordionItems} />
                 </div>
             </div>
         </Container>

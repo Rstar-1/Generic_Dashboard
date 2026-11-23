@@ -15,8 +15,10 @@ import {
     canPerformAction,
     getCurrentRole,
     hasPermission,
-    useCurrentUser
+    useCurrentUser,
+    isAdminOrDevAdmin
 } from '../../utils';
+import { AVATAR_PALETTE } from '../../utils/apiData';
 
 export { formatDate, Badge, BadgeList };
 
@@ -99,31 +101,147 @@ const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, 
 });
 ActionButtons.displayName = "ActionButtons";
 
+
+
+const getDeterministicColor = (str) => {
+    if (!str || typeof str !== "string") return AVATAR_PALETTE[0];
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+};
+
 // Memoized Profile Cell
 const ProfileCell = React.memo(({ col, row }) => {
     const rawVal = getNestedValue(row, col.accessor);
     const obj = (rawVal && typeof rawVal === "object") ? rawVal : {};
-    const name = getFirstValue([rawVal, obj, row], ["fullname", "name", "username", col.nameKey, "createdByName", "title"]);
-    const subText = getFirstValue([obj, row], [col.subKey, col.emailKey, "mobile", "phone", "email", "sub"]);
-    const rawImg = getFirstValue([obj, row], [col.imageKey, "image", "avatar"]) || (Array.isArray(row?.images) ? row.images[0] : "");
+    const isCreatorCol =
+        col.accessor === "createdby" ||
+        col.accessor === "createdBy" ||
+        col.accessor === "creator" ||
+        col.accessor === "author" ||
+        col.header === "Created By" ||
+        col.header === "Author";
+    const isOnlyImage =
+        col.onlyImage === true ||
+        col.imageOnly === true ||
+        col.ui === "image" ||
+        col.ui === "img" ||
+        (!isCreatorCol && (col.accessor === "image" || String(col.header || "").toLowerCase().includes("image")));
+
+    const isImageAccessor =
+        col.accessor === "image" ||
+        col.accessor === "img" ||
+        col.accessor === "avatar" ||
+        col.accessor === "thumbnail" ||
+        isOnlyImage;
+
+    const name = getFirstValue(
+        [rawVal, obj, !isCreatorCol ? row : null],
+        ["fullname", "name", "username", col.nameKey, "createdByName", "pageName", "sectionName", "title"]
+    );
+    const subText = getFirstValue(
+        [obj, !isCreatorCol ? row : null],
+        [col.subKey, col.emailKey, "mobile", "phone", "email", "sub", "path", "sku", "author"]
+    );
+
+    let rawImg = "";
+    if (isCreatorCol) {
+        rawImg = getFirstValue(obj, [col.imageKey, "avatar", "image", "profileImage", "photo", "avatarUrl", "profileImg", "url", "src"]);
+        if (!rawImg) {
+            rawImg = getFirstValue(row, ["avatar", "image", "profileImage", "creatorImage", "authorImage"]);
+        }
+        if (!rawImg && ((name && name.toLowerCase().includes("raj")) || (subText && String(subText).includes("8779030638")))) {
+            rawImg = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80";
+        }
+        if (!rawImg) {
+            rawImg = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80";
+        }
+    } else if (isImageAccessor) {
+        rawImg = (typeof rawVal === "string" && rawVal.trim())
+            ? rawVal.trim()
+            : (getFirstValue([rawVal, obj, row], [col.imageKey, "image", "avatar", "thumbnail", "url", "src"]) || (Array.isArray(row?.images) ? row.images[0] : ""));
+    } else {
+        rawImg = getFirstValue([obj, row], [col.imageKey, "avatar", "image", "thumbnail", "profileImage", "url", "src"]) || (Array.isArray(row?.images) ? row.images[0] : "");
+    }
+
+    if (rawImg && typeof rawImg === "object") {
+        rawImg = rawImg.url || rawImg.path || rawImg.src || rawImg.preview || "";
+    }
+    if (typeof rawImg === "string") {
+        rawImg = rawImg.trim();
+    }
+
     const imgUrl = resolveImagePath(rawImg);
-    const favColor = getFirstValue(row, [col.colorKey, "favoriteColor"], "#6366f1");
+    const [imgError, setImgError] = React.useState(false);
+
+    React.useEffect(() => {
+        setImgError(false);
+    }, [imgUrl]);
+
+    const favColor = getFirstValue(row, [col.colorKey, "favoriteColor"]) || getDeterministicColor(String(name || row?._id || row?.id || col.header || ""));
     const imgStyle = { width: "40px", height: "40px", flexShrink: 0, ...col.imgStyle, ...col.imageStyle };
+    const initialLetter = (name ? String(name).trim().charAt(0) : (col.header ? String(col.header).trim().charAt(0) : "?")).toUpperCase() || "?";
+
+    const showImage = Boolean(imgUrl) && !imgError;
+
+    if (isOnlyImage) {
+        return (
+            <div className={`flex items-center ${col.className?.includes("justify-center") || col.className?.includes("text-center") ? "justify-center" : ""}`}>
+                {showImage ? (
+                    <Image
+                        src={imgUrl}
+                        alt={name || col.header || "Product Image"}
+                        className="rounded-5 object-cover bg-forth"
+                        style={imgStyle}
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
+                        onError={() => setImgError(true)}
+                    />
+                ) : (
+                    <div
+                        style={{ background: favColor, ...imgStyle }}
+                        className="flex items-center justify-center rounded-5"
+                    >
+                        <p className="headpara-text text-white font-500 line-clamp1">
+                            {initialLetter}
+                        </p>
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     return (
         <div className="flex items-center gap-12">
-            {imgUrl ? (
-                <Image src={imgUrl} alt={name} className="rounded-5 object-cover bg-forth" style={imgStyle} />
+            {showImage ? (
+                <Image
+                    src={imgUrl}
+                    alt={name}
+                    className="rounded-5 object-cover bg-forth"
+                    style={imgStyle}
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                    onError={() => setImgError(true)}
+                />
+            ) : isCreatorCol ? (
+                <img
+                    src="/images/avatar-default.svg"
+                    alt={name || "User Avatar"}
+                    className="rounded-5 object-cover bg-forth"
+                    style={imgStyle}
+                />
             ) : (
                 <div style={{ background: favColor, ...imgStyle }} className="flex items-center justify-center rounded-5">
                     <p className="headpara-text text-white font-500">
-                        {name ? String(name).charAt(0).toUpperCase() : "?"}
+                        {initialLetter}
                     </p>
                 </div>
             )}
             <div>
-                <h5 className="text-dark headmini-text font-500 line-clamp1">{name}</h5>
-                {subText && <p className="text-gray mini-text font-500">{subText}</p>}
+                <h5 className="text-dark headmini-text font-500 capitalize line-clamp1">{name}</h5>
+                {subText && <p className="text-gray mini-text font-500 line-clamp1">{subText}</p>}
             </div>
         </div>
     );
@@ -155,12 +273,15 @@ const TableCell = React.memo(({
     // Form field types integrated with Fields.jsx
     if (col.accessor === "checkbox" || col.ui === "checkbox") {
         return (
-            <Fields
-                type="checkbox"
-                value={isSelected}
-                onChange={() => onToggleSelect?.(rowId, row)}
-                wrapperClassName="flex items-center justify-center"
-            />
+            <div className="flex items-center justify-center">
+                <input
+                    type="checkbox"
+                    checked={Boolean(isSelected)}
+                    onChange={() => onToggleSelect?.(rowId, row)}
+                    className="cursor-pointer"
+                    aria-label={`Select row ${rowId}`}
+                />
+            </div>
         );
     }
 
@@ -253,7 +374,7 @@ const TableCell = React.memo(({
             case "code":
                 return (
                     <span className="font-mono text-primary mini-text px-8 py-2 rounded-4 font-500" style={{ background: "#eff6ff" }}>
-                        {cellValue || "-"}
+                        {cellValue !== undefined && cellValue !== null && cellValue !== "" ? String(cellValue) : "-"}
                     </span>
                 );
             case "score-pill": {
@@ -266,6 +387,8 @@ const TableCell = React.memo(({
                     </span>
                 );
             }
+            case "image":
+            case "img":
             case "profile":
                 return <ProfileCell col={col} row={row} />;
             case "badge-list":
@@ -476,12 +599,15 @@ const TableHeader = React.memo(({ displayHeaders, isAllSelected, onToggleSelectA
                         className={`bg-primary p-10 capitalize ${col.className || ""}`}
                     >
                         {isCheckbox ? (
-                            <Fields
-                                type="checkbox"
-                                value={isAllSelected}
-                                onChange={onToggleSelectAll}
-                                wrapperClassName="flex items-center justify-center"
-                            />
+                            <div className="flex items-center justify-center">
+                                <input
+                                    type="checkbox"
+                                    checked={Boolean(isAllSelected)}
+                                    onChange={(e) => onToggleSelectAll?.(e.target.checked)}
+                                    className="cursor-pointer"
+                                    aria-label="Select all rows"
+                                />
+                            </div>
                         ) : (
                             <p className={`mini-text text-white font-500 ${col.className?.includes("text-center") ? "text-center" : col.className?.includes("text-right") ? "text-right" : "text-left"}`}>
                                 {col.header}
@@ -508,6 +634,7 @@ const Table = ({
     searchQuery = "",
     onSearchChange,
     searchPlaceholder = "Search...",
+    searchDebounceMs = 500,
     showControls = true,
     itemName = "items",
     loading = false,
@@ -573,9 +700,28 @@ const Table = ({
     // Checkbox selection handlers
     const isRowSelected = React.useCallback((rowId, row) => {
         if (selectedRows !== undefined) {
-            return Array.isArray(selectedRows) ? selectedRows.includes(rowId) : Boolean(selectedRows?.has?.(rowId));
+            if (Array.isArray(selectedRows)) {
+                return (
+                    selectedRows.includes(rowId) ||
+                    (row?.id && selectedRows.includes(row.id)) ||
+                    (row?._id && selectedRows.includes(row._id))
+                );
+            }
+            if (selectedRows instanceof Set) {
+                return (
+                    selectedRows.has(rowId) ||
+                    (row?.id && selectedRows.has(row.id)) ||
+                    (row?._id && selectedRows.has(row._id))
+                );
+            }
+            return Boolean(selectedRows);
         }
-        return internalSelectedRowIds.has(rowId) || Boolean(row?.checked || row?.isSelected);
+        return (
+            internalSelectedRowIds.has(rowId) ||
+            (row?.id && internalSelectedRowIds.has(row.id)) ||
+            (row?._id && internalSelectedRowIds.has(row._id)) ||
+            Boolean(row?.checked || row?.isSelected)
+        );
     }, [selectedRows, internalSelectedRowIds]);
 
     const handleSelectRow = React.useCallback((rowId, row) => {
@@ -591,28 +737,113 @@ const Table = ({
         }
     }, [onSelectRow]);
 
+    const { user: currentUser, role: userRole } = useCurrentUser();
+    const isAdmin = React.useMemo(() => isAdminOrDevAdmin(userRole || currentUser), [userRole, currentUser]);
+
+    // For non-admin roles, only items where isActive is true are shown (admin and dev admin see both true & false)
+    const displayData = React.useMemo(() => {
+        if (isAdmin || !Array.isArray(data)) return data || [];
+        return (data || []).filter((row) => {
+            if (!row || typeof row !== "object") return false;
+            if (row.isActive !== undefined) {
+                return row.isActive === true || row.isActive === "true";
+            }
+            if (row.status !== undefined) {
+                const s = String(row.status).toLowerCase();
+                return s !== "inactive" && s !== "draft" && s !== "disabled";
+            }
+            return true;
+        });
+    }, [data, isAdmin]);
+
     const isAllSelected = React.useMemo(() => {
-        if (!data.length) return false;
-        return data.every((row, idx) => isRowSelected(row._id || row.id || idx, row));
-    }, [data, isRowSelected]);
+        if (!displayData.length) return false;
+        return displayData.every((row, idx) => isRowSelected(row._id || row.id || idx, row));
+    }, [displayData, isRowSelected]);
 
-    const handleSelectAll = React.useCallback(() => {
+    const handleSelectAll = React.useCallback((checked) => {
+        const nextChecked = typeof checked === "boolean" ? checked : !isAllSelected;
+        const allIds = displayData.map((r, i) => r.id || r._id || i);
         if (onSelectAll) {
-            onSelectAll();
-        } else {
-            setInternalSelectedRowIds((prev) => {
-                if (prev.size >= data.length) return new Set();
-                return new Set(data.map((r, i) => r._id || r.id || i));
+            onSelectAll(nextChecked, allIds, displayData);
+        } else if (onSelectRow && selectedRows !== undefined) {
+            allIds.forEach((id) => {
+                const selected = isRowSelected(id);
+                if (nextChecked && !selected) onSelectRow(id);
+                if (!nextChecked && selected) onSelectRow(id);
             });
+        } else {
+            setInternalSelectedRowIds(nextChecked ? new Set(allIds) : new Set());
         }
-    }, [data, onSelectAll]);
+    }, [displayData, onSelectAll, isAllSelected, onSelectRow, selectedRows, isRowSelected]);
 
-    const handleSearch = React.useCallback((val) => {
+    // Search with Debouncing, AbortController, ClearTimeout & useDeferredValue
+    const [searchTerm, setSearchTerm] = React.useState(searchQuery);
+    const deferredSearch = React.useDeferredValue(searchTerm);
+    const debounceTimerRef = React.useRef(null);
+    const abortControllerRef = React.useRef(null);
+    const lastQueryRef = React.useRef(searchQuery);
+
+    // Sync external query prop changes (e.g. parent reset/clear filters)
+    React.useEffect(() => {
+        setSearchTerm(searchQuery || "");
+        lastQueryRef.current = searchQuery || "";
+    }, [searchQuery]);
+
+    // Cleanup timer & abort pending requests on unmount
+    React.useEffect(() => {
+        return () => {
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+            abortControllerRef.current?.abort();
+        };
+    }, []);
+
+    // Dispatch search query with AbortController and Request Cancellation
+    const triggerSearch = React.useCallback((query) => {
         if (!onSearchChange) return;
-        onSearchChange(typeof val === "string" ? val : val?.target?.value ?? "");
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+
+        const val = typeof query === "string" ? query : "";
+        if (val === lastQueryRef.current) return;
+        lastQueryRef.current = val;
+
+        // Abort previous pending search request
+        abortControllerRef.current?.abort();
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        onSearchChange(val, controller.signal);
     }, [onSearchChange]);
 
-    const { role: userRole } = useCurrentUser();
+    // Debounced search handler: resets timer on every keystroke, waits until typing stops
+    const handleSearch = React.useCallback((val) => {
+        const next = typeof val === "string" ? val : (val?.target?.value ?? "");
+        setSearchTerm(next);
+
+        if (!onSearchChange) return;
+
+        // Clear existing debounce timer on each keystroke
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+
+        // Immediate search when input is emptied
+        if (!next.trim()) {
+            triggerSearch("");
+            return;
+        }
+
+        // Debounce: trigger search only after user stops typing for searchDebounceMs
+        debounceTimerRef.current = setTimeout(() => {
+            triggerSearch(next);
+        }, searchDebounceMs);
+    }, [onSearchChange, triggerSearch, searchDebounceMs]);
+
+    // Instant search on Enter key
+    const handleSearchKeyDown = React.useCallback((e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            triggerSearch(searchTerm);
+        }
+    }, [triggerSearch, searchTerm]);
 
     const actionProps = React.useMemo(() => ({
         onEdit,
@@ -654,8 +885,9 @@ const Table = ({
                                 icon="Search"
                                 iconPosition="right"
                                 placeholder={searchPlaceholder}
-                                value={searchQuery}
+                                value={searchTerm}
                                 onChange={handleSearch}
+                                onKeyDown={handleSearchKeyDown}
                             />
                         </div>
                     )}
@@ -673,7 +905,7 @@ const Table = ({
                             onToggleSelectAll={handleSelectAll}
                         />
                         <tbody>
-                            {data.length === 0 ? (
+                            {displayData.length === 0 ? (
                                 <tr>
                                     <td colSpan={displayHeaders.length}>
                                         <div className="py-40 text-center bordb">
@@ -683,7 +915,7 @@ const Table = ({
                                     </td>
                                 </tr>
                             ) : (
-                                data.map((row, rowIdx) => {
+                                displayData.map((row, rowIdx) => {
                                     const rowId = row._id || row.id || rowIdx;
                                     return (
                                         <TableRow
@@ -706,10 +938,10 @@ const Table = ({
                 </div>
             )}
 
-            {onPageChange && totalItems > itemsPerPage && (
+            {onPageChange && (isAdmin ? totalItems : displayData.length) > itemsPerPage && (
                 <Pagination
                     page={page}
-                    totalItems={totalItems}
+                    totalItems={isAdmin ? totalItems : displayData.length}
                     itemsPerPage={itemsPerPage}
                     onPageChange={onPageChange}
                     itemName={itemName}

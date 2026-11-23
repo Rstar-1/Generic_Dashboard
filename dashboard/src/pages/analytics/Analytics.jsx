@@ -1,1262 +1,482 @@
 import React from "react";
-import Button from "../../components/common/Button";
-import Modal from "../../components/common/Modal";
-import FormBuilder from "../../components/forms/FormBuilder";
+import Chart from "react-apexcharts";
+import Container from "../../components/common/Container";
+import Image from "../../components/common/Image";
 import Icon from "../../components/common/Icon";
-import { showToast } from "../../components/common/Toast";
-import { copyToClipboard } from "../../utils";
-import {
-    rolesData,
-    usersData,
-    leadsData,
-    customersData,
-    productsData,
-    productCategoriesData,
-    blogsData,
-    blogCategoriesData,
-    cmsData,
-    seoData,
-    ordersData,
-    transactionsData,
-} from "../../utils/apiData";
+import DashImg from "../../assets/dashimg.png";
 
-// Single unique permissions extracted from rolesData in apiData.js
-const ROLE_PERMISSIONS_OPTIONS = Array.from(
-    new Set(
-        rolesData.flatMap((r) =>
-            Array.isArray(r.permissions) ? r.permissions : [r.permissions]
-        ).filter(Boolean)
-    )
-)
-    .sort((a, b) => (a === "Full_Access" ? -1 : b === "Full_Access" ? 1 : a.localeCompare(b)))
-    .map((perm) => ({
-        label: perm,
-        value: perm,
-    }));
+/* ==========================================================================
+   CHART CONFIGURATIONS & REUSABLE CHART COMPONENT
+   ========================================================================== */
+const GenericChart = ({ type, categories, series, colors, height, options }) => {
+    const mergedOptions = {
+        ...options,
+        chart: { ...options?.chart, type },
+        colors: colors || options?.colors,
+        ...(categories
+            ? {
+                labels: categories,
+                xaxis: { ...options?.xaxis, categories }
+            }
+            : {})
+    };
+    return <Chart type={type} series={series} height={options?.chart?.height || height} options={mergedOptions} />;
+};
+GenericChart.displayName = "GenericChart";
 
-// Single unique pages extracted from rolesData in apiData.js
-const ROLE_PAGES_OPTIONS = Array.from(
-    new Set(
-        rolesData.flatMap((r) =>
-            Array.isArray(r.pages) ? r.pages : [r.pages]
-        ).filter(Boolean)
-    )
-)
-    .sort((a, b) => (a === "Full_Access" ? -1 : b === "Full_Access" ? 1 : a.localeCompare(b)))
-    .map((page) => ({
-        label: page,
-        value: page,
-    }));
-
-// Entity Form Field Configurations for all Dashboard Pages according to apiData.js
-const ENTITY_CONFIGS = [
-    {
-        key: "roles",
-        title: "Role",
-        buttonText: "Add Roles",
-        fields: [
-            {
-                name: "id",
-                label: "Role ID",
-                type: "text",
-                defaultValue: `ROLE-00${rolesData.length + 1}`,
-                placeholder: "e.g. ROLE-006",
-            },
-            {
-                name: "name",
-                label: "Role Name",
-                type: "text",
-                placeholder: "e.g. Operations Manager",
-                validation: { required: true },
-            },
-            {
-                name: "role",
-                label: "Role Identifier",
-                type: "select",
-                options: [
-                    { label: "Admin", value: "admin" },
-                    { label: "Manager", value: "manager" },
-                    { label: "Accountant", value: "accountant" },
-                    { label: "Product", value: "product" },
-                    { label: "Customer", value: "customer" },
-                ],
-                defaultValue: "manager",
-            },
-            {
-                name: "permissions",
-                label: "Permissions",
-                type: "multiselect",
-                options: ROLE_PERMISSIONS_OPTIONS,
-                defaultValue: ["Full_Access"],
-            },
-            {
-                name: "pages",
-                label: "Allowed Pages",
-                type: "multiselect",
-                options: ROLE_PAGES_OPTIONS,
-                defaultValue: ["Full_Access"],
-            },
-            {
-                name: "usersassigned",
-                label: "Users Assigned",
-                type: "number",
-                defaultValue: 1,
-            },
-            {
-                name: "isActive",
-                label: "Status",
-                type: "switch",
-                defaultValue: true,
-            },
-            {
-                name: "isDeleted",
-                label: "Deleted",
-                type: "switch",
-                defaultValue: false,
-            },
-        ],
+const DONUT_CHART_OPTIONS = {
+    chart: { height: 300, offsetY: 0, fontFamily: "Poppins, sans-serif" },
+    stroke: { show: true, width: 5, colors: ["var(--white, #fff)"] },
+    grid: { padding: { top: 10, bottom: -100 } },
+    plotOptions: {
+        pie: {
+            startAngle: -105,
+            endAngle: 105,
+            offsetY: 0,
+            donut: {
+                size: "70%",
+                labels: {
+                    show: true,
+                    name: { offsetY: -45, color: "var(--gray)" },
+                    value: { fontSize: "35px", fontWeight: 600, offsetY: -20, color: "var(--dark)" },
+                    total: { show: true, label: "Total Sales", color: "var(--gray)", offsetY: 5 }
+                }
+            }
+        }
     },
-    {
-        key: "users",
-        title: "System User",
-        buttonText: "Add Users",
-        fields: [
-            {
-                name: "id",
-                label: "User ID",
-                type: "text",
-                defaultValue: `USR-00${usersData.length + 1}`,
-                placeholder: "e.g. USR-007",
-            },
-            {
-                name: "name",
-                label: "Full Name",
-                type: "text",
-                placeholder: "e.g. Rohit Sharma",
-                validation: { required: true },
-            },
-            {
-                name: "email",
-                label: "Email Address",
-                type: "email",
-                placeholder: "e.g. rohit@example.com",
-                validation: { required: true, email: true },
-            },
-            {
-                name: "mobile",
-                label: "Mobile Number",
-                type: "tel",
-                placeholder: "e.g. 9876543210",
-                validation: { mobile: true },
-            },
-            {
-                name: "role",
-                label: "User Role",
-                type: "select",
-                options: [
-                    { label: "Admin", value: "Admin" },
-                    { label: "Manager", value: "Manager" },
-                    { label: "Accountant", value: "Accountant" },
-                    { label: "Product", value: "Product" },
-                    { label: "Customer", value: "Customer" },
-                ],
-                defaultValue: "Admin",
-            },
-            {
-                name: "lastActive",
-                label: "Last Active",
-                type: "text",
-                defaultValue: "Just now",
-                placeholder: "e.g. Just now",
-            },
-            {
-                name: "isActive",
-                label: "Status",
-                type: "switch",
-                defaultValue: true,
-            },
-            {
-                name: "isDeleted",
-                label: "Deleted",
-                type: "switch",
-                defaultValue: false,
-            },
-        ],
+    legend: {
+        show: true,
+        position: "bottom",
+        offsetY: -125,
+        fontSize: "13px",
+        itemMargin: {
+            horizontal: 3,
+            vertical: 2
+        },
+        markers: {
+            width: 6,
+            height: 6,
+            radius: 8
+        },
+        labels: { colors: "var(--dark)" }
     },
-    {
-        key: "leads",
-        title: "Lead",
-        buttonText: "Add Leads",
-        fields: [
-            {
-                name: "id",
-                label: "Lead ID",
-                type: "text",
-                defaultValue: `LEAD-00${leadsData.length + 1}`,
-                placeholder: "e.g. LEAD-007",
-            },
-            {
-                name: "name",
-                label: "Lead / Prospect Name",
-                type: "text",
-                placeholder: "e.g. Sunil Deshmukh",
-                validation: { required: true },
-            },
-            {
-                name: "company",
-                label: "Company Name",
-                type: "text",
-                placeholder: "e.g. Reliance Retail Cold Chains",
-            },
-            {
-                name: "contact",
-                label: "Contact Number",
-                type: "tel",
-                placeholder: "e.g. +91 98201 44512",
-            },
-            {
-                name: "value",
-                label: "Est. Deal Value",
-                type: "text",
-                placeholder: "e.g. ₹2,45,000",
-            },
-            {
-                name: "source",
-                label: "Acquisition Source",
-                type: "select",
-                options: [
-                    { label: "Website Enquiry", value: "Website Enquiry" },
-                    { label: "Direct Call", value: "Direct Call" },
-                    { label: "Partner Referral", value: "Partner Referral" },
-                    { label: "Google Ads", value: "Google Ads" },
-                    { label: "Trade Expo", value: "Trade Expo" },
-                ],
-                defaultValue: "Website Enquiry",
-            },
-            {
-                name: "assignedTo",
-                label: "Assigned Rep",
-                type: "select",
-                options: [
-                    { label: "Raj Shetye", value: "Raj Shetye" },
-                    { label: "Pooja Hegde", value: "Pooja Hegde" },
-                    { label: "Vikram Mehta", value: "Vikram Mehta" },
-                    { label: "Unassigned", value: "Unassigned" },
-                ],
-                defaultValue: "Raj Shetye",
-            },
-            {
-                name: "createdByName",
-                label: "Created By",
-                type: "text",
-                defaultValue: "Raj Shetye",
-                placeholder: "e.g. Raj Shetye",
-            },
-            {
-                name: "isActive",
-                label: "Status",
-                type: "switch",
-                defaultValue: true,
-            },
-            {
-                name: "isDeleted",
-                label: "Deleted",
-                type: "switch",
-                defaultValue: false,
-            },
-        ],
-    },
-    {
-        key: "customers",
-        title: "Customer",
-        buttonText: "Add Customers",
-        fields: [
-            {
-                name: "id",
-                label: "Customer ID",
-                type: "text",
-                defaultValue: `CUST-00${customersData.length + 1}`,
-                placeholder: "e.g. CUST-007",
-            },
-            {
-                name: "name",
-                label: "Customer Name",
-                type: "text",
-                placeholder: "e.g. Ashmita Vinyls",
-                validation: { required: true },
-            },
-            {
-                name: "company",
-                label: "Company Name",
-                type: "text",
-                placeholder: "e.g. Ashmita Vinyls Pvt Ltd",
-            },
-            {
-                name: "email",
-                label: "Email Address",
-                type: "email",
-                placeholder: "e.g. ashmitavinyls@gmail.com",
-            },
-            {
-                name: "mobile",
-                label: "Mobile Number",
-                type: "tel",
-                placeholder: "e.g. 8879741021",
-            },
-            {
-                name: "type",
-                label: "Seller Type",
-                type: "select",
-                options: [
-                    { label: "Trader", value: "Trader" },
-                    { label: "Retailer", value: "Retailer" },
-                    { label: "Dealer", value: "Dealer" },
-                    { label: "Manufacture", value: "Manufacture" },
-                ],
-                defaultValue: "Trader",
-            },
-            {
-                name: "ordersCount",
-                label: "Orders Count",
-                type: "number",
-                defaultValue: 1,
-            },
-            {
-                name: "totalAmount",
-                label: "Total Amount",
-                type: "text",
-                placeholder: "e.g. ₹15,800",
-            },
-            {
-                name: "totalSpent",
-                label: "Total Spent",
-                type: "text",
-                placeholder: "e.g. ₹1,45,800",
-            },
-            {
-                name: "createdByName",
-                label: "Created By",
-                type: "text",
-                defaultValue: "Raj Shetye",
-            },
-            {
-                name: "isActive",
-                label: "Status",
-                type: "switch",
-                defaultValue: true,
-            },
-            {
-                name: "isDeleted",
-                label: "Deleted",
-                type: "switch",
-                defaultValue: false,
-            },
-        ],
-    },
-    {
-        key: "products",
-        title: "Product",
-        buttonText: "Add Products",
-        fields: [
-            {
-                name: "id",
-                label: "Product ID",
-                type: "text",
-                defaultValue: `PRD-00${productsData.length + 1}`,
-                placeholder: "e.g. PRD-007",
-            },
-            {
-                name: "title",
-                label: "Product Title",
-                type: "text",
-                placeholder: "e.g. Clear Standard PVC Strip Roll (2mm x 200mm x 50m)",
-                validation: { required: true },
-            },
-            {
-                name: "sku",
-                label: "SKU Identifier",
-                type: "text",
-                placeholder: "e.g. SKU-PVC-CLR-200",
-            },
-            {
-                name: "category",
-                label: "Product Category",
-                type: "select",
-                options: [
-                    { label: "Standard PVC", value: "Standard PVC" },
-                    { label: "Polar Grade", value: "Polar Grade" },
-                    { label: "Brackets", value: "Brackets" },
-                    { label: "Anti-Insect", value: "Anti-Insect" },
-                    { label: "Magnetic Kit", value: "Magnetic Kit" },
-                    { label: "Heavy Duty", value: "Heavy Duty" },
-                    { label: "Welding Screen", value: "Welding Screen" },
-                ],
-                defaultValue: "Standard PVC",
-            },
-            {
-                name: "price",
-                label: "Unit Price",
-                type: "text",
-                placeholder: "e.g. ₹4,850",
-                validation: { required: true },
-            },
-            {
-                name: "stock",
-                label: "Stock Quantity",
-                type: "text",
-                placeholder: "e.g. 142 rolls",
-            },
-            {
-                name: "rating",
-                label: "Product Rating",
-                type: "text",
-                placeholder: "e.g. 4.9 ★",
-                defaultValue: "5.0 ★",
-            },
-            {
-                name: "image",
-                label: "Product Image Path",
-                type: "text",
-                placeholder: "e.g. product/Product4.jpg",
-                defaultValue: "product/Product4.jpg",
-            },
-            {
-                name: "createdByName",
-                label: "Created By",
-                type: "text",
-                defaultValue: "Raj Shetye",
-            },
-            {
-                name: "isActive",
-                label: "Status",
-                type: "switch",
-                defaultValue: true,
-            },
-            {
-                name: "isDeleted",
-                label: "Deleted",
-                type: "switch",
-                defaultValue: false,
-            },
-        ],
-    },
-    {
-        key: "productCategories",
-        title: "Product Category",
-        buttonText: "Add Products Category",
-        fields: [
-            {
-                name: "id",
-                label: "Category ID",
-                type: "text",
-                defaultValue: `CAT-00${productCategoriesData.length + 1}`,
-                placeholder: "e.g. CAT-007",
-            },
-            {
-                name: "name",
-                label: "Category Name",
-                type: "text",
-                placeholder: "e.g. PVC Magnetic Strip Curtain Rolls",
-                validation: { required: true },
-            },
-            {
-                name: "slug",
-                label: "URL Slug",
-                type: "text",
-                placeholder: "e.g. pvc-magnetic-strip-curtain-rolls",
-            },
-            {
-                name: "categoryCode",
-                label: "Category Code",
-                type: "text",
-                placeholder: "e.g. CAT-PVC-01",
-                validation: { required: true },
-            },
-            {
-                name: "subCategoriesCount",
-                label: "Subcategories Count",
-                type: "number",
-                defaultValue: 2,
-            },
-            {
-                name: "productsCount",
-                label: "Products Count",
-                type: "number",
-                defaultValue: 12,
-            },
-            {
-                name: "icon",
-                label: "Category Icon / Image",
-                type: "text",
-                defaultValue: "product/Product4.jpg",
-            },
-            {
-                name: "createdByName",
-                label: "Created By",
-                type: "text",
-                defaultValue: "Raj Shetye",
-            },
-            {
-                name: "isActive",
-                label: "Status",
-                type: "switch",
-                defaultValue: true,
-            },
-            {
-                name: "isDeleted",
-                label: "Deleted",
-                type: "switch",
-                defaultValue: false,
-            },
-        ],
-    },
-    {
-        key: "blogs",
-        title: "Blog Article",
-        buttonText: "Add Blogs",
-        fields: [
-            {
-                name: "id",
-                label: "Blog ID",
-                type: "text",
-                defaultValue: `BLG-00${blogsData.length + 1}`,
-                placeholder: "e.g. BLG-007",
-            },
-            {
-                name: "title",
-                label: "Article Title",
-                type: "text",
-                placeholder: "e.g. PVC Curtain Rolls: Complete 2026 Buying Guide",
-                validation: { required: true },
-            },
-            {
-                name: "category",
-                label: "Blog Category",
-                type: "select",
-                options: [
-                    { label: "Buying & Selection Guide", value: "Buying & Selection Guide" },
-                    { label: "Energy Efficiency", value: "Energy Efficiency" },
-                    { label: "Installation Guides", value: "Installation Guides" },
-                    { label: "Workplace Safety", value: "Workplace Safety" },
-                    { label: "Cold Storage", value: "Cold Storage" },
-                ],
-                defaultValue: "Buying & Selection Guide",
-            },
-            {
-                name: "author",
-                label: "Author Name",
-                type: "text",
-                defaultValue: "Technical Specialist",
-            },
-            {
-                name: "readTime",
-                label: "Read Duration",
-                type: "text",
-                defaultValue: "6 min read",
-            },
-            {
-                name: "comments",
-                label: "Comments",
-                type: "text",
-                defaultValue: "10 Comments",
-            },
-            {
-                name: "views",
-                label: "Total Views",
-                type: "text",
-                defaultValue: "12,500",
-            },
-            {
-                name: "tags",
-                label: "Article Tags (Comma separated)",
-                type: "text",
-                placeholder: "Trends, Buying Guide, Industrial, PVC Rolls",
-                defaultValue: "Trends, Buying Guide, Industrial, PVC Rolls",
-            },
-            {
-                name: "excerpt",
-                label: "Excerpt / Summary",
-                type: "textarea",
-                placeholder: "Brief summary of the article...",
-            },
-            {
-                name: "image",
-                label: "Blog Image Path",
-                type: "text",
-                defaultValue: "blog/Blog1.jpg",
-            },
-            {
-                name: "createdByName",
-                label: "Created By",
-                type: "text",
-                defaultValue: "Raj Shetye",
-            },
-            {
-                name: "isActive",
-                label: "Status",
-                type: "switch",
-                defaultValue: true,
-            },
-            {
-                name: "isDeleted",
-                label: "Deleted",
-                type: "switch",
-                defaultValue: false,
-            },
-        ],
-    },
-    {
-        key: "blogCategories",
-        title: "Blog Category",
-        buttonText: "Add Blogs Category",
-        fields: [
-            {
-                name: "id",
-                label: "Category ID",
-                type: "text",
-                defaultValue: `BCAT-00${blogCategoriesData.length + 1}`,
-                placeholder: "e.g. BCAT-007",
-            },
-            {
-                name: "name",
-                label: "Category Name",
-                type: "text",
-                placeholder: "e.g. Buying & Selection Guide",
-                validation: { required: true },
-            },
-            {
-                name: "slug",
-                label: "Slug",
-                type: "text",
-                placeholder: "e.g. buying-selection-guide",
-            },
-            {
-                name: "badge",
-                label: "Badge Tag",
-                type: "text",
-                placeholder: "e.g. Buying Guide",
-                defaultValue: "Buying Guide",
-            },
-            {
-                name: "articlesCount",
-                label: "Articles Count",
-                type: "number",
-                defaultValue: 8,
-            },
-            {
-                name: "views",
-                label: "Total Views",
-                type: "text",
-                defaultValue: "25.4k",
-            },
-            {
-                name: "icon",
-                label: "Icon Path",
-                type: "text",
-                defaultValue: "SPLEDO.png",
-            },
-            {
-                name: "createdByName",
-                label: "Created By",
-                type: "text",
-                defaultValue: "Raj Shetye",
-            },
-            {
-                name: "isActive",
-                label: "Status",
-                type: "switch",
-                defaultValue: true,
-            },
-            {
-                name: "isDeleted",
-                label: "Deleted",
-                type: "switch",
-                defaultValue: false,
-            },
-        ],
-    },
-    {
-        key: "cms",
-        title: "CMS Section",
-        buttonText: "Add CMS",
-        fields: [
-            {
-                name: "id",
-                label: "CMS ID",
-                type: "text",
-                defaultValue: `CMS-00${cmsData.length + 1}`,
-                placeholder: "e.g. CMS-007",
-            },
-            {
-                name: "title",
-                label: "Content Block Title",
-                type: "text",
-                placeholder: "e.g. Hero Commercial Banner",
-                validation: { required: true },
-            },
-            {
-                name: "slug",
-                label: "Slug Identifier",
-                type: "text",
-                placeholder: "e.g. hero-commercial-banner",
-            },
-            {
-                name: "sectionArea",
-                label: "Section Location Area",
-                type: "select",
-                options: [
-                    { label: "Home Hero", value: "Home Hero" },
-                    { label: "Feature Section", value: "Feature Section" },
-                    { label: "Footer Bar", value: "Footer Bar" },
-                    { label: "Promo Topbar", value: "Promo Topbar" },
-                    { label: "Banner Area", value: "Banner Area" },
-                ],
-                defaultValue: "Home Hero",
-            },
-            {
-                name: "author",
-                label: "Author / Editor",
-                type: "text",
-                defaultValue: "Raj Shetye",
-            },
-            {
-                name: "revision",
-                label: "Revision Tag",
-                type: "text",
-                defaultValue: "v1.0",
-                placeholder: "e.g. v2.4",
-            },
-            {
-                name: "createdByName",
-                label: "Created By",
-                type: "text",
-                defaultValue: "Raj Shetye",
-            },
-            {
-                name: "isActive",
-                label: "Status",
-                type: "switch",
-                defaultValue: true,
-            },
-            {
-                name: "isDeleted",
-                label: "Deleted",
-                type: "switch",
-                defaultValue: false,
-            },
-        ],
-    },
-    {
-        key: "seo",
-        title: "SEO Metadata",
-        buttonText: "Add SEO",
-        fields: [
-            {
-                name: "id",
-                label: "Page ID",
-                type: "text",
-                defaultValue: `SEO-00${seoData.length + 1}`,
-                placeholder: "e.g. SEO-007",
-            },
-            {
-                name: "pageName",
-                label: "Page Name & Route",
-                type: "text",
-                placeholder: "e.g. Home Page (/home)",
-                validation: { required: true },
-            },
-            {
-                name: "title",
-                label: "Meta Title",
-                type: "text",
-                placeholder: "e.g. PVC Vinyl Products Supplier in India | Ashmita Vinyls",
-                validation: { required: true },
-            },
-            {
-                name: "description",
-                label: "Meta Description",
-                type: "textarea",
-                placeholder: "Explore high-grade PVC strip curtains, industrial vinyl rolls...",
-            },
-            {
-                name: "targetKeyword",
-                label: "Target Focus Keyword",
-                type: "text",
-                placeholder: "e.g. PVC vinyl products",
-            },
-            {
-                name: "breadcrumbsText",
-                label: "Breadcrumbs",
-                type: "text",
-                placeholder: "e.g. Home > Products",
-                defaultValue: "Home",
-            },
-            {
-                name: "canonical",
-                label: "Canonical URL",
-                type: "text",
-                placeholder: "e.g. https://ashmitavinyls.com/home",
-            },
-            {
-                name: "seoScore",
-                label: "SEO Score",
-                type: "text",
-                defaultValue: "95 / 100",
-            },
-            {
-                name: "lastCrawled",
-                label: "Last Crawled Date",
-                type: "text",
-                defaultValue: "2026-10-25",
-            },
-            {
-                name: "createdByName",
-                label: "Created By",
-                type: "text",
-                defaultValue: "Raj Shetye",
-            },
-            {
-                name: "isActive",
-                label: "Status",
-                type: "switch",
-                defaultValue: true,
-            },
-            {
-                name: "isDeleted",
-                label: "Deleted",
-                type: "switch",
-                defaultValue: false,
-            },
-        ],
-    },
-    {
-        key: "orders",
-        title: "Order",
-        buttonText: "Add Orders",
-        fields: [
-            {
-                name: "id",
-                label: "Internal ID",
-                type: "text",
-                defaultValue: `ORD-00${ordersData.length + 1}`,
-                placeholder: "e.g. ORD-007",
-            },
-            {
-                name: "orderId",
-                label: "Order Reference ID",
-                type: "text",
-                placeholder: "e.g. ORD-99220",
-                defaultValue: `ORD-992${ordersData.length + 20}`,
-                validation: { required: true },
-            },
-            {
-                name: "customerName",
-                label: "Customer Name",
-                type: "text",
-                placeholder: "e.g. Ashwini Sawant",
-                validation: { required: true },
-            },
-            {
-                name: "customerEmail",
-                label: "Customer Email",
-                type: "email",
-                placeholder: "e.g. ashmitavinyls@gmail.com",
-            },
-            {
-                name: "itemsCount",
-                label: "Items Count",
-                type: "number",
-                defaultValue: 6,
-            },
-            {
-                name: "totalAmount",
-                label: "Total Amount",
-                type: "text",
-                placeholder: "e.g. ₹34,800",
-                validation: { required: true },
-            },
-            {
-                name: "paymentMethod",
-                label: "Payment Method",
-                type: "select",
-                options: [
-                    { label: "UPI / NetBanking", value: "UPI / NetBanking" },
-                    { label: "Credit Card", value: "Credit Card" },
-                    { label: "Wire Transfer", value: "Wire Transfer" },
-                    { label: "Cash On Delivery", value: "Cash On Delivery" },
-                ],
-                defaultValue: "UPI / NetBanking",
-            },
-            {
-                name: "createdByName",
-                label: "Created By",
-                type: "text",
-                defaultValue: "Raj Shetye",
-            },
-            {
-                name: "isActive",
-                label: "Status",
-                type: "switch",
-                defaultValue: true,
-            },
-            {
-                name: "isDeleted",
-                label: "Deleted",
-                type: "switch",
-                defaultValue: false,
-            },
-        ],
-    },
-    {
-        key: "transactions",
-        title: "Transaction",
-        buttonText: "Add Transactions",
-        fields: [
-            {
-                name: "id",
-                label: "Internal ID",
-                type: "text",
-                defaultValue: `TXN-90${transactionsData.length + 1}`,
-                placeholder: "e.g. TXN-907",
-            },
-            {
-                name: "transactionId",
-                label: "Transaction ID",
-                type: "text",
-                placeholder: "e.g. TXN-982025",
-                defaultValue: `TXN-9820${transactionsData.length + 20}`,
-                validation: { required: true },
-            },
-            {
-                name: "customerName",
-                label: "Customer / Client Name",
-                type: "text",
-                placeholder: "e.g. Ashmita Vinyls",
-                validation: { required: true },
-            },
-            {
-                name: "customerMobile",
-                label: "Customer Mobile",
-                type: "tel",
-                placeholder: "e.g. 9087654321",
-            },
-            {
-                name: "amount",
-                label: "Payment Amount",
-                type: "text",
-                placeholder: "e.g. ₹45,800",
-                validation: { required: true },
-            },
-            {
-                name: "method",
-                label: "Payment Mode",
-                type: "select",
-                options: [
-                    { label: "Cash On Delivery", value: "Cash On Delivery" },
-                    { label: "UPI / NetBanking", value: "UPI / NetBanking" },
-                    { label: "Credit Card", value: "Credit Card" },
-                ],
-                defaultValue: "Cash On Delivery",
-            },
-            {
-                name: "createdByName",
-                label: "Created By",
-                type: "text",
-                defaultValue: "Raj Shetye",
-            },
-            {
-                name: "isActive",
-                label: "Status",
-                type: "switch",
-                defaultValue: true,
-            },
-            {
-                name: "isDeleted",
-                label: "Deleted",
-                type: "switch",
-                defaultValue: false,
-            },
-        ],
-    },
-];
-
-// Initial default payload matching the real rolesData[0] structure from apiData.js
-const DEFAULT_SAMPLE_PAYLOAD = {
-    message: "Click any 'Add [Page]' button above to open the FormBuilder modal. When submitted, the exact payload will appear here in real-time JSON format matching apiData.js schema.",
-    samplePayload: rolesData[0] || {
-        id: "ROLE-001",
-        name: "Customer",
-        role: "customer",
-        rolename: "Customer",
-        permissions: ["dashboard"],
-        pages: ["Dashboard"],
-        usersCount: 3,
-        usersassigned: 3,
-        status: "Active",
-        isActive: true,
-        isDeleted: false,
-        createdAt: "2026-01-01T00:00:00.000Z",
-        updatedAt: "2026-08-05T12:17:38.020Z",
-    },
+    dataLabels: { enabled: false }
 };
 
-const Analytics = () => {
-    const [activeModalKey, setActiveModalKey] = React.useState(null);
-    const [submittedPayload, setSubmittedPayload] = React.useState(DEFAULT_SAMPLE_PAYLOAD);
-    const [lastEntityName, setLastEntityName] = React.useState(null);
-    const [timestamp, setTimestamp] = React.useState(null);
-
-    const activeConfig = React.useMemo(
-        () => ENTITY_CONFIGS.find((c) => c.key === activeModalKey),
-        [activeModalKey]
-    );
-
-    const handleOpenModal = React.useCallback((key) => {
-        setActiveModalKey(key);
-    }, []);
-
-    const handleCloseModal = React.useCallback(() => {
-        setActiveModalKey(null);
-    }, []);
-
-    const handleSubmitPayload = React.useCallback(
-        (data) => {
-            const now = new Date().toISOString();
-            const todayDate = now.split("T")[0];
-
-            // Format createdby matching apiData.js standard
-            const createdby = data.createdby && typeof data.createdby === "object"
-                ? data.createdby
-                : {
-                    name: data.createdByName || "Raj Shetye",
-                    mobile: data.createdByMobile || "8779030638",
-                    avatar: data.createdByAvatar || "",
-                };
-
-            // Format nested customer profile object for Orders & Transactions
-            let customerObj = data.customer;
-            if (activeModalKey === "orders") {
-                customerObj = (data.customer && typeof data.customer === "object") ? data.customer : {
-                    name: data.customerName || data.customer || "Ashwini Sawant",
-                    email: data.customerEmail || "ashmitavinyls@gmail.com",
-                    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-                };
-            } else if (activeModalKey === "transactions") {
-                customerObj = (data.customer && typeof data.customer === "object") ? data.customer : {
-                    name: data.customerName || data.customer || "Ashmita Vinyls",
-                    mobile: data.customerMobile || "9087654321",
-                    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-                };
-            }
-
-            // Permissions array resolution for roles according to rolesData in apiData.js
-            let permissionsArr = data.permissions;
-            if (activeModalKey === "roles") {
-                const matchedRole = rolesData.find(
-                    (r) => r.role === data.role || r.name?.toLowerCase() === data.name?.toLowerCase()
-                );
-                if (typeof permissionsArr === "string") {
-                    permissionsArr = permissionsArr.includes(",")
-                        ? permissionsArr.split(",").map((s) => s.trim())
-                        : [permissionsArr];
-                } else if (!Array.isArray(permissionsArr) && matchedRole) {
-                    permissionsArr = matchedRole.permissions;
-                } else if (!Array.isArray(permissionsArr)) {
-                    permissionsArr = ["Full_Access"];
-                }
-            }
-
-            // Pages array resolution for roles according to rolesData in apiData.js
-            let pagesArr = data.pages;
-            if (activeModalKey === "roles") {
-                const matchedRole = rolesData.find(
-                    (r) => r.role === data.role || r.name?.toLowerCase() === data.name?.toLowerCase()
-                );
-                if (typeof pagesArr === "string") {
-                    pagesArr = pagesArr.includes(",")
-                        ? pagesArr.split(",").map((s) => s.trim())
-                        : [pagesArr];
-                } else if (!Array.isArray(pagesArr) && matchedRole) {
-                    pagesArr = matchedRole.pages;
-                } else if (!Array.isArray(pagesArr)) {
-                    pagesArr = ["Full_Access"];
-                }
-            }
-
-            // Tags array resolution for blogs
-            let tagsArr = data.tags;
-            if (activeModalKey === "blogs") {
-                if (typeof tagsArr === "string") {
-                    tagsArr = tagsArr.split(",").map((s) => s.trim());
-                } else if (!Array.isArray(tagsArr)) {
-                    tagsArr = ["Trends", "Buying Guide", "Industrial", "PVC Rolls"];
-                }
-            }
-
-            // Build clean object matching apiData.js keys
-            const cleaned = { ...data };
-            delete cleaned.createdByName;
-            delete cleaned.createdByMobile;
-            delete cleaned.createdByAvatar;
-            if (activeModalKey === "orders") {
-                delete cleaned.customerName;
-                delete cleaned.customerEmail;
-            }
-            if (activeModalKey === "transactions") {
-                delete cleaned.customerName;
-                delete cleaned.customerMobile;
-            }
-
-            const finalPayload = {
-                ...cleaned,
-                ...(customerObj ? { customer: customerObj } : {}),
-                ...(activeModalKey === "roles" ? { rolename: data.name || data.rolename || "Role", permissions: permissionsArr, pages: pagesArr } : {}),
-                ...(activeModalKey === "blogs" ? { tags: tagsArr } : {}),
-                ...(activeModalKey !== "roles" && activeModalKey !== "users" ? { createdby } : {}),
-                status: data.isActive ? "Active" : "Inactive",
-                isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
-                isDeleted: Boolean(data.isDeleted),
-                createdAt: data.createdAt || "2026-01-01T00:00:00.000Z",
-                updatedAt: now,
-            };
-
-            setSubmittedPayload(finalPayload);
-            setLastEntityName(activeConfig?.title || "Entity");
-            setTimestamp(new Date().toLocaleTimeString());
-
-            showToast(`${activeConfig?.title || "Form"} payload generated matching apiData.js!`, "success");
-            setActiveModalKey(null);
-        },
-        [activeConfig, activeModalKey]
-    );
-
-    const handleCopyJson = React.useCallback(async () => {
-        const text = JSON.stringify(submittedPayload, null, 2);
-        const ok = await copyToClipboard(text);
-        if (ok) {
-            showToast("JSON payload copied to clipboard!", "success");
-        } else {
-            showToast("Failed to copy JSON", "danger");
+const SPARKLINE_BAR_OPTIONS = {
+    chart: { type: "bar", toolbar: { show: false }, sparkline: { enabled: true } },
+    plotOptions: { bar: { borderRadius: 3, columnWidth: "65%", distributed: true } },
+    dataLabels: { enabled: false },
+    xaxis: {
+        categories: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+        offsetY: -9,
+        labels: {
+            show: true,
+            axisBorder: { show: false },
+            axisTicks: { show: false },
+            style: { colors: "var(--gray)", fontSize: "12px" }
         }
-    }, [submittedPayload]);
+    },
+    grid: { padding: { bottom: 20 } },
+    colors: ["var(--tertiary)", "var(--tertiary)", "var(--tertiary)", "var(--tertiary)", "#7c69ef", "var(--tertiary)", "var(--tertiary)"],
+    tooltip: { enabled: true }
+};
 
-    const handleResetPayload = React.useCallback(() => {
-        setSubmittedPayload(DEFAULT_SAMPLE_PAYLOAD);
-        setLastEntityName(null);
-        setTimestamp(null);
-        showToast("JSON preview reset to default apiData.js sample", "info");
+const REVENUE_CHART_OPTIONS = {
+    chart: {
+        toolbar: { show: false },
+        sparkline: { enabled: false }
+    },
+    colors: ["#7c69ef"],
+    plotOptions: {
+        bar: {
+            borderRadius: 6,
+            columnWidth: "60%",
+            distributed: false,
+            dataLabels: {
+                position: "top"
+            }
+        }
+    },
+    dataLabels: {
+        enabled: true,
+        offsetY: -26,
+        style: {
+            fontSize: "13px",
+            fontWeight: "600",
+            colors: ["#5d596c"]
+        },
+        background: {
+            enabled: false
+        },
+        formatter: (val) => {
+            if (!val || val === 0) return "";
+            if (val >= 1000000) return `${(val / 1000000).toFixed(1).replace(/\.0$/, "")}M`;
+            if (val >= 1000) return `${Math.round(val / 1000)}K`;
+            return `${val}`;
+        }
+    },
+    fill: {
+        type: "solid",
+        opacity: 1
+    },
+    stroke: {
+        show: false
+    },
+    xaxis: {
+        categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        tickPlacement: "on",
+        axisBorder: { show: false },
+        axisTicks: { show: false },
+        labels: {
+            style: {
+                colors: "#a5a3ae",
+                fontSize: "12px",
+                fontFamily: "Poppins, sans-serif"
+            }
+        }
+    },
+    yaxis: {
+        axisBorder: { show: false },
+        axisTicks: { show: false },
+        labels: {
+            style: {
+                colors: "#a5a3ae",
+                fontSize: "12px",
+                fontFamily: "Poppins, sans-serif"
+            },
+            formatter: (val) => {
+                if (val === 0) return "0k";
+                if (val >= 1000000) return `${(val / 1000000).toFixed(0)}m`;
+                if (val >= 1000) return `${Math.round(val / 1000)}k`;
+                return `${val}`;
+            }
+        }
+    },
+    grid: {
+        show: true,
+        borderColor: "#f1f1f2",
+        strokeDashArray: 4,
+        xaxis: { lines: { show: false } },
+        yaxis: { lines: { show: true } },
+        padding: { top: 30, right: 10, bottom: 0, left: 10 }
+    },
+    tooltip: {
+        enabled: true,
+        y: {
+            formatter: (val) => `₹${val.toLocaleString()}`
+        }
+    },
+    states: {
+        hover: {
+            filter: {
+                type: "darken",
+                value: 0.9
+            }
+        }
+    },
+    responsive: [
+        {
+            breakpoint: 768,
+            options: {
+                plotOptions: {
+                    bar: { columnWidth: "55%" }
+                }
+            }
+        }
+    ]
+};
+
+/* ==========================================================================
+   STATIC MOCK DATA
+   ========================================================================== */
+const STATIC_DATA = {
+    profile: {
+        role: "Administrator",
+        formattedSales: "₹489K"
+    },
+    totalSales: 489000,
+    totalOrders: 1248,
+    totalRevenue: 865400,
+    orderManagementData: [185, 320, 243, 500],
+    weeklyEarningsData: [35, 50, 42, 68, 95, 60, 40],
+    weeklyTotal: 84250,
+    formattedWeeklyTotal: "₹84.3K",
+    leadsWeeklyData: [45, 58, 52, 78, 92, 64, 80],
+    totalLeadsCount: 4200,
+    formattedLeadsCount: "4k",
+    yearlyRevenueData: [45000, 78000, 62000, 95000, 110000, 145000, 130000, 175000, 160000, 195000, 220000, 265000],
+    topProducts: [
+        { id: 1, name: "Heavy Duty PVC Strip Curtains", category: "Industrial", price: 4500, stock: 120 },
+        { id: 2, name: "Polar Grade Cold Room Curtains", category: "Commercial", price: 6200, stock: 85 },
+        { id: 3, name: "Anti-Insect Yellow Strip Rolls", category: "Safety", price: 3800, stock: 210 },
+        { id: 4, name: "Welding Screen Amber Shield", category: "Specialty", price: 7400, stock: 45 },
+        { id: 5, name: "Standard Ribbed Clear Strips", category: "Standard", price: 2900, stock: 350 }
+    ],
+    dashboardCounts: [
+        { title: "Total Sales", value: "4,89,000", prefix: "₹ ", change: "+12.5%", isPositive: true, icon: "Trending" },
+        { title: "Total Orders", value: "1,248", prefix: "", change: "+8.2%", isPositive: true, icon: "Bag" },
+        { title: "Total Revenue", value: "8,65,400", prefix: "₹ ", change: "+15.3%", isPositive: true, icon: "Analytic" }
+    ],
+    earningsBreakdown: [
+        { label: "Earnings", value: "₹84,250", color: "var(--primary)" },
+        { label: "Profit", value: "₹50,550", color: "var(--info)" },
+        { label: "Expense", value: "₹33,700", color: "var(--danger)" }
+    ]
+};
+
+/* ==========================================================================
+   MEMOIZED SECTIONS
+   ========================================================================== */
+const CardHeader = React.memo(({ title }) => (
+    <div className="px-14 py-12 bordb" style={{ borderColor: "var(--tertiary)" }}>
+        <p className="para-text capitalize text-dark font-500">{title}</p>
+    </div>
+));
+CardHeader.displayName = "CardHeader";
+
+const BestSellerCard = React.memo(({ role, formattedSales, onViewSales }) => (
+    <div className="bg-secondary px-20 py-10 rounded-5">
+        <div className="flex items-center">
+            <div className="w-65">
+                <h2 className="title-text font-600 text-white capitalize">{role}</h2>
+                <p className="small-text font-400 text-white">Best seller of the month</p>
+                <h3 className="title-text font-600 text-white pt-10">{formattedSales}</h3>
+                <button
+                    type="button"
+                    onClick={onViewSales}
+                    className="bg-white mini-text px-16 py-4 rounded-5 text-secondary border-0 mt-4 cursor-pointer font-600 transition-all hover-opacity"
+                >
+                    View Sales
+                </button>
+            </div>
+            <div className="w-35">
+                <Image src={DashImg} alt="Dash-Profile" className="object-contain w-full flex h-150" />
+            </div>
+        </div>
+    </div>
+));
+BestSellerCard.displayName = "BestSellerCard";
+
+const OrderManagementCard = React.memo(({ totalOrders, totalRevenue, series, options }) => (
+    <div className="bg-white rounded-5 h-350">
+        <CardHeader title="Order Management" />
+        {totalOrders > 0 ? (
+            <GenericChart
+                type="donut"
+                height={230}
+                categories={["Pending", "Confirmed", "Shipped", "Delivered"]}
+                series={series}
+                colors={["var(--warning)", "var(--primary)", "var(--secondary)", "var(--success)"]}
+                options={options}
+            />
+        ) : (
+            <div className="flex items-center justify-center" style={{ height: "230px" }}>
+                <p className="mini-text text-gray">No orders to display status ratio</p>
+            </div>
+        )}
+    </div>
+));
+OrderManagementCard.displayName = "OrderManagementCard";
+
+const TopProductsCard = React.memo(({ products }) => (
+    <div className="bg-white rounded-5">
+        <CardHeader title="Trending Products" />
+        <div className="py-14 px-16 grid-cols-1 gap-10">
+            {products.length > 0 ? (
+                products?.slice(0, 4)?.map((item) => (
+                    <div
+                        key={item.id}
+                        className="flex items-center justify-between border-b pb-3"
+                        style={{ borderColor: "var(--tertiary)" }}
+                    >
+                        <div className="w-80">
+                            <h4 className="text-dark headmini-text font-500">
+                                {item.name}
+                            </h4>
+                            <p className="mini-text text-gray font-400">{item.category}</p>
+                        </div>
+                        <div className="text-right w-20">
+                            <p className="text-success small-text font-600">₹{item.price.toLocaleString()}</p>
+                            <p className="mini-text text-gray">Stock: {item.stock}</p>
+                        </div>
+                    </div>
+                ))
+            ) : (
+                <div className="py-20 text-center">
+                    <p className="mini-text text-gray">No products in catalog</p>
+                </div>
+            )}
+        </div>
+    </div>
+));
+TopProductsCard.displayName = "TopProductsCard";
+
+const StatCards = React.memo(({ stats }) => (
+    <div className="grid-cols-3 gap-12">
+        {stats.map((item, index) => (
+            <div key={index} className="px-15 py-10 rounded-5 bg-white">
+                <div className="flex items-center justify-between bordb pb-3" style={{ borderColor: "var(--tertiary)" }}>
+                    <div>
+                        <p className="small-text text-gray font-500">{item.title}</p>
+                        <h2 className="title-text text-dark font-600">
+                            {item.prefix}{item.value}
+                        </h2>
+                    </div>
+                    <div>
+                        <Icon name={item.icon} width="24" height="24" className="text-primary" />
+                    </div>
+                </div>
+                <p className="text-gray small-text font-500 mt-5">
+                    <span className={item.isPositive ? "text-success font-600" : "text-danger font-600"}>
+                        {item.change}
+                    </span>{" "}
+                    than last week
+                </p>
+            </div>
+        ))}
+    </div>
+));
+StatCards.displayName = "StatCards";
+
+const EarningsReportCard = React.memo(({ formattedWeeklyTotal, weeklyEarningsData, breakdown }) => (
+    <div className="bg-white rounded-5 p-14">
+        <h3 className="mid-text text-dark font-600">Earning Reports</h3>
+        <p className="mini-text text-gray font-400">Weekly Earnings Overview</p>
+        <div className="flex gap-12 items-end mt-10">
+            <div className="w-50">
+                <div className="flex items-center gap-12">
+                    <h2 className="large-text text-dark font-600">{formattedWeeklyTotal}</h2>
+                    <span className="bg-light-success text-success mini-text font-600 px-8 py-2 rounded-5">+0.0%</span>
+                </div>
+                <p className="text-gray font-500 mini-text mt-8">You informed of this week compared to last week</p>
+            </div>
+            <div className="w-50">
+                <Chart options={SPARKLINE_BAR_OPTIONS} series={[{ data: weeklyEarningsData }]} type="bar" height={150} />
+            </div>
+        </div>
+        <div className="grid-cols-3 gap-10 items-center mt-12">
+            {breakdown.map((item, i) => (
+                <div className="bg-forth p-10 rounded-5" key={i} style={{ flex: 1 }}>
+                    <p className="text-gray mini-text font-400">{item.label}</p>
+                    <h3 className="headmini-text text-dark font-600 pt-4">{item.value}</h3>
+                </div>
+            ))}
+        </div>
+    </div>
+));
+EarningsReportCard.displayName = "EarningsReportCard";
+
+const TotalLeadsCard = React.memo(({ leadsWeeklyData, formattedLeadsCount }) => (
+    <div className="bg-white rounded-5 p-12 h-full justify-between">
+        <div>
+            <h4 className="text-dark mid-text font-600">Total Leads</h4>
+            <p className="text-gray mini-text font-400 mt-1">Last Week</p>
+            <div className="mt-8 w-90">
+                <Chart options={SPARKLINE_BAR_OPTIONS} series={[{ data: leadsWeeklyData }]} type="bar" height={180} />
+            </div>
+        </div>
+        <div className="flex items-end justify-between border-t pt-8 mt-6" style={{ borderColor: "var(--tertiary)" }}>
+            <div>
+                <p className="text-dark mini-text font-600">{formattedLeadsCount}</p>
+                <p className="text-gray mini-text font-500">Leads Overview</p>
+            </div>
+            <p className="text-success mini-text font-500">+0.0%</p>
+        </div>
+    </div>
+));
+TotalLeadsCard.displayName = "TotalLeadsCard";
+
+const YearlyRevenueCard = React.memo(({ series, options }) => (
+    <div className="bg-white rounded-5">
+        <CardHeader title="Yearly Revenue Insights" />
+        <div className="px-15 pb-10">
+            <GenericChart type="bar" series={series} height={380} options={options} />
+        </div>
+    </div>
+));
+YearlyRevenueCard.displayName = "YearlyRevenueCard";
+
+/* ==========================================================================
+   MAIN DASHBOARD COMPONENT (MEMOIZED)
+   ========================================================================== */
+const Analytics = () => {
+    const data = STATIC_DATA;
+
+    const handleViewSales = React.useCallback(() => {
+        alert("Viewing sales reports for Administrator");
     }, []);
+
+    const donutOptions = React.useMemo(() => ({
+        ...DONUT_CHART_OPTIONS,
+        plotOptions: {
+            ...DONUT_CHART_OPTIONS.plotOptions,
+            pie: {
+                ...DONUT_CHART_OPTIONS.plotOptions.pie,
+                donut: {
+                    ...DONUT_CHART_OPTIONS.plotOptions.pie.donut,
+                    labels: {
+                        ...DONUT_CHART_OPTIONS.plotOptions.pie.donut.labels,
+                        value: {
+                            ...DONUT_CHART_OPTIONS.plotOptions.pie.donut.labels.value,
+                            formatter: (val) => (val !== undefined ? val.toLocaleString() : "")
+                        },
+                        total: {
+                            ...DONUT_CHART_OPTIONS.plotOptions.pie.donut.labels.total,
+                            formatter: () => `₹${data.totalRevenue.toLocaleString()}`
+                        }
+                    }
+                }
+            }
+        }
+    }), [data.totalRevenue]);
+
+    const yearlyRevenueSeries = React.useMemo(() => [{ name: "Revenue", data: data.yearlyRevenueData }], [data.yearlyRevenueData]);
 
     return (
-        <div className="p-20">
-            {/* Grid of Action Buttons matching user page cards */}
-            <div className="grid-cols-4 sm-grid-cols-2 gap-12">
-                {ENTITY_CONFIGS.map((item) => (
-                    <div
-                        key={item.key}
-                        className="bg-forth flex items-center justify-center py-40 rounded-5 transition-all hover:bg-light"
-                        style={{ border: "1px solid #ececec" }}
-                    >
-                        <Button
-                            version="v2"
-                            bg="primary"
-                            color="white"
-                            text={item.buttonText}
-                            onClick={() => handleOpenModal(item.key)}
-                        />
-                    </div>
-                ))}
-            </div>
-
-            {/* Real-time JSON Payload Viewer */}
-            <div className="mt-24 bg-white rounded-5 p-16 b-shadow border-ec">
-                <div className="flex items-center justify-between bordb pb-12 mb-12">
-                    <div className="flex items-center gap-10">
-                        <div
-                            className="bg-light-primary center-div rounded-5"
-                            style={{ width: "36px", height: "36px" }}
-                        >
-                            <Icon name="CMS" width="18" height="18" stroke="var(--primary)" />
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-8">
-                                <h3 className="headmini-text font-600 text-dark">
-                                    Submitted Payload (JSON View)
-                                </h3>
-                                {lastEntityName && (
-                                    <span className="mini-text font-600 bg-light-success text-success px-8 py-2 rounded-4">
-                                        {lastEntityName} Submitted
-                                    </span>
-                                )}
-                            </div>
-                            <p className="mini-text text-gray mt-2">
-                                {timestamp
-                                    ? `Last submission received at ${timestamp}`
-                                    : "Fill any form modal using FormBuilder to inspect the submitted payload matching apiData.js in real time"}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-8">
-                        <Button
-                            version="v0"
-                            bg="primary"
-                            color="white"
-                            icon="Copy"
-                            text="Copy JSON"
-                            onClick={handleCopyJson}
-                        />
-                        <Button
-                            version="v0"
-                            bg="tertiary"
-                            color="dark"
-                            icon="Refresh"
-                            text="Reset"
-                            onClick={handleResetPayload}
-                        />
-                    </div>
-                </div>
-
-                <div className="relative rounded-5 overflow-hidden">
-                    <pre
-                        spellCheck={false}
-                        className="w-full small-text font-mono p-16 overflow-auto"
-                        style={{
-                            backgroundColor: "#0f172a",
-                            color: "#38bdf8",
-                            minHeight: "300px",
-                            maxHeight: "520px",
-                            margin: 0,
-                            borderRadius: "5px",
-                            lineHeight: "1.6",
-                            fontSize: "12.5px",
-                        }}
-                    >
-                        {JSON.stringify(submittedPayload, null, 2)}
-                    </pre>
-                </div>
-            </div>
-
-            {/* Dynamic Modal using FormBuilder according to selected page */}
-            <Modal
-                isOpen={Boolean(activeModalKey)}
-                onClose={handleCloseModal}
-                title={activeConfig ? `Add New ${activeConfig.title}` : "Add Item"}
-                size="md"
-                footer={null}
-            >
-                {activeConfig && (
-                    <FormBuilder
-                        key={activeModalKey}
-                        fields={activeConfig.fields}
-                        submitType="json"
-                        onSubmit={handleSubmitPayload}
-                        submitText={`Submit & Generate ${activeConfig.title} Payload`}
-                        col="2"
+        <Container version="v4" style={{ background: "var(--forth)" }}>
+            <div className="flex items-start w-full gap-12">
+                {/* Left Column - 30% */}
+                <div className="w-30 grid-cols-1 gap-12">
+                    <BestSellerCard
+                        role={data.profile.role}
+                        formattedSales={data.profile.formattedSales}
+                        onViewSales={handleViewSales}
                     />
-                )}
-            </Modal>
-        </div>
+                    <OrderManagementCard
+                        totalOrders={data.totalOrders}
+                        totalRevenue={data.totalRevenue}
+                        series={data.orderManagementData}
+                        options={donutOptions}
+                    />
+                    <TopProductsCard products={data.topProducts} />
+                </div>
+
+                {/* Right Column - 70% */}
+                <div className="w-70 grid-cols-1 gap-12">
+                    {/* Earnings & Leads Middle Row */}
+                    <div className="flex items-start w-full gap-12">
+                        <div className="w-70">
+                            <EarningsReportCard
+                                formattedWeeklyTotal={data.formattedWeeklyTotal}
+                                weeklyEarningsData={data.weeklyEarningsData}
+                                breakdown={data.earningsBreakdown}
+                            />
+                        </div>
+
+                        <div className="w-30">
+                            <TotalLeadsCard
+                                leadsWeeklyData={data.leadsWeeklyData}
+                                formattedLeadsCount={data.formattedLeadsCount}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Yearly Revenue Insights */}
+                    <YearlyRevenueCard series={yearlyRevenueSeries} options={REVENUE_CHART_OPTIONS} />
+                </div>
+            </div>
+        </Container>
     );
 };
 

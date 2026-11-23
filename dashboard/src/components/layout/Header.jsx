@@ -6,7 +6,15 @@ import Modal from "../common/Modal";
 import FormBuilder from "../forms/FormBuilder";
 import Steps from "../common/Steps";
 import Button from "../common/Button";
+import { showToast } from "../common/Toast";
 import { getFirstValue, useCurrentUser, setCurrentUser } from "../../utils";
+import { useAuth } from "../../feature/authSlice";
+import { useRoles } from "../../feature/roleSlice";
+import {
+  forgotPasswordApi,
+  verifyForgotOtpApi,
+  resetPasswordApi,
+} from "../../api/authApi";
 
 /* ==========================================================================
    STATIC CONFIGURATIONS & ROUTE TITLES
@@ -73,11 +81,11 @@ const LOGIN_FIELDS = [
 
 const FORGOT_STEP1_FIELDS = [
   {
-    name: "mobile",
-    type: "tel",
-    label: "Mobile Number",
-    placeholder: "Enter mobile number",
-    validation: { required: true, mobile: true }
+    name: "contact",
+    type: "text",
+    label: "Email or Mobile Number",
+    placeholder: "Enter registered email or mobile number",
+    validation: { required: true }
   }
 ];
 
@@ -108,17 +116,22 @@ const FORGOT_STEP3_FIELDS = [
   }
 ];
 
-const getRegisterStep1Fields = (defaultRole, defaultName) => [
+const getRegisterStep1Fields = (defaultRole, defaultName, roleOptions = []) => [
   {
     name: "role",
     type: "select",
     label: "Register As",
-    defaultValue: defaultRole || "vendor",
-    options: [
-      { label: "Admin", value: "admin" },
-      { label: "Vendor", value: "vendor" },
-      { label: "User", value: "user" }
-    ],
+    defaultValue: defaultRole || roleOptions[0]?.value || "customer",
+    options:
+      roleOptions.length > 0
+        ? roleOptions
+        : [
+            { label: "Admin", value: "admin" },
+            { label: "Customer", value: "customer" },
+            { label: "Manager", value: "manager" },
+            { label: "Accountant", value: "accountant" },
+            { label: "Product", value: "product" },
+          ],
     validation: { required: true }
   },
   {
@@ -342,11 +355,24 @@ const ForgotPasswordModal = React.memo(({ isOpen, onClose, onBackToLogin, mutati
   const handleStep1 = React.useCallback(
     (data) => {
       setError("");
+      const rawContact = String(data.contact || data.mobile || data.email || "").trim();
+      if (!rawContact) {
+        setError("Email or mobile is required.");
+        return;
+      }
+      const isEmail = rawContact.includes("@");
+      const payload = isEmail ? { email: rawContact.toLowerCase() } : { mobile: rawContact };
+
       forgotMutation.mutate(
-        { mobile: data.mobile },
+        payload,
         {
-          onSuccess: () => {
-            setFormData({ mobile: data.mobile });
+          onSuccess: (res) => {
+            setFormData({
+              ...payload,
+              contact: res?.contact || rawContact,
+              mobile: res?.mobile || (isEmail ? undefined : rawContact),
+              email: res?.email || (isEmail ? rawContact : undefined),
+            });
             setStep(2);
           },
           onError: (err) => setError(err?.message || "Failed to send OTP. Try again.")
@@ -359,32 +385,52 @@ const ForgotPasswordModal = React.memo(({ isOpen, onClose, onBackToLogin, mutati
   const handleStep2 = React.useCallback(
     (data) => {
       setError("");
+      if (!data.otp?.trim()) {
+        setError("OTP is required.");
+        return;
+      }
+      const payload = {
+        ...(formData.email ? { email: formData.email } : {}),
+        ...(formData.mobile ? { mobile: formData.mobile } : {}),
+        otp: data.otp.trim()
+      };
+
       verifyOtpMutation.mutate(
-        { mobile: formData.mobile, otp: data.otp },
+        payload,
         {
           onSuccess: () => {
-            setFormData((prev) => ({ ...prev, otp: data.otp }));
+            setFormData((prev) => ({ ...prev, otp: data.otp.trim() }));
             setStep(3);
           },
           onError: (err) => setError(err?.message || "Invalid OTP code.")
         }
       );
     },
-    [verifyOtpMutation, formData.mobile]
+    [verifyOtpMutation, formData]
   );
 
   const handleStep3 = React.useCallback(
     (data) => {
       setError("");
+      if (!data.password) {
+        setError("New password is required.");
+        return;
+      }
       if (data.password !== data.confirmPassword) {
         setError("Passwords do not match.");
         return;
       }
+      const payload = {
+        ...(formData.email ? { email: formData.email } : {}),
+        ...(formData.mobile ? { mobile: formData.mobile } : {}),
+        password: data.password
+      };
+
       resetPasswordMutation.mutate(
-        { mobile: formData.mobile, password: data.password },
+        payload,
         {
           onSuccess: () => {
-            alert("Password reset successfully! Please login with your new password.");
+            showToast("Password reset successfully! Please login with your new password.", "success");
             handleClose();
             onBackToLogin();
           },
@@ -392,7 +438,7 @@ const ForgotPasswordModal = React.memo(({ isOpen, onClose, onBackToLogin, mutati
         }
       );
     },
-    [resetPasswordMutation, formData.mobile, handleClose, onBackToLogin]
+    [resetPasswordMutation, formData, handleClose, onBackToLogin]
   );
 
   const title = step === 1 ? "Forgot Password" : step === 2 ? "Verify OTP" : "Reset Password";
@@ -408,7 +454,7 @@ const ForgotPasswordModal = React.memo(({ isOpen, onClose, onBackToLogin, mutati
 
         {step === 1 && (
           <FormBuilder key="forgot-1" fields={FORGOT_STEP1_FIELDS} submitType="json" onSubmit={handleStep1} buttonClassName="hidden">
-            <ModalHeader icon="Lock" title="Reset Password" subtitle="Enter your mobile number to request an OTP code" />
+            <ModalHeader icon="Lock" title="Reset Password" subtitle="Enter your email or mobile to request an OTP code" />
             <Button type="submit" disabled={forgotMutation.isPending} bg="primary" color="white" version="v2" className="mt-20 w-full">
               {forgotMutation.isPending ? "Sending OTP..." : "Send OTP"}
             </Button>
@@ -422,13 +468,13 @@ const ForgotPasswordModal = React.memo(({ isOpen, onClose, onBackToLogin, mutati
 
         {step === 2 && (
           <FormBuilder key="forgot-2" fields={FORGOT_STEP2_FIELDS} submitType="json" onSubmit={handleStep2} buttonClassName="hidden">
-            <ModalHeader icon="Mail" title="Verify OTP" subtitle={`Enter the OTP sent to ${formData.mobile}`} />
+            <ModalHeader icon="Mail" title="Verify OTP" subtitle={`Enter the OTP sent to ${formData.contact || formData.mobile || formData.email || "your phone/email"}`} />
             <Button type="submit" disabled={verifyOtpMutation.isPending} bg="primary" color="white" version="v2" className="mt-20 w-full">
               {verifyOtpMutation.isPending ? "Verifying..." : "Verify OTP"}
             </Button>
             <div className="text-center mt-20">
               <span className="text-gray cursor-pointer mini-text" onClick={() => setStep(1)}>
-                &larr; Change Mobile Number
+                &larr; Change Email or Mobile Number
               </span>
             </div>
           </FormBuilder>
@@ -452,11 +498,44 @@ ForgotPasswordModal.displayName = "ForgotPasswordModal";
    REGISTER MODAL (MEMOIZED)
    ========================================================================== */
 const RegisterModal = React.memo(({ isOpen, onClose, registerMutation, verifyOtpMutation, loginMutation }) => {
+  const { roles, getRoles, fetchRoles: loadRoles } = useRoles();
   const [registerStep, setRegisterStep] = React.useState("form");
   const [formStep, setFormStep] = React.useState(1);
   const [formData, setFormData] = React.useState({});
   const [tempData, setTempData] = React.useState(null);
   const [error, setError] = React.useState("");
+
+  React.useEffect(() => {
+    if (isOpen) {
+      const loader = loadRoles || getRoles;
+      loader?.({ isDeleted: false, limit: 100 });
+    }
+  }, [isOpen, loadRoles, getRoles]);
+
+  const roleOptions = React.useMemo(() => {
+    const list = [];
+    const seen = new Set();
+    (roles || []).forEach((r) => {
+      if (r.isDeleted) return;
+      const name = String(r.rolename || r.role || r.name || "").trim();
+      const val = name.toLowerCase();
+      if (val && !seen.has(val)) {
+        seen.add(val);
+        list.push({
+          label: name.charAt(0).toUpperCase() + name.slice(1),
+          value: val,
+        });
+      }
+    });
+    if (list.length > 0) return list;
+    return [
+      { label: "Admin", value: "admin" },
+      { label: "Customer", value: "customer" },
+      { label: "Manager", value: "manager" },
+      { label: "Accountant", value: "accountant" },
+      { label: "Product", value: "product" },
+    ];
+  }, [roles]);
 
   const handleClose = React.useCallback(() => {
     setError("");
@@ -469,7 +548,7 @@ const RegisterModal = React.memo(({ isOpen, onClose, registerMutation, verifyOtp
 
   const handleStep1 = React.useCallback((data) => {
     setError("");
-    setFormData(data);
+    setFormData((prev) => ({ ...prev, role: data.role, fullname: data.fullname }));
     setFormStep(2);
   }, []);
 
@@ -491,14 +570,22 @@ const RegisterModal = React.memo(({ isOpen, onClose, registerMutation, verifyOtp
 
   const handleStep4 = React.useCallback(() => {
     setError("");
-    registerMutation.mutate(formData, {
+    const matchedRole = (roles || []).find(
+      (r) => String(r.rolename || r.role || r.name).toLowerCase() === String(formData.role).toLowerCase()
+    );
+    const regPayload = {
+      ...formData,
+      role: matchedRole?.rolename?.toLowerCase() || formData.role || "customer",
+      roleId: matchedRole?._id || undefined,
+    };
+    registerMutation.mutate(regPayload, {
       onSuccess: () => {
-        setTempData(formData);
+        setTempData(regPayload);
         setRegisterStep("otp");
       },
       onError: (err) => setError(err?.message || "Registration failed. Try again.")
     });
-  }, [registerMutation, formData]);
+  }, [registerMutation, formData, roles]);
 
   const handleVerifyOtp = React.useCallback(
     (otpData) => {
@@ -523,8 +610,8 @@ const RegisterModal = React.memo(({ isOpen, onClose, registerMutation, verifyOtp
   );
 
   const step1Fields = React.useMemo(
-    () => getRegisterStep1Fields(formData.role, formData.fullname),
-    [formData.role, formData.fullname]
+    () => getRegisterStep1Fields(formData.role, formData.fullname, roleOptions),
+    [formData.role, formData.fullname, roleOptions]
   );
   const step2Fields = React.useMemo(
     () => getRegisterStep2Fields(formData.email, formData.mobile),
@@ -656,14 +743,44 @@ const Header = () => {
   const navigate = useNavigate();
 
   // Reactive user and role state from generic auth hook
-  const { user, role, setUser } = useCurrentUser();
-  const [isLoggedIn, setIsLoggedIn] = React.useState(true);
+  const { user: localUser, role, setUser } = useCurrentUser();
+  const { user: authUser, isAuthenticated, login: authLogin, register: authRegister, verifyOtp: authVerifyOtp, logout: authLogout } = useAuth();
+  const { roles, getRoles } = useRoles();
+  const user = authUser || localUser;
+  const checkTokenValid = React.useCallback(() => {
+    if (typeof window === "undefined") return false;
+    const token = localStorage.getItem("token");
+    return Boolean(token && token !== "null" && token !== "undefined");
+  }, []);
+
+  const [isLoggedIn, setIsLoggedIn] = React.useState(checkTokenValid);
+
+  React.useEffect(() => {
+    const handleAuthChange = () => setIsLoggedIn(checkTokenValid());
+    window.addEventListener("auth-user-changed", handleAuthChange);
+    window.addEventListener("storage", handleAuthChange);
+    return () => {
+      window.removeEventListener("auth-user-changed", handleAuthChange);
+      window.removeEventListener("storage", handleAuthChange);
+    };
+  }, [checkTokenValid]);
+
+  // Load roles from backend API via roleSlice
+  React.useEffect(() => {
+    if (!roles || !roles.length) {
+      getRoles({ isDeleted: false, limit: 100 });
+    }
+  }, [roles, getRoles]);
 
   const [isDarkMode, setIsDarkMode] = React.useState(() => document.body.classList.contains("dark-mode"));
   const [isUserDropdownOpen, setIsUserDropdownOpen] = React.useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = React.useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = React.useState(false);
   const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = React.useState(false);
+
+  const [isLoggingIn, setIsLoggingIn] = React.useState(false);
+  const [isRegistering, setIsRegistering] = React.useState(false);
+  const [isVerifying, setIsVerifying] = React.useState(false);
 
   const toggleDarkMode = React.useCallback(() => {
     setIsDarkMode((prev) => {
@@ -673,11 +790,15 @@ const Header = () => {
     });
   }, []);
 
-  const handleLogout = React.useCallback(() => {
+  const handleLogout = React.useCallback(async () => {
+    try {
+      await authLogout().unwrap();
+      showToast("Logged out successfully", "info");
+    } catch {}
     setIsLoggedIn(false);
     setIsUserDropdownOpen(false);
     navigate("/dashboard");
-  }, [navigate]);
+  }, [authLogout, navigate]);
 
   // Modal open/close callbacks
   const handleOpenLogin = React.useCallback(() => {
@@ -704,32 +825,111 @@ const Header = () => {
 
   const handleCloseForgot = React.useCallback(() => setIsForgotPasswordModalOpen(false), []);
 
-  // Mock mutation actions
-  const onLoginSuccessAction = React.useCallback((formData) => {
-    setUser((prev) => ({
-      ...prev,
-      fullname: getFirstValue(prev, ["fullname", "name"], "Admin User"),
-      mobile: getFirstValue([formData, prev], ["mobile", "phone"], "9876543210")
-    }));
-    setIsLoggedIn(true);
-  }, [setUser]);
+  // Real API Mutations
+  const loginMutation = React.useMemo(() => ({
+    isPending: isLoggingIn,
+    mutate: async (formData, { onSuccess, onError } = {}) => {
+      setIsLoggingIn(true);
+      try {
+        await authLogin(formData).unwrap();
+        setIsLoggedIn(true);
+        showToast("Logged in successfully!", "success");
+        onSuccess?.();
+      } catch (err) {
+        onError?.(err);
+      } finally {
+        setIsLoggingIn(false);
+      }
+    }
+  }), [authLogin, isLoggingIn]);
 
-  const onVerifyOtpSuccessAction = React.useCallback((tempData) => {
-    setUser({
-      fullname: getFirstValue(tempData, ["fullname", "name"], "New User"),
-      role: getFirstValue(tempData, ["role"], "admin"),
-      email: getFirstValue(tempData, ["email"], "user@example.com"),
-      mobile: getFirstValue(tempData, ["mobile", "phone"], "9876543210")
-    });
-    setIsLoggedIn(true);
-  }, [setUser]);
+  const registerMutation = React.useMemo(() => ({
+    isPending: isRegistering,
+    mutate: async (formData, { onSuccess, onError } = {}) => {
+      setIsRegistering(true);
+      try {
+        await authRegister(formData).unwrap();
+        showToast("Registration initiated. OTP sent!", "info");
+        onSuccess?.();
+      } catch (err) {
+        onError?.(err);
+      } finally {
+        setIsRegistering(false);
+      }
+    }
+  }), [authRegister, isRegistering]);
 
-  const loginMutation = useMockMutation(onLoginSuccessAction);
-  const registerMutation = useMockMutation();
-  const verifyOtpMutation = useMockMutation(onVerifyOtpSuccessAction);
-  const forgotMutation = useMockMutation();
-  const verifyForgotOtpMutation = useMockMutation();
-  const resetPasswordMutation = useMockMutation();
+  const verifyOtpMutation = React.useMemo(() => ({
+    isPending: isVerifying,
+    mutate: async (otpData, { onSuccess, onError } = {}) => {
+      setIsVerifying(true);
+      try {
+        await authVerifyOtp(otpData).unwrap();
+        setIsLoggedIn(true);
+        showToast("Account verified successfully!", "success");
+        onSuccess?.();
+      } catch (err) {
+        onError?.(err);
+      } finally {
+        setIsVerifying(false);
+      }
+    }
+  }), [authVerifyOtp, isVerifying]);
+
+  const [isForgotSending, setIsForgotSending] = React.useState(false);
+  const [isForgotVerifying, setIsForgotVerifying] = React.useState(false);
+  const [isResetting, setIsResetting] = React.useState(false);
+
+  const forgotMutation = React.useMemo(() => ({
+    isPending: isForgotSending,
+    mutate: async (data, { onSuccess, onError } = {}) => {
+      setIsForgotSending(true);
+      try {
+        const res = await forgotPasswordApi(data);
+        const payload = res?.data !== undefined ? res.data : res;
+        showToast(payload?.message || "OTP sent successfully!", "success");
+        onSuccess?.(payload);
+      } catch (err) {
+        onError?.(err);
+      } finally {
+        setIsForgotSending(false);
+      }
+    }
+  }), [isForgotSending]);
+
+  const verifyForgotOtpMutation = React.useMemo(() => ({
+    isPending: isForgotVerifying,
+    mutate: async (data, { onSuccess, onError } = {}) => {
+      setIsForgotVerifying(true);
+      try {
+        const res = await verifyForgotOtpApi(data);
+        const payload = res?.data !== undefined ? res.data : res;
+        showToast(payload?.message || "OTP verified successfully!", "success");
+        onSuccess?.(payload);
+      } catch (err) {
+        onError?.(err);
+      } finally {
+        setIsForgotVerifying(false);
+      }
+    }
+  }), [isForgotVerifying]);
+
+  const resetPasswordMutation = React.useMemo(() => ({
+    isPending: isResetting,
+    mutate: async (data, { onSuccess, onError } = {}) => {
+      setIsResetting(true);
+      try {
+        const res = await resetPasswordApi(data);
+        const payload = res?.data !== undefined ? res.data : res;
+        showToast(payload?.message || "Password reset successfully!", "success");
+        onSuccess?.(payload);
+      } catch (err) {
+        onError?.(err);
+      } finally {
+        setIsResetting(false);
+      }
+    }
+  }), [isResetting]);
 
   const forgotMutations = React.useMemo(
     () => ({ forgotMutation, verifyOtpMutation: verifyForgotOtpMutation, resetPasswordMutation }),
@@ -757,6 +957,9 @@ const Header = () => {
   }, [location.pathname]);
   const userName = getFirstValue(user, ["fullname", "name", "username"], "User");
   const userInitial = React.useMemo(() => userName.charAt(0).toUpperCase(), [userName]);
+  const loggedInRealRole = React.useMemo(() => {
+    return user?.rolename || user?.role || user?.roleId?.rolename || user?.roleId?.name || "Customer";
+  }, [user]);
 
   return (
     <>
@@ -827,7 +1030,7 @@ const Header = () => {
                         </div>
                         <div>
                           <h4 className="font-600 text-dark headmini-text capitalize">{userName}</h4>
-                          <p className="text-gray mini-text">{getFirstValue(user, ["role"], "Customer")}</p>
+                          <p className="text-gray mini-text capitalize">{loggedInRealRole}</p>
                         </div>
                       </>
                     ) : (
@@ -837,34 +1040,6 @@ const Header = () => {
                       </div>
                     )}
                   </div>
-
-                  {isLoggedIn && (
-                    <div className="p-8 bordb">
-                      <p className="mini-text text-gray uppercase font-600 mb-6" style={{ fontSize: "10px" }}>
-                        Switch Active Role
-                      </p>
-                      <div className="flex gap-4 flex-wrap">
-                        {["admin", "customer", "accountant", "manager", "product"].map((r) => {
-                          const isCur = String(role || "").toLowerCase() === r;
-                          return (
-                            <span
-                              key={r}
-                              onClick={() => {
-                                setCurrentUser((prev) => ({ ...prev, role: r }));
-                                setIsUserDropdownOpen(false);
-                              }}
-                              className={`cursor-pointer px-6 py-2 rounded-5 mini-text capitalize ${
-                                isCur ? "bg-primary text-white font-600" : "bg-forth text-dark"
-                              }`}
-                              style={{ fontSize: "11px" }}
-                            >
-                              {r}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
 
                   <div className="p-4">
                     {isLoggedIn ? (

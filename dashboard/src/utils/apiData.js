@@ -1,5 +1,110 @@
 import { formatDate } from "./formatDate.js";
 
+/**
+ * Generic color palette used across tables, profile avatars, and badges
+ */
+const AVATAR_PALETTE = [
+  "#3b82f6", // blue
+  "#10b981", // emerald
+  "#f59e0b", // amber
+  "#ef4444", // red
+  "#8b5cf6", // violet
+  "#ec4899", // pink
+  "#06b6d4", // cyan
+  "#6366f1", // indigo
+];
+
+/**
+ * Common status options used across page filter toolbars and form select fields
+ */
+const STATUS_OPTIONS = [
+  { label: "All Statuses", value: "all" },
+  { label: "Active", value: "Active" },
+  { label: "Inactive", value: "Inactive" },
+];
+
+/**
+ * 5-Star rating scale options used in review forms and rating selectors
+ */
+const RATING_OPTIONS = [
+  { label: "★★★★★ (5 Stars - Excellent)", value: 5 },
+  { label: "★★★★☆ (4 Stars - Very Good)", value: 4 },
+  { label: "★★★☆☆ (3 Stars - Good)", value: 3 },
+  { label: "★★☆☆☆ (2 Stars - Average)", value: 2 },
+  { label: "★☆☆☆☆ (1 Star - Poor)", value: 1 },
+];
+
+/**
+ * Generic navigation tabs configuration for MainLayout header
+ * Standard 2-tab array fallback + entity-specific tabs accessible via TABS.<entity>
+ */
+const TABS = [
+  { name: "All", value: "all" },
+  { name: "Trash", value: "trash" },
+];
+
+TABS.default = [
+  { name: "All", value: "all" },
+  { name: "Trash", value: "trash" },
+];
+
+TABS.products = [
+  { name: "All Products", value: "all" },
+  { name: "Reviews", value: "reviews" },
+  { name: "Trash", value: "trash" },
+];
+
+TABS.blogs = [
+  { name: "All Articles", value: "all" },
+  { name: "Reviews", value: "reviews" },
+  { name: "Trash", value: "trash" },
+];
+
+TABS.productCategories = [
+  { name: "All Categories", value: "all" },
+  { name: "Trash", value: "trash" },
+];
+
+TABS.blogCategories = [
+  { name: "All Categories", value: "all" },
+  { name: "Trash", value: "trash" },
+];
+
+TABS.leads = [
+  { name: "All Leads", value: "all" },
+  { name: "Trash", value: "trash" },
+];
+
+TABS.orders = [
+  { name: "All Orders", value: "all" },
+  { name: "Trash", value: "trash" },
+];
+
+TABS.transactions = [
+  { name: "All Transactions", value: "all" },
+  { name: "Trash", value: "trash" },
+];
+
+TABS.cms = [
+  { name: "All Sections", value: "all" },
+  { name: "Trash", value: "trash" },
+];
+
+TABS.seo = [
+  { name: "All Pages", value: "all" },
+  { name: "Trash", value: "trash" },
+];
+
+TABS.roles = [
+  { name: "All Roles", value: "all" },
+  { name: "Trash", value: "trash" },
+];
+
+TABS.users = [
+  { name: "All Users", value: "all" },
+  { name: "Trash", value: "trash" },
+];
+
 const menuData = [
   {
     name: "Dashboard",
@@ -148,12 +253,6 @@ const commonTableColumns = [
     style: { minWidth: "80px", maxWidth: "80px" },
   },
   {
-    header: "Deleted",
-    accessor: "isDeleted",
-    ui: "status",
-    style: { minWidth: "120px" },
-  },
-  {
     header: "Created Date",
     accessor: "createdAt",
     ui: "date",
@@ -181,27 +280,33 @@ const rolesTableColumns = [
     style: { minWidth: "40px", maxWidth: "40px" },
   },
   {
+    header: "Role ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "80px" },
+  },
+  {
     header: "Role Name",
     accessor: "rolename",
     ui: "badge",
-    style: { minWidth: "120px", maxWidth: "120px" },
+    style: { minWidth: "125px", maxWidth: "125px" },
   },
   {
     header: "Permissions",
     accessor: "permissions",
     ui: "badge-list",
-    style: { minWidth: "250px", maxWidth: "250px" },
+    style: { minWidth: "300px", maxWidth: "300px" },
   },
   {
     header: "Pages",
     accessor: "pages",
     ui: "badge-list",
-    style: { minWidth: "250px", maxWidth: "250px" },
+    style: { minWidth: "300px", maxWidth: "300px" },
   },
   {
     header: "Users Assigned",
     accessor: "usersassigned",
-    ui: "text",
+    ui: "code",
     className: "text-center",
     style: { minWidth: "110px", maxWidth: "110px" },
   },
@@ -216,12 +321,18 @@ const usersTableColumns = [
     style: { minWidth: "40px" },
   },
   {
+    header: "User ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "80px" },
+  },
+  {
     header: "Name",
     accessor: "name",
     ui: "profile",
     imageKey: "avatar",
     subKey: "mobile",
-    style: { minWidth: "200px" },
+    style: { minWidth: "160px" },
   },
   {
     header: "Email",
@@ -238,8 +349,156 @@ const usersTableColumns = [
   {
     header: "Last Active",
     accessor: "lastActive",
+    ui: "date",
+    style: { minWidth: "140px" },
+  },
+  {
+    header: "OTP Verified",
+    accessor: "isOtpVerified",
+    ui: "status",
+    style: { minWidth: "90px" },
+  },
+  ...commonTableColumns,
+];
+
+const leadsTableColumns = [
+  {
+    header: "",
+    accessor: "checkbox",
+    ui: "checkbox",
+    style: { minWidth: "40px" },
+  },
+  {
+    header: "Lead ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "80px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "150px" },
+  },
+  {
+    header: "Enquiry Name",
+    accessor: "name",
     ui: "text",
-    style: { minWidth: "120px" },
+    style: { minWidth: "100px" },
+  },
+  {
+    header: "Mobile",
+    accessor: "mobile",
+    ui: "text",
+    style: { minWidth: "80px" },
+  },
+  {
+    header: "Email",
+    accessor: "email",
+    ui: "text",
+    style: { minWidth: "80px" },
+  },
+  {
+    header: "Description",
+    accessor: "description",
+    ui: "desc",
+    style: { minWidth: "150px" },
+  },
+  {
+    header: "Severity",
+    accessor: "severity",
+    ui: "status",
+    style: { minWidth: "90px" },
+  },
+  {
+    header: "Location",
+    accessor: "location",
+    ui: "text",
+    style: { minWidth: "80px" },
+  },
+  ...commonTableColumns,
+];
+
+const blogCategoriesTableColumns = [
+  {
+    header: "",
+    accessor: "checkbox",
+    ui: "checkbox",
+    style: { minWidth: "40px" },
+  },
+  {
+    header: "Category ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "60px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "80px" },
+  },
+  {
+    header: "Category Name",
+    accessor: "categoryName",
+    ui: "text",
+    style: { minWidth: "340px" },
+  },
+  {
+    header: "Blogs",
+    accessor: "count",
+    ui: "code",
+    style: { minWidth: "50px" },
+  },
+  ...commonTableColumns,
+];
+
+const productCategoriesTableColumns = [
+  {
+    header: "",
+    accessor: "checkbox",
+    ui: "checkbox",
+    style: { minWidth: "40px" },
+  },
+  {
+    header: "Product ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "80px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "140px" },
+  },
+  {
+    header: "Product Category",
+    accessor: "categoryName",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "description",
+    style: { minWidth: "100px" },
+  },
+  {
+    header: "Icon Name",
+    accessor: "iconName",
+    ui: "code",
+    className: "text-center",
+    style: { minWidth: "80px" },
+  },
+  {
+    header: "Products",
+    accessor: "count",
+    ui: "code",
+    className: "text-center",
+    style: { minWidth: "80px" },
   },
   ...commonTableColumns,
 ];
@@ -314,88 +573,54 @@ const transactionsTableColumns = [
     style: { minWidth: "40px" },
   },
   {
-    header: "Customer",
-    accessor: "customer",
-    ui: "profile",
-    imageKey: "avatar",
-    subKey: "mobile",
-    style: { minWidth: "200px" },
-  },
-  {
     header: "Transaction ID",
-    accessor: "transactionId",
-    ui: "code",
-    style: { minWidth: "100px" },
-  },
-  {
-    header: "Created By",
-    accessor: "createdby",
-    ui: "profile",
-    imageKey: "avatar",
-    subKey: "mobile",
-    style: { minWidth: "200px" },
-  },
-  {
-    header: "Amount",
-    accessor: "amount",
+    accessor: "id",
     ui: "code",
     style: { minWidth: "80px" },
   },
   {
-    header: "Payment Method",
-    accessor: "method",
-    ui: "badge",
-    style: { minWidth: "130px" },
-  },
-  ...commonTableColumns,
-];
-
-const productCategoriesTableColumns = [
-  {
-    header: "",
-    accessor: "checkbox",
-    ui: "checkbox",
-    style: { minWidth: "40px" },
-  },
-  {
-    header: "Category",
-    accessor: "name",
-    ui: "profile",
-    subKey: "slug",
-    imageKey: "icon",
-    style: { minWidth: "220px" },
-  },
-  {
-    header: "Category ID",
-    accessor: "id",
-    ui: "code",
-    style: { minWidth: "100px" },
-  },
-  {
     header: "Created By",
     accessor: "createdby",
     ui: "profile",
     imageKey: "avatar",
     subKey: "mobile",
-    style: { minWidth: "200px" },
+    style: { minWidth: "150px" },
   },
   {
-    header: "Code",
-    accessor: "categoryCode",
-    ui: "code",
-    style: { minWidth: "120px" },
-  },
-  {
-    header: "Subcategories",
-    accessor: "subCategoriesCount",
-    ui: "text",
-    style: { minWidth: "120px" },
-  },
-  {
-    header: "Products",
-    accessor: "productsCount",
+    header: "Customer Name",
+    accessor: "name",
     ui: "text",
     style: { minWidth: "100px" },
+  },
+  {
+    header: "Mobile",
+    accessor: "mobile",
+    ui: "text",
+    style: { minWidth: "80px" },
+  },
+  {
+    header: "Email",
+    accessor: "email",
+    ui: "text",
+    style: { minWidth: "80px" },
+  },
+  {
+    header: "Description",
+    accessor: "description",
+    ui: "desc",
+    style: { minWidth: "150px" },
+  },
+  {
+    header: "Severity",
+    accessor: "severity",
+    ui: "status",
+    style: { minWidth: "90px" },
+  },
+  {
+    header: "Location",
+    accessor: "location",
+    ui: "text",
+    style: { minWidth: "80px" },
   },
   ...commonTableColumns,
 ];
@@ -406,14 +631,6 @@ const productsTableColumns = [
     accessor: "checkbox",
     ui: "checkbox",
     style: { minWidth: "40px" },
-  },
-  {
-    header: "Product",
-    accessor: "title",
-    ui: "profile",
-    subKey: "sku",
-    imageKey: "image",
-    style: { minWidth: "240px" },
   },
   {
     header: "Product ID",
@@ -428,6 +645,14 @@ const productsTableColumns = [
     imageKey: "avatar",
     subKey: "mobile",
     style: { minWidth: "200px" },
+  },
+  {
+    header: "Product",
+    accessor: "productName",
+    ui: "profile",
+    subKey: "description",
+    imageKey: "image",
+    style: { minWidth: "240px" },
   },
   {
     header: "Category",
@@ -447,62 +672,6 @@ const productsTableColumns = [
     ui: "text",
     style: { minWidth: "100px" },
   },
-  {
-    header: "Rating",
-    accessor: "rating",
-    ui: "text",
-    style: { minWidth: "90px" },
-  },
-  ...commonTableColumns,
-];
-
-const blogCategoriesTableColumns = [
-  {
-    header: "",
-    accessor: "checkbox",
-    ui: "checkbox",
-    style: { minWidth: "40px" },
-  },
-  {
-    header: "Category",
-    accessor: "name",
-    ui: "profile",
-    subKey: "slug",
-    imageKey: "icon",
-    style: { minWidth: "220px" },
-  },
-  {
-    header: "Category ID",
-    accessor: "id",
-    ui: "code",
-    style: { minWidth: "100px" },
-  },
-  {
-    header: "Created By",
-    accessor: "createdby",
-    ui: "profile",
-    imageKey: "avatar",
-    subKey: "mobile",
-    style: { minWidth: "200px" },
-  },
-  {
-    header: "Badge Tag",
-    accessor: "badge",
-    ui: "badge",
-    style: { minWidth: "130px" },
-  },
-  {
-    header: "Articles",
-    accessor: "articlesCount",
-    ui: "text",
-    style: { minWidth: "100px" },
-  },
-  {
-    header: "Total Views",
-    accessor: "views",
-    ui: "code",
-    style: { minWidth: "120px" },
-  },
   ...commonTableColumns,
 ];
 
@@ -514,18 +683,10 @@ const blogsTableColumns = [
     style: { minWidth: "40px" },
   },
   {
-    header: "Article Title",
-    accessor: "title",
-    ui: "profile",
-    subKey: "author",
-    imageKey: "image",
-    style: { minWidth: "270px" },
-  },
-  {
     header: "Blog ID",
     accessor: "id",
     ui: "code",
-    style: { minWidth: "100px" },
+    style: { minWidth: "90px" },
   },
   {
     header: "Created By",
@@ -533,42 +694,51 @@ const blogsTableColumns = [
     ui: "profile",
     imageKey: "avatar",
     subKey: "mobile",
-    style: { minWidth: "200px" },
+    style: { minWidth: "140px" },
+  },
+  {
+    header: "Blogs",
+    accessor: "blogName",
+    ui: "profile",
+    subKey: "description",
+    imageKey: "image",
+    style: { minWidth: "100px" },
   },
   {
     header: "Category",
     accessor: "category",
     ui: "badge",
-    style: { minWidth: "160px" },
-  },
-  {
-    header: "Excerpt",
-    accessor: "excerpt",
-    ui: "desc",
     style: { minWidth: "240px" },
-  },
-  {
-    header: "Tags",
-    accessor: "tags",
-    ui: "arr-badge",
-    style: { minWidth: "180px" },
-  },
-  {
-    header: "Read Time",
-    accessor: "readTime",
-    ui: "text",
-    style: { minWidth: "100px" },
   },
   {
     header: "Comments",
     accessor: "comments",
     ui: "code",
-    style: { minWidth: "110px" },
+    className: "text-center",
+    style: { minWidth: "60px" },
   },
+  // {
+  //   header: "Tags",
+  //   accessor: "tags",
+  //   ui: "arr-badge",
+  //   style: { minWidth: "240px" },
+  // },
+  // {
+  //   header: "Read Time",
+  //   accessor: "readTime",
+  //   ui: "text",
+  //   style: { minWidth: "100px" },
+  // },
+  // {
+  //   header: "Short Description",
+  //   accessor: "shortDesc",
+  //   ui: "desc",
+  //   style: { minWidth: "120px" },
+  // },
   ...commonTableColumns,
 ];
 
-const leadsTableColumns = [
+const reviewsTableColumns = [
   {
     header: "",
     accessor: "checkbox",
@@ -576,15 +746,7 @@ const leadsTableColumns = [
     style: { minWidth: "40px" },
   },
   {
-    header: "Lead / Prospect",
-    accessor: "name",
-    ui: "profile",
-    subKey: "company",
-    imageKey: "avatar",
-    style: { minWidth: "220px" },
-  },
-  {
-    header: "Lead ID",
+    header: "Review ID",
     accessor: "id",
     ui: "code",
     style: { minWidth: "100px" },
@@ -595,33 +757,46 @@ const leadsTableColumns = [
     ui: "profile",
     imageKey: "avatar",
     subKey: "mobile",
-    style: { minWidth: "200px" },
-  },
-  {
-    header: "Contact",
-    accessor: "contact",
-    ui: "text",
     style: { minWidth: "150px" },
   },
   {
-    header: "Est. Value",
-    accessor: "value",
+    header: "Product / Article",
+    accessor: "itemName",
+    ui: "profile",
+    subKey: "subText",
+    imageKey: "image",
+    style: { minWidth: "180px" },
+  },
+  {
+    header: "Rating",
+    accessor: "ratingDisplay",
     ui: "code",
     style: { minWidth: "110px" },
   },
   {
-    header: "Source",
-    accessor: "source",
-    ui: "badge",
+    header: "Comment",
+    accessor: "comment",
+    ui: "desc",
+    style: { minWidth: "260px" },
+  },
+  {
+    header: "Status",
+    accessor: "isActive",
+    ui: "status",
+    style: { minWidth: "80px", maxWidth: "80px" },
+  },
+  {
+    header: "Date",
+    accessor: "createdAt",
+    ui: "date",
     style: { minWidth: "120px" },
   },
   {
-    header: "Assigned To",
-    accessor: "assignedTo",
-    ui: "text",
-    style: { minWidth: "130px" },
+    header: "Actions",
+    accessor: "actions",
+    ui: "actions",
+    style: { minWidth: "110px" },
   },
-  ...commonTableColumns,
 ];
 
 const ordersTableColumns = [
@@ -633,17 +808,9 @@ const ordersTableColumns = [
   },
   {
     header: "Order ID",
-    accessor: "orderId",
+    accessor: "id",
     ui: "code",
-    style: { minWidth: "140px" },
-  },
-  {
-    header: "Customer",
-    accessor: "customer",
-    ui: "profile",
-    imageKey: "avatar",
-    subKey: "email",
-    style: { minWidth: "220px" },
+    style: { minWidth: "80px" },
   },
   {
     header: "Created By",
@@ -651,25 +818,43 @@ const ordersTableColumns = [
     ui: "profile",
     imageKey: "avatar",
     subKey: "mobile",
-    style: { minWidth: "200px" },
+    style: { minWidth: "150px" },
   },
   {
-    header: "Items",
-    accessor: "itemsCount",
+    header: "Customer Name",
+    accessor: "name",
+    ui: "text",
+    style: { minWidth: "100px" },
+  },
+  {
+    header: "Mobile",
+    accessor: "mobile",
     ui: "text",
     style: { minWidth: "80px" },
   },
   {
-    header: "Total Amount",
-    accessor: "totalAmount",
-    ui: "code",
-    style: { minWidth: "120px" },
+    header: "Email",
+    accessor: "email",
+    ui: "text",
+    style: { minWidth: "80px" },
   },
   {
-    header: "Payment Method",
-    accessor: "paymentMethod",
-    ui: "text",
+    header: "Description",
+    accessor: "description",
+    ui: "desc",
     style: { minWidth: "150px" },
+  },
+  {
+    header: "Severity",
+    accessor: "severity",
+    ui: "status",
+    style: { minWidth: "90px" },
+  },
+  {
+    header: "Location",
+    accessor: "location",
+    ui: "text",
+    style: { minWidth: "80px" },
   },
   ...commonTableColumns,
 ];
@@ -761,10 +946,10 @@ const cmsTableColumns = [
     style: { minWidth: "40px" },
   },
   {
-    header: "Content Block",
-    accessor: "title",
+    header: "Section Name",
+    accessor: "sectionName",
     ui: "profile",
-    subKey: "slug",
+    subKey: "itemsCountLabel",
     style: { minWidth: "220px" },
   },
   {
@@ -779,23 +964,11 @@ const cmsTableColumns = [
     ui: "profile",
     imageKey: "avatar",
     subKey: "mobile",
-    style: { minWidth: "200px" },
+    style: { minWidth: "180px" },
   },
   {
-    header: "Section Area",
-    accessor: "sectionArea",
-    ui: "badge",
-    style: { minWidth: "140px" },
-  },
-  {
-    header: "Author",
-    accessor: "author",
-    ui: "text",
-    style: { minWidth: "120px" },
-  },
-  {
-    header: "Revision",
-    accessor: "revision",
+    header: "Items Count",
+    accessor: "itemsCount",
     ui: "code",
     style: { minWidth: "90px" },
   },
@@ -812,18 +985,6 @@ const analyticsTableColumns = {
 /* ==========================================
    GENERIC PAGE SIDEBAR DATA CONFIGURATION
    ========================================== */
-
-const usersSidebarData = {
-  title: "Roles",
-  items: [
-    { name: "All Users", color: "var(--primary)", role: "all" },
-    { name: "Customer", color: "var(--warning)", role: "customer" },
-    { name: "Admin", color: "var(--success)", role: "admin" },
-    { name: "Accountant", color: "var(--secondary)", role: "accountant" },
-    { name: "Manager", color: "var(--info)", role: "manager" },
-    { name: "Product", color: "var(--danger)", role: "product" },
-  ],
-};
 
 const customersSidebarData = {
   title: "Customer Status",
@@ -929,167 +1090,6 @@ const cmsSidebarData = {
    GENERIC PAGE DATA CONFIGURATION
    ========================================== */
 
-const rolesData = [
-  {
-    id: "ROLE-001",
-    name: "Customer",
-    role: "customer",
-    rolename: "Customer",
-    permissions: ["dashboard"],
-    pages: ["Dashboard"],
-    usersCount: 3,
-    usersassigned: 3,
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-  },
-  {
-    id: "ROLE-002",
-    name: "Admin",
-    role: "admin",
-    rolename: "Admin",
-    permissions: ["Full_Access"],
-    pages: ["Full_Access"],
-    usersCount: 3,
-    usersassigned: 3,
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-  },
-  {
-    id: "ROLE-003",
-    name: "Accountant",
-    role: "accountant",
-    rolename: "Accountant",
-    permissions: [
-      "view_dashboard",
-      "view_analytics",
-      "view_orders",
-      "add_orders",
-      "edit_orders",
-      "trash_orders",
-      "view_transactions",
-      "add_transactions",
-      "edit_transactions",
-      "trash_transactions",
-      "view_systemuser",
-    ],
-    pages: ["Dashboard", "Analytics", "Orders", "Transactions", "System Users"],
-    usersCount: 4,
-    usersassigned: 4,
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-  },
-  {
-    id: "ROLE-004",
-    name: "Manager",
-    role: "manager",
-    rolename: "Manager",
-    permissions: [
-      "view_dashboard",
-      "view_analytics",
-      "view_blogcategory",
-      "add_blogcategory",
-      "edit_blogcategory",
-      "trash_blogcategory",
-      "view_blogs",
-      "add_blogs",
-      "edit_blogs",
-      "trash_blogs",
-      "view_cms",
-      "add_cms",
-      "edit_cms",
-      "trash_cms",
-      "view_seo",
-      "add_seo",
-      "edit_seo",
-      "trash_seo",
-      "view_systemuser",
-    ],
-    pages: [
-      "Dashboard",
-      "Analytics",
-      "Blogs Category",
-      "Blogs",
-      "CMS",
-      "SEO",
-      "System Users",
-    ],
-    usersCount: 2,
-    usersassigned: 2,
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-  },
-  {
-    id: "ROLE-005",
-    name: "Product",
-    role: "product",
-    rolename: "Product",
-    permissions: [
-      "view_dashboard",
-      "view_analytics",
-      "view_productcategory",
-      "add_productcategory",
-      "edit_productcategory",
-      "trash_productcategory",
-      "view_products",
-      "add_products",
-      "edit_products",
-      "trash_products",
-      "view_customers",
-      "add_customers",
-      "edit_customers",
-      "trash_customers",
-      "view_leads",
-      "add_leads",
-      "edit_leads",
-      "trash_leads",
-      "view_systemuser",
-    ],
-    pages: [
-      "Dashboard",
-      "Analytics",
-      "Products Category",
-      "Products",
-      "Customers",
-      "Leads",
-      "System Users",
-    ],
-    usersCount: 1,
-    usersassigned: 1,
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-  },
-  {
-    id: "ROLE-006",
-    name: "Archived Role",
-    role: "archived",
-    rolename: "Archived Role",
-    permissions: ["view_dashboard"],
-    pages: ["Dashboard"],
-    usersCount: 0,
-    usersassigned: 0,
-    status: "Inactive",
-    isActive: false,
-    isDeleted: true,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-  },
-];
-
 const customersData = [
   {
     id: "CUST-001",
@@ -1113,7 +1113,8 @@ const customersData = [
     createdby: {
       name: "Raj Shetye",
       mobile: "8779030638",
-      avatar: "",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
     },
   },
   {
@@ -1216,7 +1217,8 @@ const customersData = [
     createdby: {
       name: "Raj Shetye",
       mobile: "8779030638",
-      avatar: "",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
     },
   },
   {
@@ -1299,250 +1301,6 @@ const customersData = [
   },
 ];
 
-const transactionsData = [
-  {
-    id: "TXN-901",
-    transactionId: "TXN-982014",
-    customer: {
-      name: "Ashmita Vinyls",
-      mobile: "9087654321",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-    },
-    createdby: {
-      name: "Raj Shetye",
-      mobile: "8779030638",
-      avatar: "",
-    },
-    amount: "₹45,800",
-    method: "Cash On Delivery",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    date: "2026-09-14",
-    createdDate: "2026-09-14",
-    updatedDate: "2026-09-15",
-  },
-  {
-    id: "TXN-902",
-    transactionId: "TXN-982015",
-    customer: {
-      name: "Mayur Computer",
-      mobile: "9087654321",
-      avatar:
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80",
-    },
-    createdby: {
-      name: "Adhiraj",
-      mobile: "1234567890",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    },
-    amount: "₹1,12,500",
-    method: "Cash On Delivery",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    date: "2026-09-14",
-    createdDate: "2026-09-14",
-    updatedDate: "2026-09-15",
-  },
-  {
-    id: "TXN-903",
-    transactionId: "TXN-982016",
-    customer: {
-      name: "Kepal Enterprise",
-      mobile: "9087654321",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    },
-    createdby: {
-      name: "Kaif Shaikh",
-      mobile: "9807654321",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-    },
-    amount: "₹24,900",
-    method: "UPI / NetBanking",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    date: "2026-09-13",
-    createdDate: "2026-09-13",
-    updatedDate: "2026-09-15",
-  },
-  {
-    id: "TXN-904",
-    transactionId: "TXN-982017",
-    customer: {
-      name: "Krishi Engineering",
-      mobile: "9087654321",
-      avatar:
-        "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&q=80",
-    },
-    createdby: {
-      name: "Nikhil Jaiswal",
-      mobile: "8907654321",
-      avatar:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
-    },
-    amount: "₹88,000",
-    method: "Credit Card",
-    status: "Inactive",
-    isActive: false,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    date: "2026-09-12",
-    createdDate: "2026-09-12",
-    updatedDate: "2026-09-15",
-  },
-];
-
-const usersData = [
-  {
-    id: "USR-001",
-    name: "Raj Shetye",
-    email: "rajshetye.5855@gmail.com",
-    mobile: "8779030638",
-    role: "Admin",
-    lastActive: "Just now",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-01-10",
-    updatedDate: "2026-09-15",
-    avatar: "",
-  },
-  {
-    id: "USR-003",
-    name: "Adhiraj",
-    email: "adhiraj@gmail.com",
-    mobile: "1234567890",
-    role: "Manager",
-    lastActive: "1 day ago",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-03-01",
-    updatedDate: "2026-09-10",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-  },
-  {
-    id: "USR-004",
-    name: "Kaif Shaikh",
-    email: "kaif@gmail.com",
-    mobile: "9807654321",
-    role: "Accountant",
-    lastActive: "3 days ago",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-01-25",
-    updatedDate: "2026-09-12",
-    avatar:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-  },
-  {
-    id: "USR-005",
-    name: "Nikhil Jaiswal",
-    email: "nikhil@gmail.com",
-    mobile: "8907654321",
-    role: "Product",
-    lastActive: "5 days ago",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-04-18",
-    updatedDate: "2026-08-20",
-    avatar:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
-  },
-  {
-    id: "USR-002",
-    name: "Ashmita Vinyls",
-    email: "ashmitavinyls@gmail.com",
-    mobile: "9087654321",
-    role: "Customer",
-    lastActive: "2 hrs ago",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-02-14",
-    updatedDate: "2026-09-14",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80",
-  },
-  {
-    id: "USR-006",
-    name: "Mayur Computer",
-    email: "mayur@gmail.com",
-    mobile: "9087654321",
-    role: "Customer",
-    lastActive: "2 hrs ago",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-02-14",
-    updatedDate: "2026-09-14",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80",
-  },
-  {
-    id: "USR-008",
-    name: "Kepal Enterprise",
-    email: "kepal@gmail.com",
-    mobile: "9087654321",
-    role: "Customer",
-    lastActive: "2 hrs ago",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-02-14",
-    updatedDate: "2026-09-14",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80",
-  },
-  {
-    id: "USR-009",
-    name: "Krishi Engineering",
-    email: "krishi@gmail.com",
-    mobile: "9087654321",
-    role: "Customer",
-    lastActive: "2 hrs ago",
-    status: "Inactive",
-    isActive: false,
-    isDeleted: true,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-02-14",
-    updatedDate: "2026-09-14",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80",
-  },
-];
-
 const analyticsData = {
   Customers: {
     name: customersData[0]?.name || "Ashmita Vinyls",
@@ -1557,984 +1315,32 @@ const analyticsData = {
     updatedDate: customersData[0]?.updatedDate || "2026-09-14",
   },
   Transaction: {
-    transactionId: transactionsData[0]?.transactionId || "TXN-982014",
-    customer: transactionsData[0]?.customer?.name || "Ashmita Vinyls",
-    amount: transactionsData[0]?.amount || "₹45,800",
-    method: transactionsData[0]?.method || "Cash On Delivery",
-    status: transactionsData[0]?.status || "Active",
-    createdDate: transactionsData[0]?.date || "2026-09-14",
+    transactionId: "TXN-982014",
+    customer: "Ashmita Vinyls",
+    amount: "₹45,800",
+    method: "Cash On Delivery",
+    status: "Active",
+    createdDate: "2026-09-14",
     updatedDate: "2026-09-14",
   },
   Users: {
-    name: usersData[0]?.name || "John Doe",
-    email: usersData[0]?.email || "john.doe@example.com",
-    role: usersData[0]?.role || "admin",
-    lastActive: usersData[0]?.lastActive || "2 mins ago",
-    status: usersData[0]?.status || "Active",
-    createdDate: usersData[0]?.createdDate || "2026-01-15",
-    updatedDate: usersData[0]?.updatedDate || "2026-08-20",
-  },
-  Roles: {
-    name: rolesData[0]?.name || "Super Administrator",
-    role: rolesData[0]?.role || "admin",
-    usersCount: rolesData[0]?.usersCount || 1,
-    status: rolesData[0]?.status || "Active",
-    createdAt: rolesData[0]?.createdAt || "2026-01-01T00:00:00.000Z",
-    updatedAt: rolesData[0]?.updatedAt || "2026-08-05T12:17:38.020Z",
-  },
-};
-
-const productCategoriesData = [
-  {
-    id: "CAT-001",
-    name: "PVC Magnetic Strip Curtain Rolls",
-    slug: "pvc-magnetic-strip-curtain-rolls",
-    categoryCode: "CAT-PVC-01",
-    subCategoriesCount: 4,
-    productsCount: 24,
+    name: "John Doe",
+    email: "john.doe@example.com",
+    role: "admin",
+    lastActive: "2 mins ago",
     status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-01-12",
-    updatedDate: "2026-08-20",
-    icon: "product/Product4.jpg",
-    createdby: {
-      name: "Raj Shetye",
-      mobile: "8779030638",
-      avatar: "",
-    },
-  },
-  {
-    id: "CAT-002",
-    name: "Mounting Brackets & Tracks (SS & MS)",
-    slug: "mounting-brackets-tracks",
-    categoryCode: "CAT-BRK-02",
-    subCategoriesCount: 5,
-    productsCount: 18,
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
     createdDate: "2026-01-15",
     updatedDate: "2026-08-20",
-    icon: "product/Product7.jpg",
-    createdby: {
-      name: "Adhiraj",
-      mobile: "1234567890",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    },
   },
-  {
-    id: "CAT-003",
-    name: "Polar Grade Low-Temp Curtains",
-    slug: "polar-grade-curtains",
-    categoryCode: "CAT-POL-03",
-    subCategoriesCount: 3,
-    productsCount: 15,
+  Roles: {
+    name: "Super Administrator",
+    role: "admin",
+    usersCount: 1,
     status: "Active",
-    isActive: true,
-    isDeleted: false,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-02-01",
-    updatedDate: "2026-08-20",
-    icon: "hero.png",
-    createdby: {
-      name: "Kaif Shaikh",
-      mobile: "9807654321",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-    },
   },
-  {
-    id: "CAT-004",
-    name: "Anti-Insect Yellow Strips",
-    slug: "anti-insect-yellow-strips",
-    categoryCode: "CAT-INS-04",
-    subCategoriesCount: 2,
-    productsCount: 12,
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-02-18",
-    updatedDate: "2026-08-20",
-    icon: "dashimg.png",
-    createdby: {
-      name: "Nikhil Jaiswal",
-      mobile: "8907654321",
-      avatar:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
-    },
-  },
-  {
-    id: "CAT-005",
-    name: "Welding Screen Barriers",
-    slug: "welding-screen-barriers",
-    categoryCode: "CAT-WLD-05",
-    subCategoriesCount: 4,
-    productsCount: 10,
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-03-05",
-    updatedDate: "2026-08-20",
-    icon: "CROSY.png",
-    createdby: {
-      name: "Raj Shetye",
-      mobile: "8779030638",
-      avatar: "",
-    },
-  },
-  {
-    id: "CAT-006",
-    name: "Double Ribbed Industrial PVC",
-    slug: "double-ribbed-industrial-pvc",
-    categoryCode: "CAT-RBD-06",
-    subCategoriesCount: 3,
-    productsCount: 20,
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-03-20",
-    updatedDate: "2026-08-20",
-    icon: "DSBKO.png",
-    createdby: {
-      name: "Adhiraj",
-      mobile: "1234567890",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    },
-  },
-  {
-    id: "CAT-007",
-    name: "Clear High-Impact Sheet Rolls",
-    slug: "clear-pvc-sheet-rolls",
-    categoryCode: "CAT-SHT-07",
-    subCategoriesCount: 2,
-    productsCount: 8,
-    status: "Inactive",
-    isActive: false,
-    isDeleted: true,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-04-02",
-    updatedDate: "2026-08-20",
-    icon: "SPLEDO.png",
-    createdby: {
-      name: "Kaif Shaikh",
-      mobile: "9807654321",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-    },
-  },
-];
-
-const productsData = [
-  {
-    id: "PRD-001",
-    title: "Clear Standard PVC Strip Roll (2mm x 200mm x 50m)",
-    sku: "SKU-PVC-CLR-200",
-    category: "Standard PVC",
-    price: "₹4,850",
-    stock: "142 rolls",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    rating: "4.9 ★",
-    createdDate: "2026-01-10",
-    updatedDate: "2026-09-15",
-    image: "product/Product4.jpg",
-    createdby: {
-      name: "Raj Shetye",
-      mobile: "8779030638",
-      avatar: "",
-    },
-  },
-  {
-    id: "PRD-002",
-    title: "Polar Freezer PVC Strip (-40°C Resistant)",
-    sku: "SKU-PVC-POL-300",
-    category: "Polar Grade",
-    price: "₹6,200",
-    stock: "68 rolls",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    rating: "4.8 ★",
-    createdDate: "2026-01-10",
-    updatedDate: "2026-09-14",
-    image: "hero.png",
-    createdby: {
-      name: "Adhiraj",
-      mobile: "1234567890",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    },
-  },
-  {
-    id: "PRD-003",
-    title: "SS304 Universal Hook-On Track (1 Meter)",
-    sku: "SKU-TRK-SS304-1M",
-    category: "Brackets",
-    price: "₹1,250",
-    stock: "320 pcs",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    rating: "5.0 ★",
-    createdDate: "2026-01-10",
-    updatedDate: "2026-09-12",
-    image: "product/Product7.jpg",
-    createdby: {
-      name: "Kaif Shaikh",
-      mobile: "9807654321",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-    },
-  },
-  {
-    id: "PRD-004",
-    title: "Amber Yellow Anti-Mosquito Ribbed Roll",
-    sku: "SKU-PVC-AMB-200",
-    category: "Anti-Insect",
-    price: "₹5,400",
-    stock: "12 rolls",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    rating: "4.7 ★",
-    createdDate: "2026-01-10",
-    updatedDate: "2026-09-10",
-    image: "dashimg.png",
-    createdby: {
-      name: "Nikhil Jaiswal",
-      mobile: "8907654321",
-      avatar:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
-    },
-  },
-  {
-    id: "PRD-005",
-    title: "Automatic Magnetic Sealing PVC Curtain Kit",
-    sku: "SKU-KIT-MAG-900",
-    category: "Magnetic Kit",
-    price: "₹8,900",
-    stock: "0 pcs",
-    status: "Inactive",
-    isActive: false,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    rating: "4.9 ★",
-    createdDate: "2026-01-10",
-    updatedDate: "2026-09-08",
-    image: "CROSY.png",
-    createdby: {
-      name: "Raj Shetye",
-      mobile: "8779030638",
-      avatar: "",
-    },
-  },
-  {
-    id: "PRD-006",
-    title: "Heavy Duty Ribbed Forklift Strip (3mm x 300mm)",
-    sku: "SKU-PVC-RBD-300",
-    category: "Heavy Duty",
-    price: "₹7,650",
-    stock: "85 rolls",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    rating: "4.8 ★",
-    createdDate: "2026-01-10",
-    updatedDate: "2026-09-06",
-    image: "DSBKO.png",
-    createdby: {
-      name: "Adhiraj",
-      mobile: "1234567890",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    },
-  },
-  {
-    id: "PRD-007",
-    title: "Green Tint Welding Safety Curtain Screen",
-    sku: "SKU-WLD-GRN-200",
-    category: "Welding Screen",
-    price: "₹5,900",
-    stock: "8 rolls",
-    status: "Active",
-    isActive: true,
-    isDeleted: true,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    rating: "4.6 ★",
-    createdDate: "2026-01-10",
-    updatedDate: "2026-09-02",
-    image: "SPLEDO.png",
-    createdby: {
-      name: "Kaif Shaikh",
-      mobile: "9807654321",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-    },
-  },
-];
-
-const blogCategoriesData = [
-  {
-    id: "BCAT-001",
-    categoryId: 1,
-    name: "Buying & Selection Guide",
-    slug: "buying-selection-guide",
-    badge: "Buying Guide",
-    articlesCount: 16,
-    views: "58.4k",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-01-05",
-    updatedDate: "2026-09-10",
-    icon: "SPLEDO.png",
-    createdby: {
-      name: "Raj Shetye",
-      mobile: "8779030638",
-      avatar: "",
-    },
-  },
-  {
-    id: "BCAT-002",
-    categoryId: 2,
-    name: "Cold Storage Logistics",
-    slug: "cold-storage-logistics",
-    badge: "Warehouse",
-    articlesCount: 14,
-    views: "48.2k",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-01-10",
-    updatedDate: "2026-09-10",
-    icon: "hero.png",
-    createdby: {
-      name: "Adhiraj",
-      mobile: "1234567890",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    },
-  },
-  {
-    id: "BCAT-003",
-    categoryId: 3,
-    name: "Energy & Thermal Efficiency",
-    slug: "energy-efficiency",
-    badge: "Green Tech",
-    articlesCount: 18,
-    views: "62.4k",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-01-18",
-    updatedDate: "2026-09-10",
-    icon: "product/Product4.jpg",
-    createdby: {
-      name: "Kaif Shaikh",
-      mobile: "9807654321",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-    },
-  },
-  {
-    id: "BCAT-004",
-    categoryId: 4,
-    name: "Workplace Safety & Standards",
-    slug: "workplace-safety",
-    badge: "Compliance",
-    articlesCount: 9,
-    views: "28.1k",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-02-05",
-    updatedDate: "2026-09-10",
-    icon: "product/Product7.jpg",
-    createdby: {
-      name: "Nikhil Jaiswal",
-      mobile: "8907654321",
-      avatar:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
-    },
-  },
-  {
-    id: "BCAT-005",
-    categoryId: 5,
-    name: "Installation & Maintenance Guides",
-    slug: "installation-guides",
-    badge: "Tutorials",
-    articlesCount: 22,
-    views: "94.6k",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2026-02-22",
-    updatedDate: "2026-09-10",
-    icon: "CROSY.png",
-    createdby: {
-      name: "Raj Shetye",
-      mobile: "8779030638",
-      avatar: "",
-    },
-  },
-  {
-    id: "BCAT-006",
-    categoryId: 6,
-    name: "Archived Industry Case Studies",
-    slug: "archived-case-studies",
-    badge: "Archive",
-    articlesCount: 6,
-    views: "14.2k",
-    status: "Inactive",
-    isActive: false,
-    isDeleted: true,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdDate: "2025-11-12",
-    updatedDate: "2026-09-10",
-    icon: "DSBKO.png",
-    createdby: {
-      name: "Adhiraj",
-      mobile: "1234567890",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    },
-  },
-];
-
-const blogsData = [
-  {
-    id: "BLG-001",
-    title:
-      "PVC Curtain Rolls in 2026: Latest Trends, Applications & Buying Guide",
-    categoryId: 1,
-    category: "Buying & Selection Guide",
-    author: "Technical Specialist",
-    createdby: {
-      name: "Raj Shetye",
-      mobile: "8779030638",
-      avatar: "",
-    },
-    date: "October 05, 2026",
-    publishedDate: "2026-10-05",
-    createdDate: "2026-10-05",
-    updatedDate: "2026-10-15",
-    comments: "18 Comments",
-    commentsCount: 18,
-    readTime: "6 min read",
-    image: "blog/Blog1.jpg",
-    coverImage: "hero.png",
-    excerpt:
-      "Discover the latest material innovations, environmental standards, and automated sealing trends shaping industrial PVC strip curtains in 2026.",
-    content:
-      "As modern industrial facilities demand higher energy efficiency and stricter environmental compliance, PVC curtain rolls in 2026 have evolved significantly. Contemporary manufacturing utilizes phthalate-free, UV-stabilized, and fire-retardant vinyl formulations that deliver longer lifespans under heavy traffic.\n\nFrom magnetic automated closures to specialized low-temperature polar grades, choosing the right curtain roll requires understanding door dimensions, forklift traffic volume, and climate control requirements.",
-    quote:
-      "Modern PVC strip curtains represent a high-return, low-maintenance investment that slashes industrial energy bills by up to 30%.",
-    tags: ["Trends", "Buying Guide", "Industrial", "PVC Rolls"],
-    reviews: [
-      {
-        id: 1,
-        name: "Amitabh Roy",
-        role: "Procurement Head, Om Logistics",
-        date: "October 06, 2026 at 2:30 pm",
-        avatar:
-          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
-        rating: 5,
-        text: "Comprehensive and practical overview of the latest material advancements in 2026. The emphasis on phthalate-free and UV-stabilized PVC helped us refine our warehouse procurement specs.",
-      },
-      {
-        id: 2,
-        name: "Pooja Varma",
-        role: "Operations Manager, Apex Industrial Hub",
-        date: "October 06, 2026 at 5:10 pm",
-        avatar:
-          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
-        rating: 5,
-        text: "The selection criteria for strip thickness and door traffic volume made choosing the right rolls completely hassle-free.",
-      },
-    ],
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    views: "18,420",
-  },
-  {
-    id: "BLG-002",
-    title: "7 Ways Polar Grade Curtains Reduce Industrial Freezer Power Bills",
-    categoryId: 3,
-    category: "Energy Efficiency",
-    author: "Dr. Aniket Joshi",
-    createdby: {
-      name: "Adhiraj",
-      mobile: "1234567890",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    },
-    date: "September 12, 2026",
-    publishedDate: "2026-09-12",
-    createdDate: "2026-09-12",
-    updatedDate: "2026-10-15",
-    comments: "14 Comments",
-    commentsCount: 14,
-    readTime: "5 min read",
-    image: "blog/Blog2.jpg",
-    coverImage: "hero.png",
-    excerpt:
-      "Learn how polar grade PVC strip curtains retain thermal barriers down to -40°C in food preservation warehouses.",
-    content:
-      "Thermal leakage around cold room openings contributes up to 40% of refrigeration compressor load. Polar grade strip curtains remain flexible in sub-zero environments without cracking.",
-    quote:
-      "Polar grade vinyl reduces refrigeration cycle frequency by sealing extreme temperature differentials.",
-    tags: ["Cold Storage", "Energy", "Polar Grade"],
-    reviews: [],
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    views: "14,820",
-  },
-  {
-    id: "BLG-003",
-    title: "Choosing Hook-On SS304 vs Galvanized Steel Mounting Tracks",
-    categoryId: 5,
-    category: "Installation Guides",
-    author: "Vikram Mehta",
-    createdby: {
-      name: "Kaif Shaikh",
-      mobile: "9807654321",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-    },
-    date: "September 08, 2026",
-    publishedDate: "2026-09-08",
-    createdDate: "2026-09-08",
-    updatedDate: "2026-10-15",
-    comments: "9 Comments",
-    commentsCount: 9,
-    readTime: "7 min read",
-    image: "blog/Blog3.jpg",
-    coverImage: "product/Product7.jpg",
-    excerpt:
-      "Comparing SS304 hook-on tracks with galvanized options for rust prevention in high-humidity zones.",
-    content:
-      "Selecting the proper mounting hardware is as crucial as the vinyl material itself. Marine-grade stainless steel 304 tracks resist harsh sanitizing detergents and humidity.",
-    quote:
-      "SS304 hardware outlasts standard galvanized brackets by more than 3x in corrosive food processing areas.",
-    tags: ["Hardware", "Stainless Steel", "Installation"],
-    reviews: [],
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    views: "9,450",
-  },
-  {
-    id: "BLG-004",
-    title: "How Anti-Insect Amber Curtains Protect Food Processing Plants",
-    categoryId: 4,
-    category: "Workplace Safety",
-    author: "Pooja Hegde",
-    createdby: {
-      name: "Nikhil Jaiswal",
-      mobile: "8907654321",
-      avatar:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
-    },
-    date: "September 02, 2026",
-    publishedDate: "2026-09-02",
-    createdDate: "2026-09-02",
-    updatedDate: "2026-10-15",
-    comments: "22 Comments",
-    commentsCount: 22,
-    readTime: "4 min read",
-    image: "blog/Blog4.jpg",
-    coverImage: "product/Product4.jpg",
-    excerpt:
-      "Amber yellow anti-insect curtains block specific light spectrums to keep flying pests away from sterile zones.",
-    content:
-      "Flying insects are attracted to ultraviolet and visible light emitted from indoor factory luminaires. Specially tinted amber curtains block these attractive wavelengths.",
-    quote:
-      "Amber strips act as an invisible physiological barrier to phototactic insects.",
-    tags: ["Workplace Safety", "Anti-Insect", "Food Safety"],
-    reviews: [],
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    views: "18,200",
-  },
-  {
-    id: "BLG-005",
-    title: "2026 Guide to Magnetic Hands-Free Automatic PVC Closures",
-    categoryId: 2,
-    category: "Cold Storage",
-    author: "Suresh Pillai",
-    createdby: {
-      name: "Raj Shetye",
-      mobile: "8779030638",
-      avatar: "",
-    },
-    date: "September 28, 2026",
-    publishedDate: "2026-09-28",
-    createdDate: "2026-09-28",
-    updatedDate: "2026-10-15",
-    comments: "3 Comments",
-    commentsCount: 3,
-    readTime: "6 min read",
-    image: "blog/Blog5.jpg",
-    coverImage: "CROSY.png",
-    excerpt:
-      "Self-closing magnetic strip doors optimize forklift pass-through cycles without manual intervention.",
-    content:
-      "Magnetic edge strips snap shut immediately after pedestrian or pallet jack passage, virtually eliminating opening dwell times and air exchange.",
-    quote:
-      "Instant magnetic snap-closure cuts door transition air loss by over 80%.",
-    tags: ["Automation", "Magnetic Closures", "Logistics"],
-    reviews: [],
-    status: "Inactive",
-    isActive: false,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    views: "3,110",
-  },
-  {
-    id: "BLG-006",
-    title: "Preventing Forklift Damage with Double-Ribbed PVC Strips",
-    categoryId: 4,
-    category: "Workplace Safety",
-    author: "Vikram Mehta",
-    createdby: {
-      name: "Adhiraj",
-      mobile: "1234567890",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    },
-    date: "October 05, 2026",
-    publishedDate: "2026-10-05",
-    createdDate: "2026-10-05",
-    updatedDate: "2026-10-15",
-    comments: "0 Comments",
-    commentsCount: 0,
-    readTime: "5 min read",
-    image: "blog/Blog6.jpg",
-    coverImage: "DSBKO.png",
-    excerpt:
-      "Double-ribbed raised ridges take the brunt of heavy forklift scratches, preserving strip transparency.",
-    content:
-      "Industrial traffic quickly scratches smooth vinyl curtains, obscuring driver visibility. Raised ridges absorb mechanical abrasion while maintaining see-through clarity in the recessed valleys.",
-    quote:
-      "Ribbed profiles extend optical clarity and functional lifetime in heavy forklift loading bays.",
-    tags: ["Ribbed PVC", "Durability", "Forklift Safety"],
-    reviews: [],
-    status: "Active",
-    isActive: true,
-    isDeleted: true,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    views: "0",
-  },
-];
-
-const leadsData = [
-  {
-    id: "LEAD-001",
-    name: "Sunil Deshmukh",
-    company: "Reliance Retail Cold Chains",
-    contact: "+91 98201 44512",
-    value: "₹2,45,000",
-    source: "Website Enquiry",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    assignedTo: "Raj Shetye",
-    createdDate: "2026-09-14",
-    updatedDate: "2026-09-15",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    createdby: {
-      name: "Raj Shetye",
-      mobile: "8779030638",
-      avatar: "",
-    },
-  },
-  {
-    id: "LEAD-002",
-    name: "Meera Krishnan",
-    company: "Apollo Hospital Labs",
-    contact: "+91 98112 77334",
-    value: "₹85,000",
-    source: "Direct Call",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    assignedTo: "Pooja Hegde",
-    createdDate: "2026-09-13",
-    updatedDate: "2026-09-15",
-    avatar:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-    createdby: {
-      name: "Adhiraj",
-      mobile: "1234567890",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    },
-  },
-  {
-    id: "LEAD-003",
-    name: "Gaurav Malhotra",
-    company: "BigBasket Distribution Center",
-    contact: "+91 98900 12389",
-    value: "₹5,20,000",
-    source: "Partner Referral",
-    status: "Inactive",
-    isActive: false,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    assignedTo: "Unassigned",
-    createdDate: "2026-09-12",
-    updatedDate: "2026-09-15",
-    avatar:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
-    createdby: {
-      name: "Kaif Shaikh",
-      mobile: "9807654321",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-    },
-  },
-  {
-    id: "LEAD-004",
-    name: "Ananya Patel",
-    company: "Zomato Hyperpure Warehouse",
-    contact: "+91 97654 32190",
-    value: "₹1,80,000",
-    source: "Google Ads",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    assignedTo: "Raj Shetye",
-    createdDate: "2026-09-10",
-    updatedDate: "2026-09-15",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80",
-    createdby: {
-      name: "Nikhil Jaiswal",
-      mobile: "8907654321",
-      avatar:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
-    },
-  },
-  {
-    id: "LEAD-005",
-    name: "Rameshwar Rao",
-    company: "Hyderabad Agro Logistics",
-    contact: "+91 94401 22890",
-    value: "₹65,000",
-    source: "Trade Expo",
-    status: "Inactive",
-    isActive: false,
-    isDeleted: true,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    assignedTo: "Vikram Mehta",
-    createdDate: "2026-08-28",
-    updatedDate: "2026-09-15",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    createdby: {
-      name: "Raj Shetye",
-      mobile: "8779030638",
-      avatar: "",
-    },
-  },
-];
-
-const ordersData = [
-  {
-    id: "ORD-001",
-    orderId: "ORD-99214",
-    customer: {
-      name: "Ashwini Sawant",
-      email: "ashmitavinyls@gmail.com",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-    },
-    createdby: {
-      name: "Raj Shetye",
-      mobile: "8779030638",
-      avatar: "",
-    },
-    itemsCount: 6,
-    totalAmount: "₹34,800",
-    paymentMethod: "UPI / NetBanking",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    date: "2026-09-14",
-    createdDate: "2026-09-14",
-    updatedDate: "2026-09-15",
-  },
-  {
-    id: "ORD-002",
-    orderId: "ORD-99215",
-    customer: {
-      name: "Mayur Gada",
-      email: "mayur.gada@gmail.com",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    },
-    createdby: {
-      name: "Adhiraj",
-      mobile: "1234567890",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
-    },
-    itemsCount: 2,
-    totalAmount: "₹12,400",
-    paymentMethod: "Credit Card",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    date: "2026-09-13",
-    createdDate: "2026-09-13",
-    updatedDate: "2026-09-15",
-  },
-  {
-    id: "ORD-003",
-    orderId: "ORD-99216",
-    customer: {
-      name: "Sneha Patil",
-      email: "sneha.patil@gmail.com",
-      avatar:
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80",
-    },
-    createdby: {
-      name: "Kaif Shaikh",
-      mobile: "9807654321",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-    },
-    itemsCount: 14,
-    totalAmount: "₹88,500",
-    paymentMethod: "Wire Transfer",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    date: "2026-09-12",
-    createdDate: "2026-09-12",
-    updatedDate: "2026-09-15",
-  },
-  {
-    id: "ORD-004",
-    orderId: "ORD-99217",
-    customer: {
-      name: "Rohit Shinde",
-      email: "rohit.shinde@gmail.com",
-      avatar:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
-    },
-    createdby: {
-      name: "Nikhil Jaiswal",
-      mobile: "8907654321",
-      avatar:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80",
-    },
-    itemsCount: 1,
-    totalAmount: "₹4,850",
-    paymentMethod: "Cash On Delivery",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    date: "2026-09-11",
-    createdDate: "2026-09-11",
-    updatedDate: "2026-09-15",
-  },
-  {
-    id: "ORD-005",
-    orderId: "ORD-99218",
-    customer: {
-      name: "Pooja Hegde",
-      email: "pooja.hegde@gmail.com",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80",
-    },
-    createdby: {
-      name: "Raj Shetye",
-      mobile: "8779030638",
-      avatar: "",
-    },
-    itemsCount: 3,
-    totalAmount: "₹18,900",
-    paymentMethod: "Credit Card",
-    status: "Inactive",
-    isActive: false,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    date: "2026-09-09",
-    createdDate: "2026-09-09",
-    updatedDate: "2026-09-15",
-  },
-];
+};
 
 const seoSiteInfo = {
   name: "Ashmita Vinyls",
@@ -2588,7 +1394,8 @@ const seoData = [
     createdby: {
       name: "Raj Shetye",
       mobile: "8779030638",
-      avatar: "",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
     },
     lastCrawled: "2026-10-25",
   },
@@ -2728,7 +1535,8 @@ const seoData = [
     createdby: {
       name: "Raj Shetye",
       mobile: "8779030638",
-      avatar: "",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
     },
     lastCrawled: "2026-10-22",
   },
@@ -2868,7 +1676,8 @@ const seoData = [
     createdby: {
       name: "Raj Shetye",
       mobile: "8779030638",
-      avatar: "",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
     },
     lastCrawled: "2026-10-15",
   },
@@ -3007,7 +1816,8 @@ const seoData = [
     createdby: {
       name: "Raj Shetye",
       mobile: "8779030638",
-      avatar: "",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
     },
     lastCrawled: "2026-10-01",
   },
@@ -3060,7 +1870,8 @@ const cmsData = [
     createdby: {
       name: "Raj Shetye",
       mobile: "8779030638",
-      avatar: "",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
     },
   },
   {
@@ -3143,7 +1954,8 @@ const cmsData = [
     createdby: {
       name: "Raj Shetye",
       mobile: "8779030638",
-      avatar: "",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80",
     },
   },
 ];
@@ -3158,6 +1970,10 @@ const configData = {
 };
 
 export {
+  AVATAR_PALETTE,
+  RATING_OPTIONS,
+  STATUS_OPTIONS,
+  TABS,
   commonTableColumns,
   configData,
   formatDate,
@@ -3170,12 +1986,12 @@ export {
   productsTableColumns,
   blogCategoriesTableColumns,
   blogsTableColumns,
+  reviewsTableColumns,
   leadsTableColumns,
   ordersTableColumns,
   seoTableColumns,
   cmsTableColumns,
   analyticsTableColumns,
-  usersSidebarData,
   customersSidebarData,
   transactionsSidebarData,
   analyticsSidebarData,
@@ -3188,15 +2004,6 @@ export {
   seoSidebarData,
   cmsSidebarData,
   customersData,
-  transactionsData,
-  usersData,
-  rolesData,
-  productCategoriesData,
-  productsData,
-  blogCategoriesData,
-  blogsData,
-  leadsData,
-  ordersData,
   seoSiteInfo,
   seoData,
   seoFaqsData,

@@ -14,6 +14,9 @@ const TYPE_DEFAULTS = {
   checkbox: false,
   radio: false,
   switch: false,
+  dragfile: [],
+  "bulk-inputs": [{ name: "", value: "" }],
+  "bulk-input": [{ name: "", value: "" }],
 };
 
 const getDefaultValue = (field) => {

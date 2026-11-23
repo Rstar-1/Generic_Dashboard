@@ -1,11 +1,8 @@
 import React from "react";
 import Fields from "../Fields";
+import { STATUS_OPTIONS } from "../../../utils/apiData";
 
-export const COMMON_STATUS_OPTIONS = [
-    { label: "All Statuses", value: "all" },
-    { label: "Active", value: "Active" },
-    { label: "Inactive", value: "Inactive" },
-];
+export const COMMON_STATUS_OPTIONS = STATUS_OPTIONS;
 
 const FilterForm = React.memo(({
     fields = [],

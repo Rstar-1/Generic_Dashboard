@@ -8,6 +8,7 @@ import Fields from "../forms/Fields";
 import { menuData } from "../../utils/apiData";
 import { resolveImagePath } from "../../utils/imageResolver";
 import { getFirstValue, canAccessPage, useCurrentUser } from "../../utils";
+import { useAuth } from "../../feature/authSlice";
 
 const SidebarLink = React.memo(({ to, label, iconName, shortcut, isCollapsed }) => {
   const [hovered, setHovered] = React.useState(false);
@@ -48,11 +49,11 @@ const SidebarHeader = React.memo(({ isCollapsed, displayRole, onToggle, onCollap
         className="bg-secondary icon-lg rounded-5 cursor-pointer flex items-center justify-center"
         onClick={onToggle}
       >
-        <p className="text-white font-500 headpara-text">K</p>
+        <p className="text-white font-500 headpara-text">A</p>
       </div>
       {!isCollapsed && (
         <div>
-          <h3 className="headmini-text text-secondary font-600 uppercase">KAIOM</h3>
+          <h3 className="headmini-text text-secondary font-600 uppercase">Ashmita Vinyls</h3>
           <p className="mini-text text-gray capitalize">{displayRole}</p>
         </div>
       )}
@@ -93,7 +94,7 @@ const SidebarSearch = React.memo(({ isCollapsed, searchQuery, onSearchChange, on
 
 SidebarSearch.displayName = "SidebarSearch";
 
-const SidebarProfile = React.memo(({ isCollapsed, userImage, userName, userMobile, firstLetter }) => {
+const SidebarProfile = React.memo(({ isCollapsed, userImage, userName, userMobile, firstLetter, isLoggedIn }) => {
   const [profileHovered, setProfileHovered] = React.useState(false);
   const [imgError, setImgError] = React.useState(false);
 
@@ -102,45 +103,46 @@ const SidebarProfile = React.memo(({ isCollapsed, userImage, userName, userMobil
   }, [userImage]);
 
   return (
-    <div className={`bg-white mt-5 ${isCollapsed ? "px-8" : "px-16"}`}>
-      <hr className="border-0 bg-tertiary" style={{ height: "1px" }} />
-      <NavLink
-        to="/profile"
-        onMouseEnter={() => setProfileHovered(true)}
-        onMouseLeave={() => setProfileHovered(false)}
-        className={`flex items-center rounded-5 ${profileHovered ? "bg-forth" : ""} ${isCollapsed ? "justify-center p-6" : "justify-between p-10"
-          }`}
-      >
-        <div className="flex items-center gap-8">
-          {userImage && !imgError ? (
-            <img
-              src={userImage}
-              alt={userName}
-              className="rounded-full common-img object-cover"
-              style={{ width: "36px", height: "36px", borderRadius: "50%", flexShrink: 0 }}
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <div
-              className="rounded-full bg-secondary text-white flex items-center justify-center font-600 uppercase"
-              style={{ width: "36px", height: "36px", borderRadius: "50%", flexShrink: 0, fontSize: "15px" }}
-            >
-              {firstLetter}
-            </div>
-          )}
-          {!isCollapsed && (
-            <div>
-              <h4 className="headmini-text text-dark font-600 capitalize">{userName}</h4>
-              {userMobile && <p className="mini-text text-gray">{userMobile}</p>}
-            </div>
-          )}
-        </div>
-        {!isCollapsed && (
-          <div className="text-gray">
-            <Icon name="ChevronsUpDown" width="14" height="14" strokeWidth="2.5" />
+    <div className={`bg-white mt-10 ${isCollapsed ? "px-8" : "px-12"}`}>
+      <div className="w-full bordh">
+        <NavLink
+          to={isLoggedIn ? "/profile" : "/dashboard"}
+          onMouseEnter={() => setProfileHovered(true)}
+          onMouseLeave={() => setProfileHovered(false)}
+          className={`flex items-center rounded-5 ${profileHovered ? "bg-forth" : ""} ${isCollapsed ? "justify-center p-6" : "justify-between p-10"
+            }`}
+        >
+          <div className="flex items-center gap-8">
+            {userImage && !imgError ? (
+              <img
+                src={userImage}
+                alt={userName}
+                className="rounded-full common-img object-cover"
+                style={{ width: "36px", height: "36px", borderRadius: "50%", flexShrink: 0 }}
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <div
+                className="rounded-full bg-secondary text-white flex items-center justify-center font-600 uppercase"
+                style={{ width: "36px", height: "36px", borderRadius: "50%", flexShrink: 0, fontSize: "15px" }}
+              >
+                {firstLetter}
+              </div>
+            )}
+            {!isCollapsed && (
+              <div>
+                <h4 className="headmini-text text-dark font-600 capitalize">{userName}</h4>
+                {userMobile && <p className="mini-text text-gray">{userMobile}</p>}
+              </div>
+            )}
           </div>
-        )}
-      </NavLink>
+          {!isCollapsed && (
+            <div className="text-gray">
+              <Icon name="ChevronsUpDown" width="14" height="14" strokeWidth="2.5" />
+            </div>
+          )}
+        </NavLink>
+      </div>
     </div>
   );
 });
@@ -150,13 +152,38 @@ SidebarProfile.displayName = "SidebarProfile";
 const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
   const [searchQuery, setSearchQuery] = React.useState("");
   const { user: authUser, role: authRole } = useCurrentUser();
+  const { isAuthenticated } = useAuth();
+
+  const [hasToken, setHasToken] = React.useState(() => {
+    if (typeof window === "undefined") return false;
+    const token = localStorage.getItem("token");
+    return Boolean(token && token !== "null" && token !== "undefined");
+  });
+
+  React.useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem("token");
+      setHasToken(Boolean(token && token !== "null" && token !== "undefined"));
+    };
+    window.addEventListener("auth-user-changed", checkAuth);
+    window.addEventListener("storage", checkAuth);
+    return () => {
+      window.removeEventListener("auth-user-changed", checkAuth);
+      window.removeEventListener("storage", checkAuth);
+    };
+  }, []);
+
+  const isLoggedIn = Boolean((isAuthenticated && hasToken) || hasToken);
 
   const user = React.useMemo(
     () => userProp || authUser,
     [userProp, authUser]
   );
 
-  const displayRole = React.useMemo(() => user?.role || user?.roleId?.name || authRole, [user, authRole]);
+  const displayRole = React.useMemo(() => {
+    if (!isLoggedIn) return "Guest";
+    return user?.rolename || user?.role || user?.roleId?.rolename || user?.roleId?.name || authRole || "Guest";
+  }, [user, authRole, isLoggedIn]);
 
   const handleToggle = React.useCallback(() => setIsCollapsed((prev) => !prev), [setIsCollapsed]);
   const handleCollapse = React.useCallback(() => setIsCollapsed(true), [setIsCollapsed]);
@@ -170,12 +197,31 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
   const filteredMenu = React.useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
 
+    // When user is not logged in, only show Dashboard in menu
+    if (!isLoggedIn) {
+      const dashboardItem = menuData.find(
+        (item) => item.name === "Dashboard" || item.route === "/dashboard"
+      );
+      const fallbackDashboard = dashboardItem || {
+        name: "Dashboard",
+        route: "/dashboard",
+        icon: "Grid",
+        status: true,
+      };
+      if (q && !fallbackDashboard.name.toLowerCase().includes(q)) {
+        return [];
+      }
+      return [fallbackDashboard];
+    }
+
+    const userOrRole = user || displayRole;
+
     return menuData.reduce((acc, item) => {
       if (!item?.status) return acc;
 
       if (item.category?.length) {
         const allowedSubs = item.category.filter(
-          (sub) => sub.status && canAccessPage(displayRole, sub.name, item.name)
+          (sub) => sub.status && canAccessPage(userOrRole, sub.name, item.name)
         );
         if (!allowedSubs.length) return acc;
 
@@ -188,7 +234,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
             category: parentMatches && !matchedSubs.length ? allowedSubs : matchedSubs,
           });
         }
-      } else if (canAccessPage(displayRole, item.name, item.route)) {
+      } else if (canAccessPage(userOrRole, item.name, item.route)) {
         if (!q || item.name.toLowerCase().includes(q)) {
           acc.push(item);
         }
@@ -196,15 +242,19 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
 
       return acc;
     }, []);
-  }, [searchQuery, displayRole]);
+  }, [searchQuery, user, displayRole, isLoggedIn]);
 
-  const userImage = React.useMemo(() => resolveImagePath(getFirstValue(user, ["image", "avatar"])), [user]);
-  const userName = getFirstValue(user, ["fullname", "name", "username"], "User");
-  const userMobile = getFirstValue(user, ["mobile", "phone", "email"], "");
-  const firstLetter = (userName?.trim()?.charAt(0) || "U").toUpperCase();
+  const userImage = React.useMemo(() => {
+    if (!isLoggedIn) return "";
+    return resolveImagePath(getFirstValue(user, ["image", "avatar"]));
+  }, [user, isLoggedIn]);
+
+  const userName = isLoggedIn ? getFirstValue(user, ["fullname", "name", "username"], "User") : "Welcome Guest";
+  const userMobile = isLoggedIn ? getFirstValue(user, ["mobile", "phone", "email"], "") : "Sign in to access";
+  const firstLetter = isLoggedIn ? (userName?.trim()?.charAt(0) || "U").toUpperCase() : "G";
 
   return (
-    <Container version="v0" className="h-100 bg-white overflow-auto">
+    <Container version="v0" className="bg-white overflow-auto relative h-100">
       <SidebarHeader
         isCollapsed={isCollapsed}
         displayRole={displayRole}
@@ -263,6 +313,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
         userName={userName}
         userMobile={userMobile}
         firstLetter={firstLetter}
+        isLoggedIn={isLoggedIn}
       />
     </Container>
   );

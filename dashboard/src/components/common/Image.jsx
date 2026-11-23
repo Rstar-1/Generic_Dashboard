@@ -40,11 +40,17 @@ export const Image = React.memo(
       props.fetchPriority === "high" ||
       props.fetchpriority === "high";
 
-    const handleError = React.useCallback(() => {
-      if (imgSrc !== fallback) {
-        setImgSrc(fallback);
-      }
-    }, [imgSrc, fallback]);
+    const handleError = React.useCallback(
+      (e) => {
+        if (imgSrc !== fallback) {
+          setImgSrc(fallback);
+        }
+        if (typeof props.onError === "function") {
+          props.onError(e);
+        }
+      },
+      [imgSrc, fallback, props.onError]
+    );
 
     if (isVideoSrc(resolved)) {
       return (
@@ -80,13 +86,15 @@ export const Image = React.memo(
         width={width}
         height={height}
         className={className}
+        referrerPolicy="no-referrer"
+        crossOrigin="anonymous"
         style={{
           aspectRatio: computedRatio,
           objectFit: computedRatio ? "cover" : undefined,
           ...style,
         }}
-        onError={handleError}
         {...props}
+        onError={handleError}
       />
     );
   }

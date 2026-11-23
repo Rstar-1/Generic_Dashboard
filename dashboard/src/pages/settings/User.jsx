@@ -3,203 +3,544 @@ import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
-import Fields from "../../components/forms/Fields";
 import FilterForm from "../../components/forms/sections/FilterForm";
+import Modal from "../../components/common/Modal";
+import FormBuilder from "../../components/forms/FormBuilder";
+import { getUserFormFields, sanitizeCrudFormData } from "../../components/forms/sections/CrudForm";
 import { showToast } from "../../components/common/Toast";
-import { useCurrentUser } from "../../utils";
-import {
-    usersSidebarData,
-    usersTableColumns,
-    usersData as initialUsersData,
-} from "../../utils/apiData";
+import { useCurrentUser, isAdminOrDevAdmin } from "../../utils";
+import { usersTableColumns, STATUS_OPTIONS, TABS } from "../../utils/apiData";
+import { useUsers } from "../../feature/userSlice";
+import { useRoles } from "../../feature/roleSlice";
+import { registerApi } from "../../api/authApi";
 
 const ITEMS_PER_PAGE = 5;
-const TABS = [
-    { name: "All Users", value: "all" },
-    { name: "Trash", value: "trash" },
+
+const USER_ROLES = [
+    { label: "Admin", value: "admin" },
+    { label: "Manager", value: "manager" },
+    { label: "Accountant", value: "accountant" },
+    { label: "Product", value: "product" },
+    { label: "Customer", value: "customer" },
 ];
 
-const STATUS_OPTIONS = [
-    { label: "All Statuses", value: "all" },
-    { label: "Active", value: "Active" },
-    { label: "Inactive", value: "Inactive" },
+const ROLE_COLORS = {
+    all: "var(--primary)",
+    customer: "var(--warning)",
+    admin: "var(--success)",
+    accountant: "var(--secondary)",
+    manager: "var(--info)",
+    product: "var(--danger)",
+};
+
+const DEFAULT_SIDEBAR_ROLES = [
+    { name: "Customer", role: "customer", color: "var(--warning)" },
+    { name: "Admin", role: "admin", color: "var(--success)" },
+    { name: "Accountant", role: "accountant", color: "var(--secondary)" },
+    { name: "Manager", role: "manager", color: "var(--info)" },
+    { name: "Product", role: "product", color: "var(--danger)" },
 ];
+
+const fileToBase64 = (file) =>
+    new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+    });
 
 const User = () => {
-    // Current authenticated user role
-    const { role: authRole } = useCurrentUser();
-    const loggedInRole = React.useMemo(() => String(authRole || "admin").toLowerCase().trim(), [authRole]);
-    const isAdmin = loggedInRole === "admin";
+    const { user: currentUser, role: authRole, isAdminOrDevAdmin: isUserAdminOrDevAdmin } = useCurrentUser();
 
-    const [users, setUsers] = React.useState(initialUsersData);
+    // Check if the logged-in user is an Admin or Dev Admin
+    const isPrivilegedUser = React.useMemo(() => {
+        const roleStr = String(authRole || currentUser?.role || currentUser?.rolename || "").toLowerCase().trim();
+        return Boolean(
+            isUserAdminOrDevAdmin ||
+            isAdminOrDevAdmin(authRole || currentUser) ||
+            roleStr === "admin" ||
+            roleStr === "dev admin" ||
+            roleStr === "devadmin" ||
+            roleStr === "dev-admin" ||
+            roleStr.includes("admin")
+        );
+    }, [authRole, currentUser, isUserAdminOrDevAdmin]);
+
+    // Current login user role identifiers
+    const loggedInUserRoleName = React.useMemo(() => {
+        return String(currentUser?.rolename || currentUser?.role || currentUser?.roleId?.rolename || authRole || "").trim();
+    }, [currentUser, authRole]);
+
+    const loggedInUserRoleKey = React.useMemo(() => {
+        return loggedInUserRoleName.toLowerCase();
+    }, [loggedInUserRoleName]);
+
+    const loggedInUserRoleId = React.useMemo(() => {
+        return currentUser?.roleId?._id || currentUser?.roleId || null;
+    }, [currentUser]);
+
+    const loggedInRole = React.useMemo(() => loggedInUserRoleKey || "admin", [loggedInUserRoleKey]);
+
+    const { users, total, loading, getUsers, editUser, removeUser } = useUsers();
+    const { roles, getRoles, fetchRoles: fetchRolesList } = useRoles();
+
+    React.useEffect(() => {
+        const loader = fetchRolesList || getRoles;
+        loader?.({ isDeleted: false, limit: 100 });
+    }, [fetchRolesList, getRoles]);
+
+    const dynamicRoleOptions = React.useMemo(() => {
+        // Non-admin users can only assign their own role
+        if (!isPrivilegedUser && loggedInUserRoleKey) {
+            const displayName = loggedInUserRoleName.charAt(0).toUpperCase() + loggedInUserRoleName.slice(1);
+            return [
+                {
+                    label: displayName,
+                    value: loggedInUserRoleKey,
+                },
+            ];
+        }
+
+        const list = [];
+        const seen = new Set();
+        (roles || []).forEach((r) => {
+            if (r.isDeleted) return;
+            const name = String(r.rolename || r.role || r.name || "").trim();
+            const val = name.toLowerCase();
+            if (val && !seen.has(val)) {
+                seen.add(val);
+                list.push({
+                    label: name.charAt(0).toUpperCase() + name.slice(1),
+                    value: val,
+                });
+            }
+        });
+        if (list.length > 0) return list;
+        return USER_ROLES;
+    }, [roles, isPrivilegedUser, loggedInUserRoleKey, loggedInUserRoleName]);
+
     const [activeTab, setActiveTab] = React.useState("all");
-    const [selectedCategory, setSelectedCategory] = React.useState("All Users");
+    const [selectedRoleFilter, setSelectedRoleFilter] = React.useState(() => {
+        if (!isPrivilegedUser && loggedInUserRoleKey) {
+            return loggedInUserRoleKey;
+        }
+        return "all";
+    });
+    const [selectedCategory, setSelectedCategory] = React.useState(() => {
+        if (!isPrivilegedUser && loggedInUserRoleName) {
+            return `${loggedInUserRoleName.charAt(0).toUpperCase() + loggedInUserRoleName.slice(1)} Users`;
+        }
+        return "All Users";
+    });
     const [searchQuery, setSearchQuery] = React.useState("");
     const [statusFilter, setStatusFilter] = React.useState("all");
     const [currentPage, setCurrentPage] = React.useState(1);
+    const [selectedUserIds, setSelectedUserIds] = React.useState([]);
 
-    // Sync active category and tab when role changes
     React.useEffect(() => {
-        if (!isAdmin) {
-            const matchedItem = usersSidebarData.items.find(
-                (i) => i.role?.toLowerCase() === loggedInRole
-            );
-            setActiveTab(matchedItem?.role || loggedInRole);
-            setSelectedCategory(matchedItem?.name || "All Users");
-        } else {
-            setActiveTab("all");
-            setSelectedCategory("All Users");
+        if (!isPrivilegedUser && loggedInUserRoleKey) {
+            setSelectedRoleFilter(loggedInUserRoleKey);
+            setSelectedCategory(`${loggedInUserRoleName.charAt(0).toUpperCase() + loggedInUserRoleName.slice(1)} Users`);
         }
-        setCurrentPage(1);
-    }, [isAdmin, loggedInRole]);
+    }, [isPrivilegedUser, loggedInUserRoleKey, loggedInUserRoleName]);
 
-    // Base visible users pool: Admin sees all users, non-admin sees only users matching their logged-in role
-    const visibleUsersPool = React.useMemo(() => {
-        if (isAdmin) return users;
-        return users.filter(
-            (u) => String(u.role || "").toLowerCase().trim() === loggedInRole
-        );
-    }, [users, isAdmin, loggedInRole]);
+    const allUsersTotalRef = React.useRef(0);
+    React.useEffect(() => {
+        if (selectedRoleFilter === "all" && activeTab === "all" && total > 0) {
+            allUsersTotalRef.current = total;
+        }
+    }, [selectedRoleFilter, activeTab, total]);
 
-    const handleSearchChange = React.useCallback((val) => {
-        const nextQuery = typeof val === "string" ? val : (val?.target?.value ?? "");
-        setSearchQuery(nextQuery);
-        setCurrentPage(1);
-    }, []);
+    // Modal state for Add / Edit user
+    const [isModalOpen, setIsModalOpen] = React.useState(false);
+    const [editingUser, setEditingUser] = React.useState(null);
 
-    const handleStatusFilterChange = React.useCallback((val) => {
-        const nextStatus = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
-        setStatusFilter(nextStatus);
-        setCurrentPage(1);
-    }, []);
-
-    const activeNonDeletedUsers = React.useMemo(
-        () => visibleUsersPool.filter((u) => !u.isDeleted),
-        [visibleUsersPool]
-    );
-
-    // Sidebar items with dynamic role count in a single O(N) pass
+    // Dynamic sidebar items derived directly from roleSlice API roles
     const sidebarItems = React.useMemo(() => {
-        const counts = activeNonDeletedUsers.reduce((acc, u) => {
+        // Non-admin / non-dev-admin user: show ONLY their own role
+        if (!isPrivilegedUser && loggedInUserRoleKey) {
+            const displayName = loggedInUserRoleName ? (loggedInUserRoleName.charAt(0).toUpperCase() + loggedInUserRoleName.slice(1)) : "User";
+            return [
+                {
+                    name: `${displayName} Users`,
+                    role: loggedInUserRoleKey,
+                    color: ROLE_COLORS[loggedInUserRoleKey] || "var(--primary)",
+                    icon: "Users",
+                    count: total || users?.length || 0,
+                },
+            ];
+        }
+
+        const counts = (users || []).reduce((acc, u) => {
             const roleKey = u.role?.toLowerCase();
             if (roleKey) acc[roleKey] = (acc[roleKey] || 0) + 1;
             return acc;
         }, {});
 
-        // If admin, show all sidebar items; if non-admin, restrict to their own role and "All Users"
-        const itemsToDisplay = isAdmin
-            ? usersSidebarData.items
-            : usersSidebarData.items.filter(
-                (item) => item.role === "all" || item.role?.toLowerCase() === loggedInRole
-            );
-
-        return itemsToDisplay.map((item) => ({
-            ...item,
+        const allCount = (selectedRoleFilter === "all" && activeTab === "all" ? total : allUsersTotalRef.current) || total || users.length || 0;
+        const allItem = {
+            name: "All Users",
+            role: "all",
+            color: "var(--primary)",
             icon: "Users",
-            count: item.role === "all" ? activeNonDeletedUsers.length : (counts[item.role?.toLowerCase()] || 0),
-        }));
-    }, [activeNonDeletedUsers, isAdmin, loggedInRole]);
+            count: allCount,
+        };
 
-    // Sidebar & tab navigation handlers
-    const handleSidebarItemClick = React.useCallback((name) => {
-        setSelectedCategory(name);
+        const list = [allItem];
+        const seen = new Set();
+
+        (roles || []).forEach((r) => {
+            if (r.isDeleted) return;
+            const rName = String(r.rolename || r.name || r.role || "").trim();
+            const rKey = rName.toLowerCase();
+            if (!rKey || seen.has(rKey)) return;
+            seen.add(rKey);
+
+            const displayName = rName.charAt(0).toUpperCase() + rName.slice(1);
+            const assignedCount = (r.usersassigned !== undefined && r.usersassigned > 0)
+                ? r.usersassigned
+                : (r.count !== undefined && r.count > 0 ? r.count : (counts[rKey] || 0));
+
+            list.push({
+                name: displayName,
+                role: rKey,
+                color: ROLE_COLORS[rKey] || "var(--primary)",
+                icon: "Users",
+                count: assignedCount,
+            });
+        });
+
+        if (list.length === 1) {
+            DEFAULT_SIDEBAR_ROLES.forEach((dr) => {
+                list.push({
+                    ...dr,
+                    icon: "Users",
+                    count: counts[dr.role] || 0,
+                });
+            });
+        }
+
+        return list;
+    }, [users, total, roles, selectedRoleFilter, activeTab, isPrivilegedUser, loggedInUserRoleKey, loggedInUserRoleName]);
+
+    // Backend paginated user fetching
+    const fetchUserData = React.useCallback(() => {
+        const params = {
+            page: currentPage,
+            limit: ITEMS_PER_PAGE,
+            isDeleted: activeTab === "trash" ? true : false,
+        };
+
+        // For all roles except Admin & Dev Admin: always pass login user's role filter in API
+        if (!isPrivilegedUser && loggedInUserRoleKey) {
+            const matchedRoleDoc = (roles || []).find(
+                (r) =>
+                    String(r.rolename || r.role || r.name || "").toLowerCase().trim() === loggedInUserRoleKey ||
+                    String(r._id) === String(loggedInUserRoleId)
+            );
+            if (matchedRoleDoc?._id || loggedInUserRoleId) {
+                params.roleId = matchedRoleDoc?._id || loggedInUserRoleId;
+            }
+            params.role = matchedRoleDoc?.rolename || matchedRoleDoc?.name || loggedInUserRoleName || loggedInUserRoleKey;
+        } else if (selectedRoleFilter && selectedRoleFilter !== "all") {
+            const target = selectedRoleFilter.toLowerCase().trim();
+            const matchedRoleDoc = (roles || []).find(
+                (r) => String(r.rolename || r.role || r.name || "").toLowerCase().trim() === target
+            );
+            if (matchedRoleDoc?._id) {
+                params.roleId = matchedRoleDoc._id;
+            }
+            if (matchedRoleDoc?.rolename || matchedRoleDoc?.name) {
+                params.role = matchedRoleDoc.rolename || matchedRoleDoc.name;
+            } else {
+                params.role = target;
+            }
+        }
+
+        const trimmedSearch = searchQuery.trim();
+        if (trimmedSearch) {
+            params.search = trimmedSearch;
+        }
+
+        if (statusFilter !== "all") {
+            params.isActive = statusFilter === "Active";
+        }
+
+        getUsers(params);
+    }, [
+        currentPage,
+        activeTab,
+        isPrivilegedUser,
+        loggedInUserRoleKey,
+        loggedInUserRoleName,
+        loggedInUserRoleId,
+        selectedRoleFilter,
+        roles,
+        searchQuery,
+        statusFilter,
+        getUsers,
+    ]);
+
+    React.useEffect(() => {
+        fetchUserData();
+    }, [fetchUserData]);
+
+    // Base visible users pool: filtered by selected role filter
+    const visibleUsersPool = React.useMemo(() => {
+        if (!users) return [];
+
+        let list = users;
+
+        // If NOT admin or dev admin, enforce showing ONLY users with the logged-in user's role
+        if (!isPrivilegedUser && loggedInUserRoleKey) {
+            const matchedRoleDoc = (roles || []).find(
+                (r) =>
+                    String(r.rolename || r.role || r.name || "").toLowerCase().trim() === loggedInUserRoleKey ||
+                    String(r._id) === String(loggedInUserRoleId)
+            );
+            const targetId = String(matchedRoleDoc?._id || loggedInUserRoleId || "").trim();
+
+            return list.filter((u) => {
+                const uRole = String(u.role || u.rolename || u.roleId?.rolename || "").toLowerCase().trim();
+                const uRoleId = String(u.roleId?._id || u.roleId || "").trim();
+
+                return (
+                    uRole === loggedInUserRoleKey ||
+                    (targetId && uRoleId === targetId)
+                );
+            });
+        }
+
+        if (selectedRoleFilter && selectedRoleFilter !== "all") {
+            const target = selectedRoleFilter.toLowerCase().trim();
+            const matchedRoleDoc = (roles || []).find(
+                (r) => String(r.rolename || r.role || r.name || "").toLowerCase().trim() === target
+            );
+            const targetId = String(matchedRoleDoc?._id || "").trim();
+            const targetCode = String(matchedRoleDoc?.id || "").toLowerCase().trim();
+
+            return list.filter((u) => {
+                const uRole = String(u.role || u.rolename || "").toLowerCase().trim();
+                const uRoleId = String(u.roleId?._id || u.roleId || "").trim();
+
+                return (
+                    uRole === target ||
+                    (targetId && uRoleId === targetId) ||
+                    (targetCode && uRole === targetCode)
+                );
+            });
+        }
+
+        return list;
+    }, [users, isPrivilegedUser, loggedInUserRoleKey, loggedInUserRoleId, selectedRoleFilter, roles]);
+
+    const handleSidebarItemClick = React.useCallback((itemOrName) => {
+        if (!isPrivilegedUser) return;
+
+        const name = typeof itemOrName === "string" ? itemOrName : (itemOrName?.name || "");
+        const role = typeof itemOrName === "object" && itemOrName?.role ? itemOrName.role : null;
+
+        const matchedItem = (sidebarItems || []).find(
+            (i) =>
+                i.name?.toLowerCase() === name?.toLowerCase() ||
+                (role && i.role?.toLowerCase() === role?.toLowerCase()) ||
+                i.role?.toLowerCase() === name?.toLowerCase()
+        );
+
+        const targetCategory = matchedItem ? matchedItem.name : (name || "All Users");
+        const targetRole = matchedItem?.role || (targetCategory.toLowerCase() === "all users" ? "all" : targetCategory.toLowerCase());
+
+        setSelectedCategory(targetCategory);
+        setSelectedRoleFilter(targetRole);
         setCurrentPage(1);
-        const item = usersSidebarData.items.find((i) => i.name === name);
-        setActiveTab(item?.role || "all");
-    }, []);
+        setSelectedUserIds([]);
+    }, [sidebarItems, isPrivilegedUser]);
 
     const handleTabChange = React.useCallback((tabValue) => {
-        setActiveTab(tabValue);
+        const next = typeof tabValue === "string" ? tabValue : (tabValue?.value || "all");
+        setActiveTab(next);
         setCurrentPage(1);
-        if (tabValue === "trash") {
+        setSelectedUserIds([]);
+        if (next === "trash") {
             setSelectedCategory("Trash");
+        } else if (!isPrivilegedUser && loggedInUserRoleName) {
+            setSelectedCategory(`${loggedInUserRoleName.charAt(0).toUpperCase() + loggedInUserRoleName.slice(1)} Users`);
         } else {
-            const item = usersSidebarData.items.find((i) => i.role === tabValue);
+            const item = (sidebarItems || []).find((i) => i.role === selectedRoleFilter);
             setSelectedCategory(item ? item.name : "All Users");
         }
-    }, []);
+    }, [sidebarItems, selectedRoleFilter, isPrivilegedUser, loggedInUserRoleName]);
 
     const handleClearFilters = React.useCallback(() => {
         setStatusFilter("all");
         setSearchQuery("");
+        if (isPrivilegedUser) {
+            setSelectedRoleFilter("all");
+            setSelectedCategory("All Users");
+        } else {
+            setSelectedRoleFilter(loggedInUserRoleKey);
+            setSelectedCategory(`${loggedInUserRoleName.charAt(0).toUpperCase() + loggedInUserRoleName.slice(1)} Users`);
+        }
+        setActiveTab("all");
         setCurrentPage(1);
+        setSelectedUserIds([]);
         showToast("User filters reset", "info");
+    }, [isPrivilegedUser, loggedInUserRoleKey, loggedInUserRoleName]);
+
+    const handleViewUser = React.useCallback((row) => {
+        showToast(`Operator Profile: ${row.fullname || row.name} | Role: ${row.role} | Email: ${row.email}`, "info");
     }, []);
 
-    // Action handlers for table rows
-    const handleViewUser = React.useCallback((row) => {
-        showToast(`Viewing operator profile: ${row.name} (${row.role})`, "info");
+    const handleOpenAddModal = React.useCallback(() => {
+        setEditingUser(null);
+        setIsModalOpen(true);
+    }, []);
+
+    const handleCloseModal = React.useCallback(() => {
+        setIsModalOpen(false);
+        setEditingUser(null);
     }, []);
 
     const handleEditUser = React.useCallback((row) => {
-        showToast(`Editing security credentials for ${row.name}`, "info");
+        setEditingUser(row);
+        setIsModalOpen(true);
     }, []);
 
-    const handleDeleteUser = React.useCallback((row) => {
-        if (activeTab === "trash") {
-            setUsers((prev) => prev.filter((u) => u.id !== row.id));
-            showToast(`User ${row.name} permanently removed!`, "danger");
-        } else {
-            setUsers((prev) =>
-                prev.map((u) => (u.id === row.id ? { ...u, isDeleted: true } : u))
-            );
-            showToast(`User ${row.name} moved to trash!`, "danger");
-        }
-    }, [activeTab]);
-
-    const handleExportUsers = React.useCallback(() => {
-        navigator.clipboard?.writeText(JSON.stringify(visibleUsersPool, null, 2));
-        showToast("System user directory exported to clipboard!", "success");
-    }, [visibleUsersPool]);
-
-    // Multi-criteria filtering with case-insensitive role & status matching
-    const filteredUsers = React.useMemo(() => {
-        const q = searchQuery.toLowerCase().trim();
-        const targetStatus = String(statusFilter || "all").toLowerCase().trim();
-        const targetRole = String(activeTab || "all").toLowerCase().trim();
-
-        return visibleUsersPool.filter((item) => {
-            const isItemDeleted = Boolean(item.isDeleted);
-            if (activeTab === "trash") {
-                if (!isItemDeleted) return false;
-            } else {
-                if (isItemDeleted) return false;
+    const handleDeleteUser = React.useCallback(
+        async (row) => {
+            const userId = row.id || row._id;
+            try {
+                await removeUser(userId).unwrap();
+                const isTrash = activeTab === "trash" || row.isDeleted;
+                showToast(`User "${row.fullname || row.name}" ${isTrash ? "permanently deleted!" : "moved to trash!"}`, "success");
+                setSelectedUserIds((prev) => prev.filter((id) => id !== userId && id !== row.id && id !== row._id));
+                fetchUserData();
+            } catch (err) {
+                showToast(err?.message || "Failed to delete user", "danger");
             }
+        },
+        [activeTab, removeUser, fetchUserData]
+    );
 
-            const rawStatus = item.status;
-            const itemStatus = (typeof rawStatus === "boolean" ? (rawStatus ? "active" : "inactive") : String(rawStatus || "")).toLowerCase().trim();
-            const itemRole = String(item.role || "").toLowerCase().trim();
+    const handleBulkDelete = React.useCallback(async () => {
+        if (!selectedUserIds.length) return;
+        try {
+            await Promise.all(selectedUserIds.map((id) => removeUser(id).unwrap()));
+            showToast(`${selectedUserIds.length} user(s) removed successfully!`, "success");
+            setSelectedUserIds([]);
+            fetchUserData();
+        } catch (err) {
+            showToast(err?.message || "Failed to delete selected users", "danger");
+        }
+    }, [selectedUserIds, removeUser, fetchUserData]);
 
-            const matchesRole = targetRole === "all" || targetRole === "trash" || itemRole === targetRole;
-            const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
-            const matchesSearch =
-                !q ||
-                String(item.name || "").toLowerCase().includes(q) ||
-                String(item.email || "").toLowerCase().includes(q) ||
-                String(item.mobile || "").toLowerCase().includes(q) ||
-                itemRole.includes(q);
-
-            return matchesRole && matchesStatus && matchesSearch;
+    // Checkbox selection handlers
+    const isAllSelected = React.useMemo(() => {
+        if (!visibleUsersPool.length) return false;
+        return visibleUsersPool.every((u) => {
+            const id = u.id || u._id;
+            return selectedUserIds.includes(id) || (u._id && selectedUserIds.includes(u._id));
         });
-    }, [visibleUsersPool, activeTab, statusFilter, searchQuery]);
+    }, [visibleUsersPool, selectedUserIds]);
 
-    const paginatedUsers = React.useMemo(() => {
-        const start = (currentPage - 1) * ITEMS_PER_PAGE;
-        return filteredUsers.slice(start, start + ITEMS_PER_PAGE);
-    }, [filteredUsers, currentPage]);
-
-    const hasActiveFilters = statusFilter !== "all" || Boolean(searchQuery);
-
-    const tableSubtitle = React.useMemo(() => {
-        if (activeTab === "trash") {
-            return "Deactivated system users in trash";
+    const handleSelectAll = React.useCallback((checked) => {
+        const next = typeof checked === "boolean" ? checked : !isAllSelected;
+        if (next) {
+            const allIds = visibleUsersPool.map((u) => u.id || u._id);
+            setSelectedUserIds(allIds);
+        } else {
+            setSelectedUserIds([]);
         }
-        if (isAdmin) {
-            return "Authenticated platform operators, administrators, and vendor partners";
+    }, [visibleUsersPool, isAllSelected]);
+
+    const handleSelectRow = React.useCallback((id, row) => {
+        const targetId = row?.id || id;
+        setSelectedUserIds((prev) => {
+            const exists = prev.includes(targetId) || (row?._id && prev.includes(row._id));
+            if (exists) {
+                return prev.filter((x) => x !== targetId && x !== row?._id);
+            }
+            return [...prev, targetId];
+        });
+    }, []);
+
+    // Form fields configuration for Add / Edit User Modal via generic CrudForm helper
+    const formFields = React.useMemo(
+        () => getUserFormFields({ editingUser, roleOptions: dynamicRoleOptions, userRole: authRole || loggedInRole }),
+        [editingUser, dynamicRoleOptions, authRole, loggedInRole]
+    );
+
+    const handleFormSubmit = React.useCallback(async (formData) => {
+        if (!formData.fullname?.trim()) {
+            showToast("Full name is required", "warning");
+            return;
         }
-        const formattedRole = loggedInRole.charAt(0).toUpperCase() + loggedInRole.slice(1);
-        return `Authenticated platform operators for ${formattedRole} role`;
-    }, [isAdmin, loggedInRole, activeTab]);
+
+        let imageVal = "";
+        const rawImg = formData.image;
+        if (Array.isArray(rawImg)) {
+            if (rawImg.length > 0) {
+                const first = rawImg[0];
+                if (first instanceof File || first instanceof Blob) {
+                    try {
+                        imageVal = await fileToBase64(first);
+                    } catch {
+                        imageVal = first.name || "";
+                    }
+                } else if (typeof first === "string") {
+                    imageVal = first.trim();
+                }
+            } else {
+                imageVal = "";
+            }
+        } else if (rawImg instanceof File || rawImg instanceof Blob) {
+            try {
+                imageVal = await fileToBase64(rawImg);
+            } catch {
+                imageVal = rawImg.name || "";
+            }
+        } else if (typeof rawImg === "string") {
+            imageVal = rawImg.trim();
+        } else if (editingUser?.image) {
+            imageVal = editingUser.image;
+        }
+
+        const matchedRole = (roles || []).find(
+            (r) => String(r.rolename || r.role || r.name).toLowerCase() === String(formData.role).toLowerCase()
+        );
+
+        const payload = {
+            fullname: formData.fullname.trim(),
+            email: formData.email?.trim().toLowerCase(),
+            mobile: formData.mobile?.trim(),
+            image: imageVal,
+            role: matchedRole?.rolename?.toLowerCase() || formData.role || "customer",
+            roleId: matchedRole?._id || undefined,
+            isActive: sanitizeCrudFormData(formData, { userRole: authRole || loggedInRole, isEditing: Boolean(editingUser) }).isActive,
+        };
+
+        if (formData.password) {
+            payload.password = formData.password;
+        }
+
+        try {
+            if (editingUser) {
+                await editUser(editingUser.id || editingUser._id, payload).unwrap();
+                showToast(`User "${payload.fullname}" updated successfully!`, "success");
+            } else {
+                await registerApi({
+                    ...payload,
+                    isOtpVerified: true,
+                });
+                showToast(`User "${payload.fullname}" created successfully!`, "success");
+            }
+            setIsModalOpen(false);
+            setEditingUser(null);
+            fetchUserData();
+        } catch (err) {
+            showToast(err?.message || "Failed to save user", "danger");
+        }
+    }, [editingUser, editUser, fetchUserData, roles]);
 
     const filterInputsNode = React.useMemo(
         () => (
@@ -210,17 +551,31 @@ const User = () => {
                         label: "Account Status Filter",
                         options: STATUS_OPTIONS,
                         value: statusFilter,
-                        onChange: handleStatusFilterChange,
+                        onChange: (v) => {
+                            setStatusFilter(typeof v === "string" ? v : (v?.value || "all"));
+                            setCurrentPage(1);
+                            setSelectedUserIds([]);
+                        },
                     },
                 ]}
             />
         ),
-        [statusFilter, handleStatusFilterChange]
+        [statusFilter]
     );
 
     const quickActionNode = React.useMemo(
         () => (
             <div className="flex items-center gap-8">
+                {selectedUserIds.length > 0 && (
+                    <Button
+                        text={`Delete (${selectedUserIds.length})`}
+                        version="v2"
+                        bg="danger"
+                        color="white"
+                        icon="Trash"
+                        onClick={handleBulkDelete}
+                    />
+                )}
                 <Button
                     text="Add Users"
                     version="v2"
@@ -229,17 +584,30 @@ const User = () => {
                     border="primary"
                     color="white"
                     icon="File"
-                    onClick={handleExportUsers}
-                    title="Export system user directory to clipboard"
+                    onClick={handleOpenAddModal}
                 />
             </div>
         ),
-        [handleExportUsers]
+        [selectedUserIds, handleBulkDelete, handleOpenAddModal]
     );
+
+    const tableSubtitle = React.useMemo(() => {
+        if (activeTab === "trash") {
+            return "Deactivated system users in trash";
+        }
+        if (!isPrivilegedUser && loggedInUserRoleName) {
+            return `Authenticated platform operators for ${loggedInUserRoleName} role`;
+        }
+        if (selectedRoleFilter && selectedRoleFilter !== "all") {
+            const displayName = selectedCategory || (selectedRoleFilter.charAt(0).toUpperCase() + selectedRoleFilter.slice(1));
+            return `Authenticated platform operators for ${displayName} role`;
+        }
+        return "Authenticated platform operators, administrators, and vendor partners";
+    }, [isPrivilegedUser, loggedInUserRoleName, selectedRoleFilter, selectedCategory, activeTab]);
 
     return (
         <MainLayout
-            sidebarTitle={usersSidebarData.title}
+            sidebarTitle="Roles"
             sidebarItems={sidebarItems}
             selectedSidebarItem={selectedCategory}
             onSidebarItemClick={handleSidebarItemClick}
@@ -248,39 +616,69 @@ const User = () => {
             headerSub="Manage authorized platform operators, credential assignments, active sessions, and access roles"
             quickAction={quickActionNode}
             showTabControls={true}
-            tabs={TABS}
+            tabs={TABS.users || TABS}
             activeTab={activeTab}
             onTabChange={handleTabChange}
             filterDescription="Filter system users by role, active status, or keyword search"
             filterInputs={filterInputsNode}
-            hasActiveFilters={hasActiveFilters}
+            hasActiveFilters={statusFilter !== "all" || Boolean(searchQuery) || (isPrivilegedUser && selectedRoleFilter !== "all")}
             onClearAllFilters={handleClearFilters}
         >
             <div className="bg-white p-14 rounded-10">
                 <Table
                     title="User Directory"
                     subtitle={tableSubtitle}
-                    data={paginatedUsers}
+                    data={visibleUsersPool}
                     columns={usersTableColumns}
-                    totalItems={filteredUsers.length}
+                    totalItems={selectedRoleFilter !== "all" && visibleUsersPool.length < total ? visibleUsersPool.length : total}
                     itemsPerPage={ITEMS_PER_PAGE}
                     page={currentPage}
-                    onPageChange={setCurrentPage}
+                    onPageChange={(p) => {
+                        setCurrentPage(p);
+                        setSelectedUserIds([]);
+                    }}
                     searchQuery={searchQuery}
-                    onSearchChange={handleSearchChange}
+                    onSearchChange={(v) => {
+                        setSearchQuery(typeof v === "string" ? v : (v?.target?.value ?? ""));
+                        setCurrentPage(1);
+                        setSelectedUserIds([]);
+                    }}
                     searchPlaceholder="Search users by name, email, role, or phone..."
                     itemName="users"
                     collapsible={true}
-                    maxVisibleColumns={5}
+                    maxVisibleColumns={6}
                     minWidth="1050px"
+                    loading={loading}
+                    selectedRows={selectedUserIds}
+                    onSelectRow={handleSelectRow}
+                    onSelectAll={handleSelectAll}
                     onView={handleViewUser}
                     onEdit={handleEditUser}
                     onDelete={handleDeleteUser}
                     viewTitle="View User Profile"
                     editTitle="Edit Credentials"
-                    deleteTitle="Deactivate User"
+                    deleteTitle={activeTab === "trash" ? "Permanently Delete User" : "Deactivate User"}
                 />
             </div>
+
+            <Modal
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                title={editingUser ? `Edit User: ${editingUser.fullname || editingUser.name}` : "Add New User"}
+                size="sm"
+                type="sidebar"
+                placement="right"
+                footer={null}
+            >
+                <FormBuilder
+                    key={editingUser ? (editingUser.id || editingUser._id) : "new-user"}
+                    fields={formFields}
+                    submitType="json"
+                    onSubmit={handleFormSubmit}
+                    submitText={editingUser ? "Update User" : "Submit & Save User"}
+                    col="1"
+                />
+            </Modal>
         </MainLayout>
     );
 };

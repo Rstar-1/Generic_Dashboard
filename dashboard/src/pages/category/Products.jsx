@@ -3,186 +3,354 @@ import MainLayout from "../../components/layout/sections/MainLayout";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
 import Icon from "../../components/common/Icon";
-import Fields from "../../components/forms/Fields";
 import FilterForm from "../../components/forms/sections/FilterForm";
+import Modal from "../../components/common/Modal";
+import FormBuilder from "../../components/forms/FormBuilder";
+import { getProductCategoryFormFields, sanitizeCrudFormData } from "../../components/forms/sections/CrudForm";
 import { showToast } from "../../components/common/Toast";
 import {
     productCategoriesSidebarData,
     productCategoriesTableColumns,
-    productCategoriesData as initialCategoriesData,
+    STATUS_OPTIONS,
+    TABS,
 } from "../../utils/apiData";
+import { useCurrentUser } from "../../utils";
+import { useProductCategories } from "../../feature/productCategorySlice";
+import { getCategoriesApi } from "../../api/productCategoryApi";
 
 const ITEMS_PER_PAGE = 5;
-const TABS = [
-    { name: "All Categories", value: "all" },
-    { name: "Trash", value: "trash" },
-];
 
-const STATUS_OPTIONS = [
-    { label: "All Statuses", value: "all" },
-    { label: "Active", value: "Active" },
-    { label: "Inactive", value: "Inactive" },
-];
-
-const CODE_OPTIONS = [
-    { label: "All Category Codes", value: "all" },
-    ...initialCategoriesData.map((c) => ({
-        label: `${c.categoryCode} - ${c.name}`,
-        value: c.categoryCode,
-    })),
-];
+const fileToBase64 = (file) =>
+    new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+    });
 
 const CategoryProducts = () => {
-    const [categories, setCategories] = React.useState(initialCategoriesData);
+    const { user: currentUser } = useCurrentUser();
+    const {
+        categories,
+        total,
+        loading,
+        getCategories,
+        addCategory,
+        editCategory,
+        removeCategory,
+        bulkRemoveCategories,
+    } = useProductCategories();
+
     const [activeTab, setActiveTab] = React.useState("all");
     const [selectedCategory, setSelectedCategory] = React.useState("All Categories");
     const [searchQuery, setSearchQuery] = React.useState("");
     const [statusFilter, setStatusFilter] = React.useState("all");
-    const [codeFilter, setCodeFilter] = React.useState("all");
     const [currentPage, setCurrentPage] = React.useState(1);
+    const [selectedCategoryIds, setSelectedCategoryIds] = React.useState([]);
+
+    const [isModalOpen, setIsModalOpen] = React.useState(false);
+    const [editingCategory, setEditingCategory] = React.useState(null);
+
+    // Fetch categories with backend query params
+    const fetchCategoryData = React.useCallback(() => {
+        const params = {
+            page: currentPage,
+            limit: ITEMS_PER_PAGE,
+            isDeleted: activeTab === "trash",
+        };
+
+        const trimmed = searchQuery.trim();
+        if (trimmed) params.search = trimmed;
+
+        if (statusFilter !== "all") {
+            params.isActive = statusFilter === "Active";
+        }
+
+        getCategories(params);
+    }, [currentPage, activeTab, searchQuery, statusFilter, getCategories]);
 
     React.useEffect(() => {
-        setCategories(initialCategoriesData);
+        fetchCategoryData();
+    }, [fetchCategoryData]);
+
+    const [statusCounts, setStatusCounts] = React.useState({
+        all: 0,
+        active: 0,
+        inactive: 0,
+    });
+
+    const fetchStatusCounts = React.useCallback(async () => {
+        try {
+            const [allRes, activeRes, inactiveRes] = await Promise.all([
+                getCategoriesApi({ isDeleted: false, page: 1, limit: 1 }),
+                getCategoriesApi({ isDeleted: false, isActive: true, page: 1, limit: 1 }),
+                getCategoriesApi({ isDeleted: false, isActive: false, page: 1, limit: 1 }),
+            ]);
+
+            const parseCount = (res) => {
+                const p = res?.data !== undefined ? res.data : res;
+                return Number(p?.pagination?.total ?? p?.total ?? (Array.isArray(p) ? p.length : 0)) || 0;
+            };
+
+            const allCount = parseCount(allRes);
+            const activeCount = parseCount(activeRes);
+            const inactiveCount = parseCount(inactiveRes);
+
+            setStatusCounts({
+                all: allCount || (activeCount + inactiveCount),
+                active: activeCount,
+                inactive: inactiveCount,
+            });
+        } catch {
+            // Fallback gracefully
+        }
     }, []);
+
+    React.useEffect(() => {
+        fetchStatusCounts();
+    }, [fetchStatusCounts]);
 
     const handleSearchChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.target?.value ?? "");
         setSearchQuery(next);
         setCurrentPage(1);
+        setSelectedCategoryIds([]);
     }, []);
 
     const handleStatusFilterChange = React.useCallback((val) => {
         const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
         setStatusFilter(next);
+        setSelectedCategory(next === "Active" ? "Active" : next === "Inactive" ? "Inactive" : "All Categories");
         setCurrentPage(1);
+        setSelectedCategoryIds([]);
     }, []);
 
-    const handleCodeFilterChange = React.useCallback((val) => {
-        const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
-        setCodeFilter(next);
+    const handleClearFilters = React.useCallback(() => {
+        setStatusFilter("all");
+        setSearchQuery("");
+        setSelectedCategory("All Categories");
         setCurrentPage(1);
+        setSelectedCategoryIds([]);
+        showToast("Category filters reset", "info");
     }, []);
 
-    const activeNonDeletedCategories = React.useMemo(
-        () => categories.filter((c) => !c.isDeleted),
-        [categories]
-    );
-
-    // Sidebar items with real-time dynamic count calculations
-    const sidebarItems = React.useMemo(() => {
-        const counts = activeNonDeletedCategories.reduce((acc, cat) => {
-            const s = cat.status?.toLowerCase();
-            if (s) acc[s] = (acc[s] || 0) + 1;
-            return acc;
-        }, {});
-
-        return productCategoriesSidebarData.items.map((item) => ({
-            ...item,
-            icon: "Box",
-            count: item.status === "all" ? activeNonDeletedCategories.length : (counts[item.status?.toLowerCase()] || 0),
-        }));
-    }, [activeNonDeletedCategories]);
-
-    // Sidebar & tab navigation handlers
+    // Sidebar navigation
     const handleSidebarItemClick = React.useCallback((name) => {
         setSelectedCategory(name);
         setCurrentPage(1);
+        setSelectedCategoryIds([]);
         const item = productCategoriesSidebarData.items.find((i) => i.name === name);
-        setActiveTab(item?.status || "all");
+        const nextStatus = item?.status || "all";
+        setStatusFilter(nextStatus);
     }, []);
 
     const handleTabChange = React.useCallback((tabValue) => {
         setActiveTab(tabValue);
         setCurrentPage(1);
+        setSelectedCategoryIds([]);
         if (tabValue === "trash") {
             setSelectedCategory("Trash");
+            setStatusFilter("all");
         } else {
-            const item = productCategoriesSidebarData.items.find((i) => i.status === tabValue);
-            setSelectedCategory(item ? item.name : "All Categories");
+            setSelectedCategory("All Categories");
         }
     }, []);
 
-    const handleClearFilters = React.useCallback(() => {
-        setStatusFilter("all");
-        setCodeFilter("all");
-        setSearchQuery("");
-        setCurrentPage(1);
-        showToast("Category filters reset", "info");
+    // Selection handlers for bulk operations
+    const isAllSelected = React.useMemo(() => {
+        if (!categories.length) return false;
+        return categories.every((c) => {
+            const id = c.id || c._id;
+            return selectedCategoryIds.includes(id) || (c._id && selectedCategoryIds.includes(c._id));
+        });
+    }, [categories, selectedCategoryIds]);
+
+    const handleSelectAll = React.useCallback((checked) => {
+        const next = typeof checked === "boolean" ? checked : !isAllSelected;
+        if (next) {
+            const allIds = categories.map((c) => c.id || c._id);
+            setSelectedCategoryIds(allIds);
+        } else {
+            setSelectedCategoryIds([]);
+        }
+    }, [categories, isAllSelected]);
+
+    const handleSelectRow = React.useCallback((id, row) => {
+        const targetId = row?.id || id;
+        setSelectedCategoryIds((prev) => {
+            const exists = prev.includes(targetId) || (row?._id && prev.includes(row._id));
+            if (exists) {
+                return prev.filter((x) => x !== targetId && x !== row?._id);
+            }
+            return [...prev, targetId];
+        });
     }, []);
 
-    // Action handlers for rows
+    // Actions
     const handleViewCategory = React.useCallback((row) => {
-        showToast(`Viewing category details for ${row.name}`, "info");
+        const name = row.name || row.categoryName || "Category";
+        showToast(`Category: ${name} (${row.id || "N/A"}) - ${row.productsCount ?? row.count ?? 0} products`, "info");
     }, []);
 
     const handleEditCategory = React.useCallback((row) => {
-        showToast(`Editing category ${row.name}`, "info");
+        setEditingCategory(row);
+        setIsModalOpen(true);
     }, []);
 
-    const handleDeleteCategory = React.useCallback((row) => {
-        if (activeTab === "trash") {
-            setCategories((prev) => prev.filter((c) => c.id !== row.id));
-            showToast(`Category ${row.name} permanently removed!`, "danger");
-        } else {
-            setCategories((prev) => prev.map((c) => (c.id === row.id ? { ...c, isDeleted: true } : c)));
-            showToast(`Category ${row.name} moved to trash!`, "danger");
+    const handleDeleteCategory = React.useCallback(async (row) => {
+        const id = row.id || row._id;
+        const catName = row.name || row.categoryName || "Category";
+        try {
+            await removeCategory(id);
+            if (activeTab === "trash") {
+                showToast(`Category "${catName}" permanently removed!`, "success");
+            } else {
+                showToast(`Category "${catName}" moved to trash!`, "success");
+            }
+            fetchCategoryData();
+            fetchStatusCounts();
+        } catch (err) {
+            showToast(err?.message || "Failed to delete category", "danger");
         }
-    }, [activeTab]);
+    }, [activeTab, removeCategory, fetchCategoryData, fetchStatusCounts]);
+
+    const handleBulkDelete = React.useCallback(async () => {
+        if (!selectedCategoryIds.length) return;
+        try {
+            await bulkRemoveCategories({
+                ids: selectedCategoryIds,
+                permanent: activeTab === "trash",
+            });
+            if (activeTab === "trash") {
+                showToast(`${selectedCategoryIds.length} category(s) permanently removed!`, "success");
+            } else {
+                showToast(`${selectedCategoryIds.length} category(s) moved to trash!`, "success");
+            }
+            setSelectedCategoryIds([]);
+            fetchCategoryData();
+            fetchStatusCounts();
+        } catch (err) {
+            showToast(err?.message || "Failed to bulk delete categories", "danger");
+        }
+    }, [selectedCategoryIds, activeTab, bulkRemoveCategories, fetchCategoryData, fetchStatusCounts]);
 
     const handleExportCategories = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(categories, null, 2));
         showToast("Product categories exported to clipboard!", "success");
     }, [categories]);
 
-    // Multi-criteria filtering
-    const filteredCategories = React.useMemo(() => {
-        const q = searchQuery.toLowerCase().trim();
-        const targetTab = String(activeTab || "all").toLowerCase().trim();
-        const targetStatus = String(statusFilter || "all").toLowerCase().trim();
-        const targetCode = String(codeFilter || "all").toLowerCase().trim();
+    // Modal Form Fields via generic CrudForm helper
+    const formFields = React.useMemo(() => getProductCategoryFormFields({ editingCategory, userRole: currentUser }), [editingCategory, currentUser]);
 
-        return categories.filter((item) => {
-            const isItemDeleted = Boolean(item.isDeleted);
-            if (activeTab === "trash") {
-                if (!isItemDeleted) return false;
+    const handleFormSubmit = React.useCallback(async (formData) => {
+        if (!formData.categoryName?.trim()) {
+            showToast("Category name is required", "warning");
+            return;
+        }
+
+        let imageVal = "";
+        const rawImg = formData.image;
+        if (Array.isArray(rawImg)) {
+            if (rawImg.length > 0) {
+                const first = rawImg[0];
+                if (first instanceof File || first instanceof Blob) {
+                    try {
+                        imageVal = await fileToBase64(first);
+                    } catch {
+                        imageVal = first.name || "";
+                    }
+                } else if (typeof first === "string") {
+                    imageVal = first.trim();
+                }
+            }
+        } else if (rawImg instanceof File || rawImg instanceof Blob) {
+            try {
+                imageVal = await fileToBase64(rawImg);
+            } catch {
+                imageVal = rawImg.name || "";
+            }
+        } else if (typeof rawImg === "string") {
+            imageVal = rawImg.trim();
+        } else if (editingCategory?.image) {
+            imageVal = editingCategory.image;
+        }
+
+        let activeCreatorId =
+            currentUser?._id ||
+            currentUser?.id ||
+            currentUser?.userId ||
+            currentUser?.email;
+
+        if (!activeCreatorId) {
+            try {
+                const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+                activeCreatorId =
+                    storedUser?._id ||
+                    storedUser?.id ||
+                    storedUser?.userId ||
+                    storedUser?.email;
+            } catch { }
+        }
+
+        const payload = {
+            categoryName: formData.categoryName.trim(),
+            description: formData.description ? formData.description.trim() : "",
+            image: imageVal,
+            iconName: formData.iconName ? formData.iconName.trim() : "",
+            isActive: sanitizeCrudFormData(formData, { userRole: currentUser, isEditing: Boolean(editingCategory) }).isActive,
+        };
+
+        if (activeCreatorId) {
+            payload.createdBy = activeCreatorId;
+        }
+
+        try {
+            if (editingCategory) {
+                const targetId = editingCategory.id || editingCategory._id;
+                if (editingCategory.createdBy) {
+                    payload.createdBy =
+                        typeof editingCategory.createdBy === "object"
+                            ? (editingCategory.createdBy._id || editingCategory.createdBy.id || activeCreatorId)
+                            : (editingCategory.createdBy || activeCreatorId);
+                }
+                await editCategory(targetId, payload);
+                showToast(`Category "${payload.categoryName}" updated successfully!`, "success");
             } else {
-                if (isItemDeleted) return false;
+                await addCategory(payload);
+                showToast(`Category "${payload.categoryName}" created successfully!`, "success");
+            }
+            setIsModalOpen(false);
+            setEditingCategory(null);
+            fetchCategoryData();
+            fetchStatusCounts();
+        } catch (err) {
+            showToast(err?.message || "Failed to save category", "danger");
+        }
+    }, [editingCategory, editCategory, addCategory, fetchCategoryData, fetchStatusCounts, currentUser]);
+
+    // Sidebar items with dynamic total counts
+    const sidebarItems = React.useMemo(() => {
+        const totalAll = activeTab === "trash" ? total : (statusCounts.all || total);
+        const totalActive = statusCounts.active;
+        const totalInactive = statusCounts.inactive;
+
+        return productCategoriesSidebarData.items.map((item) => {
+            let countVal = 0;
+            if (item.status === "all") {
+                countVal = totalAll;
+            } else if (item.status === "Active") {
+                countVal = totalActive;
+            } else if (item.status === "Inactive") {
+                countVal = totalInactive;
             }
 
-            const itemStatus = String(item.status || "").toLowerCase().trim();
-            const itemCode = String(item.categoryCode || "").toLowerCase().trim();
-
-            const matchesTab = targetTab === "all" || targetTab === "trash" || itemStatus === targetTab;
-            const matchesStatus = targetStatus === "all" || itemStatus === targetStatus;
-            const matchesCode = targetCode === "all" || itemCode === targetCode;
-
-            const matchesSearch =
-                !q ||
-                String(item.name || "").toLowerCase().includes(q) ||
-                String(item.slug || "").toLowerCase().includes(q) ||
-                itemCode.includes(q) ||
-                itemStatus.includes(q);
-
-            return matchesTab && matchesStatus && matchesCode && matchesSearch;
+            return {
+                ...item,
+                icon: "Box",
+                count: countVal,
+            };
         });
-    }, [categories, activeTab, statusFilter, codeFilter, searchQuery]);
-
-    const paginatedCategories = React.useMemo(() => {
-        const start = (currentPage - 1) * ITEMS_PER_PAGE;
-        return filteredCategories.slice(start, start + ITEMS_PER_PAGE);
-    }, [filteredCategories, currentPage]);
-
-    const tableSubtitle = React.useMemo(() => {
-        if (activeTab === "trash") {
-            return "Archived product categories in trash";
-        }
-        return "Complete list of product categories with subcategory counts and catalog statuses";
-    }, [activeTab]);
-
-    const hasActiveFilters = React.useMemo(
-        () => statusFilter !== "all" || codeFilter !== "all" || Boolean(searchQuery.trim()),
-        [statusFilter, codeFilter, searchQuery]
-    );
+    }, [statusCounts, total, activeTab]);
 
     const filterInputsNode = React.useMemo(
         () => (
@@ -195,34 +363,43 @@ const CategoryProducts = () => {
                         value: statusFilter,
                         onChange: handleStatusFilterChange,
                     },
-                    {
-                        type: "select",
-                        label: "Category Code",
-                        options: CODE_OPTIONS,
-                        value: codeFilter,
-                        onChange: handleCodeFilterChange,
-                    },
                 ]}
             />
         ),
-        [statusFilter, handleStatusFilterChange, codeFilter, handleCodeFilterChange]
+        [statusFilter, handleStatusFilterChange]
     );
 
     const quickActionNode = React.useMemo(
         () => (
-            <Button
-                text="Add Category"
-                version="v2"
-                bg="primary"
-                variant="outline"
-                border="primary"
-                color="white"
-                icon="File"
-                onClick={handleExportCategories}
-                title="Export product category catalog"
-            />
+            <div className="flex align-items-center gap-8">
+                {selectedCategoryIds.length > 0 && (
+                    <Button
+                        text={`Delete (${selectedCategoryIds.length})`}
+                        version="v2"
+                        bg="danger"
+                        variant="outline"
+                        border="danger"
+                        color="white"
+                        icon="Trash"
+                        onClick={handleBulkDelete}
+                    />
+                )}
+                <Button
+                    text="Add Category"
+                    version="v2"
+                    bg="primary"
+                    variant="outline"
+                    border="primary"
+                    color="white"
+                    icon="Plus"
+                    onClick={() => {
+                        setEditingCategory(null);
+                        setIsModalOpen(true);
+                    }}
+                />
+            </div>
         ),
-        [handleExportCategories]
+        [selectedCategoryIds, handleBulkDelete]
     );
 
     return (
@@ -236,37 +413,76 @@ const CategoryProducts = () => {
             headerSub="Manage ecommerce product category classifications, subcategories, and catalog hierarchies"
             quickAction={quickActionNode}
             showTabControls={true}
-            tabs={TABS}
+            tabs={TABS.productCategories || TABS}
             activeTab={activeTab}
             onTabChange={handleTabChange}
-            filterDescription="Filter categories by status, category code, or keyword"
+            filterDescription="Filter categories by status, category code, or keyword search"
             filterInputs={filterInputsNode}
-            hasActiveFilters={hasActiveFilters}
+            hasActiveFilters={statusFilter !== "all" || Boolean(searchQuery.trim()) || activeTab !== "all"}
             onClearAllFilters={handleClearFilters}
         >
-            <Table
-                title="Product Category Hierarchy"
-                subtitle={tableSubtitle}
-                data={paginatedCategories}
-                columns={productCategoriesTableColumns}
-                totalItems={filteredCategories.length}
-                itemsPerPage={ITEMS_PER_PAGE}
-                page={currentPage}
-                onPageChange={setCurrentPage}
-                searchQuery={searchQuery}
-                onSearchChange={handleSearchChange}
-                searchPlaceholder="Search by category name, slug, or code..."
-                itemName="productcategory"
-                collapsible={true}
-                maxVisibleColumns={5}
-                minWidth="1050px"
-                onView={handleViewCategory}
-                onEdit={handleEditCategory}
-                onDelete={handleDeleteCategory}
-                viewTitle="View Category Details"
-                editTitle="Edit Category"
-                deleteTitle="Delete Category"
-            />
+            <div className="bg-white p-14 rounded-10">
+                <Table
+                    title="Product Category Hierarchy"
+                    subtitle={
+                        activeTab === "trash"
+                            ? "Archived product categories in trash"
+                            : "Complete list of product categories with subcategory counts and catalog hierarchies"
+                    }
+                    data={categories}
+                    columns={productCategoriesTableColumns}
+                    totalItems={total}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    page={currentPage}
+                    onPageChange={(p) => {
+                        setCurrentPage(p);
+                        setSelectedCategoryIds([]);
+                    }}
+                    searchQuery={searchQuery}
+                    onSearchChange={handleSearchChange}
+                    searchPlaceholder="Search by category name, description, or code..."
+                    itemName="productcategory"
+                    collapsible={true}
+                    maxVisibleColumns={5}
+                    minWidth="1050px"
+                    loading={loading}
+                    selectedRows={selectedCategoryIds}
+                    onSelectRow={handleSelectRow}
+                    onSelectAll={handleSelectAll}
+                    onView={handleViewCategory}
+                    onEdit={handleEditCategory}
+                    onDelete={handleDeleteCategory}
+                    viewTitle="View Category Details"
+                    editTitle="Edit Category"
+                    deleteTitle={activeTab === "trash" ? "Permanently Delete Category" : "Delete Category"}
+                />
+            </div>
+
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setEditingCategory(null);
+                }}
+                title={
+                    editingCategory
+                        ? `Edit Category: ${editingCategory.categoryName || editingCategory.name}`
+                        : "Add New Category"
+                }
+                size="sm"
+                type="sidebar"
+                placement="right"
+                footer={null}
+            >
+                <FormBuilder
+                    key={editingCategory ? (editingCategory.id || editingCategory._id) : "new-category"}
+                    fields={formFields}
+                    submitType="json"
+                    onSubmit={handleFormSubmit}
+                    submitText={editingCategory ? "Update Category" : "Save Category"}
+                    col="1"
+                />
+            </Modal>
         </MainLayout>
     );
 };

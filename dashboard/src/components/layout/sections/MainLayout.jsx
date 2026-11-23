@@ -18,7 +18,11 @@ const CATEGORY_COLORS = {
 
 // Memoized Category list item
 const CategoryItem = React.memo(({ cat, selectedItem, onClick, isCollapsed }) => {
-    const isActive = selectedItem === cat.name;
+    const isActive =
+        selectedItem === cat.name ||
+        (Boolean(selectedItem) && Boolean(cat.name) && String(selectedItem).toLowerCase() === String(cat.name).toLowerCase()) ||
+        (Boolean(selectedItem) && Boolean(cat.role) && String(selectedItem).toLowerCase() === String(cat.role).toLowerCase()) ||
+        (Boolean(selectedItem) && Boolean(cat.status) && String(selectedItem).toLowerCase() === String(cat.status).toLowerCase());
     return (
         <div
             onClick={onClick}
@@ -212,8 +216,8 @@ const MainLayout = React.memo(({
     const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(true);
     const [showFilters, setShowFilters] = React.useState(defaultShowFilters);
 
-    const { role: currentRole } = useCurrentUser();
-    const activeRole = userRole && userRole !== "admin" ? userRole : currentRole;
+    const { role: currentRole, user } = useCurrentUser();
+    const activeRole = userRole && userRole !== "admin" ? userRole : (user || currentRole);
 
     // Toggle handlers wrapped in useCallback
     const handleToggleSidebar = React.useCallback(() => {

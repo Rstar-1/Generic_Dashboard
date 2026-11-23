@@ -9,7 +9,20 @@ export const TYPES = {
   warning: { color: "var(--warning)", title: "Warning", icon: "!" },
 };
 
-const getType = (type) => TYPES[type] || (type === "danger" ? TYPES.error : TYPES.success);
+const getType = (type, message = "") => {
+  const isDeleteSuccess = typeof message === "string" && (
+    message.toLowerCase().includes("moved to trash") ||
+    message.toLowerCase().includes("permanently removed") ||
+    message.toLowerCase().includes("permanently deleted") ||
+    message.toLowerCase().includes("deleted successfully") ||
+    message.toLowerCase().includes("removed successfully") ||
+    message.toLowerCase().includes("cancelled & archived")
+  );
+  if (isDeleteSuccess && (type === "danger" || type === "error")) {
+    return TYPES.success;
+  }
+  return TYPES[type] || (type === "danger" ? TYPES.error : TYPES.success);
+};
 
 export const Toast = React.memo(
   ({
@@ -20,7 +33,7 @@ export const Toast = React.memo(
     className = "",
     style = {},
   }) => {
-    const config = getType(type);
+    const config = getType(type, message);
 
     const handleClose = React.useCallback(
       (e) => {
@@ -34,40 +47,43 @@ export const Toast = React.memo(
       <div
         className={`toast-in bg-white rounded-5 relative b-shadow mb-8 ${className}`}
         style={{
-          minWidth: 300,
+          minWidth: 350,
+          maxWidth: 350,
           borderLeft: `6px solid ${config.color}`,
           ...style,
         }}
       >
-        <div className="flex items-center gap-12 p-14">
-          <div
-            className="rounded-full icon-lg"
-            style={{ background: config.color }}
-          >
-            {["Check", "Close"].includes(config.icon) ? (
-              <Icon
-                name={config.icon}
-                width={config.icon === "Check" ? 18 : 16}
-                height={config.icon === "Check" ? 18 : 16}
-                stroke="#fff"
-                strokeWidth="3.5"
-              />
-            ) : (
-              <p
-                className="font-500 text-white small-text"
-              >
-                {config.icon}
-              </p>
-            )}
+        <div className="flex items-center p-14" style={{ gap: '16px' }}>
+          <div className='w-10'>
+            <div
+              className="rounded-5 icon-lg"
+              style={{ background: config.color }}
+            >
+              {["Check", "Close"].includes(config.icon) ? (
+                <Icon
+                  name={config.icon}
+                  width={config.icon === "Check" ? 20 : 21}
+                  height={config.icon === "Check" ? 20 : 21}
+                  stroke="#fff"
+                  strokeWidth="2"
+                />
+              ) : (
+                <p
+                  className="font-500 text-white headpara-text"
+                >
+                  {config.icon}
+                </p>
+              )}
+            </div>
           </div>
 
-          <div className="">
-            <h4 className="font-600 headmini-text text-dark line-clamp1">
+          <div className="w-90">
+            <h4 className="font-600 headmini-text text-dark line-clamp1 uppercase">
               {title || config.title}
             </h4>
 
             {message && (
-              <p className="text-gray mini-text">
+              <p className="text-gray mini-text line-clamp1">
                 {message}
               </p>
             )}
