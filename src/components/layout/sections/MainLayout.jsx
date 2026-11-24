@@ -1,0 +1,328 @@
+import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import Container from "../../common/Container";
+import Button from "../../common/Button";
+import Tab from "../../common/Tab";
+import Icon from "../../common/Icon";
+import { menuData } from "../../../utils/apiData";
+import { canAccessPage, useCurrentUser } from "../../../utils";
+
+// Category color mapping
+const CATEGORY_COLORS = {
+    Dashboard: "#1e74db",
+    "System Users": "#6366f1",
+    Roles: "#10b981",
+    Profile: "#f59e0b",
+};
+
+// Memoized Category list item
+const CategoryItem = React.memo(({ cat, selectedItem, onClick, isCollapsed }) => {
+    const isActive =
+        selectedItem === cat.name ||
+        (Boolean(selectedItem) && Boolean(cat.name) && String(selectedItem).toLowerCase() === String(cat.name).toLowerCase()) ||
+        (Boolean(selectedItem) && Boolean(cat.role) && String(selectedItem).toLowerCase() === String(cat.role).toLowerCase()) ||
+        (Boolean(selectedItem) && Boolean(cat.status) && String(selectedItem).toLowerCase() === String(cat.status).toLowerCase());
+    return (
+        <div
+            onClick={onClick}
+            className={`flex items-center rounded-5 cursor-pointer ${isCollapsed ? "justify-center py-12" : "justify-between p-10"
+                } ${isActive ? "bg-forth text-dark font-600" : "text-gray font-500"}`}
+            title={isCollapsed ? cat.name : ""}
+        >
+            <div className="flex items-center gap-8">
+                <div
+                    className="flex items-center justify-center rounded-5 flex-shrink-0"
+                    style={{ backgroundColor: cat.color || CATEGORY_COLORS[cat.name] || "#1e74db", width: 25, height: 25 }}
+                >
+                    {cat.icon ? (
+                        <Icon name={cat.icon} width="14" height="14" stroke="#ffffff" strokeWidth="2.5" />
+                    ) : (
+                        <p className="small-text text-white font-400">{cat.name?.charAt(0)?.toUpperCase()}</p>
+                    )}
+                </div>
+                {!isCollapsed && <p className="small-text line-clamp1">{cat.name}</p>}
+            </div>
+            {!isCollapsed && typeof cat.count === "number" && (
+                <p className={`mini-text ${isActive ? "text-secondary font-500" : "text-gray"}`}>
+                    {cat.count.toLocaleString()}
+                </p>
+            )}
+        </div>
+    );
+});
+
+CategoryItem.displayName = "CategoryItem";
+
+// Memoized Sidebar section
+const MainLayoutSidebar = React.memo(({
+    sidebarTitle,
+    items,
+    selectedItem,
+    isCollapsed,
+    onToggleCollapse,
+    onItemClick,
+}) => (
+    <aside
+        className={`${isCollapsed ? "w-5" : "w-20"} bg-white p-10 bordr sticky top-0 h-page overflow-hidden`}
+        style={{
+            transition: "width 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+            flexShrink: 0,
+            minWidth: isCollapsed ? 60 : 240,
+        }}
+    >
+        <div className={`flex items-center mt-6 mb-12 ${isCollapsed ? "justify-center" : "justify-between"}`}>
+            {!isCollapsed && <p className="small-text text-dark font-500 uppercase">{sidebarTitle}</p>}
+            <Button
+                onClick={onToggleCollapse}
+                bg="forth"
+                color="gray"
+                colorHover="dark"
+                version="icon"
+                icon={isCollapsed ? "ChevronRight" : "ChevronLeft"}
+                title={`${isCollapsed ? "Expand" : "Collapse"} ${sidebarTitle}`}
+            />
+        </div>
+
+        <div className="grid-cols-1 gap-4">
+            {items.map((item, idx) => (
+                <CategoryItem
+                    key={item.name || idx}
+                    cat={item}
+                    selectedItem={selectedItem}
+                    onClick={() => onItemClick(item)}
+                    isCollapsed={isCollapsed}
+                />
+            ))}
+        </div>
+    </aside>
+));
+
+MainLayoutSidebar.displayName = "MainLayoutSidebar";
+
+// Memoized Header & Tab Section
+const MainLayoutHeader = React.memo(({
+    headerIcon,
+    headerTitle,
+    headerSub,
+    quickAction,
+    quickStyle,
+    showTabControls,
+    tabs,
+    activeTab,
+    onTabChange,
+    filterDescription,
+    filterInputs,
+    hasActiveFilters,
+    onClearAllFilters,
+    showFilters,
+    onToggleFilters,
+}) => {
+    const showFilterControls = showTabControls && activeTab !== "Analytic" && (filterDescription || filterInputs || hasActiveFilters);
+
+    return (
+        <div className="sticky top-0 left-0 w-full z-99">
+            <div className="flex items-center justify-between bg-white px-14 py-9 bordb">
+                <div className="flex items-center gap-12">
+                    {headerIcon && (
+                        <div className="bg-light-primary text-primary rounded-5 icon-lg">
+                            {headerIcon}
+                        </div>
+                    )}
+                    <div>
+                        <h2 className="headmini-text text-dark font-500">{headerTitle}</h2>
+                        {headerSub && <p className="mini-text text-gray">{headerSub}</p>}
+                    </div>
+                </div>
+                {quickAction && <div className="text-right" style={quickStyle}>{quickAction}</div>}
+            </div>
+
+            {showTabControls && (
+                <div className="bg-white bordb">
+                    {tabs?.length > 0 && <Tab tabs={tabs} activeTab={activeTab} onChange={onTabChange} />}
+
+                    {showFilterControls && (
+                        <div>
+                            <div className="flex items-center justify-between py-12 px-12 bg-white">
+                                <p className="small-text text-gray">{filterDescription}</p>
+                                <div className="flex items-center gap-8">
+                                    {filterInputs && (
+                                        <Button
+                                            version="v2"
+                                            bg={showFilters ? "secondary" : "white"}
+                                            color={showFilters ? "white" : "secondary"}
+                                            border="secondary"
+                                            onClick={onToggleFilters}
+                                            className="flex items-center gap-4"
+                                        >
+                                            <Icon name="Filter" width="12" height="12" strokeWidth="2.5" className="mr-4" />
+                                            {showFilters ? "Hide Filters" : "Filters"}
+                                        </Button>
+                                    )}
+                                    {hasActiveFilters && (
+                                        <Button
+                                            text="Clear All"
+                                            version="v2"
+                                            bg="white"
+                                            color="danger"
+                                            border="danger"
+                                            onClick={onClearAllFilters}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+
+                            {showFilters && filterInputs && (
+                                <div className="bg-forth border-t border-b p-16 gap-12" style={{ transition: "all 0.3s ease" }}>
+                                    {filterInputs}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+});
+
+MainLayoutHeader.displayName = "MainLayoutHeader";
+
+// Main Layout Component
+const MainLayout = React.memo(({
+    sidebarTitle = "Categories",
+    sidebarItems = [],
+    selectedSidebarItem = "",
+    onSidebarItemClick = () => { },
+    headerIcon,
+    headerTitle,
+    headerSub,
+    quickAction,
+    showTabControls = true,
+    tabs = [],
+    activeTab = "",
+    onTabChange = () => { },
+    filterDescription = "",
+    hasActiveFilters = false,
+    onClearAllFilters = () => { },
+    filterInputs = null,
+    defaultShowFilters = false,
+    showSidebar = true,
+    quickStyle,
+    children,
+    userRole = "admin",
+}) => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(true);
+    const [showFilters, setShowFilters] = React.useState(defaultShowFilters);
+
+    const { role: currentRole, user, isAdmin } = useCurrentUser();
+    const effectiveIsAdmin = Boolean(isAdmin || (userRole && String(userRole).toLowerCase().includes("admin")));
+
+    // Filter out trash tab for non-admin roles as global guard
+    const sanitizedTabs = React.useMemo(() => {
+        if (!Array.isArray(tabs)) return tabs;
+        if (effectiveIsAdmin) return tabs;
+        return tabs.filter((t) => (t?.value || "").toLowerCase() !== "trash");
+    }, [tabs, effectiveIsAdmin]);
+
+    const activeRole = userRole && userRole !== "admin" ? userRole : (user || currentRole);
+
+    // Toggle handlers wrapped in useCallback
+    const handleToggleSidebar = React.useCallback(() => {
+        setIsSidebarCollapsed((prev) => !prev);
+    }, []);
+
+    const handleToggleFilters = React.useCallback(() => {
+        setShowFilters((prev) => !prev);
+    }, []);
+
+    // Compute default sidebar items from menuData using generic permission system
+    const defaultSidebarItems = React.useMemo(() => {
+        const items = [];
+
+        menuData.forEach((group) => {
+            if (!group.category) return;
+
+            group.category.forEach((sub) => {
+                if (!sub.status) return;
+                if (canAccessPage(activeRole, sub.name, group.name)) {
+                    items.push({
+                        name: sub.name,
+                        route: sub.route,
+                        icon: sub.icon,
+                        color: CATEGORY_COLORS[sub.name] || "#1e74db",
+                    });
+                }
+            });
+        });
+
+        return items;
+    }, [activeRole]);
+
+    const isUsingDefault = !sidebarItems || sidebarItems.length === 0;
+    const resolvedItems = isUsingDefault ? defaultSidebarItems : sidebarItems;
+
+    const resolvedSelectedItem = React.useMemo(() => {
+        if (!isUsingDefault) return selectedSidebarItem;
+        return defaultSidebarItems.find((item) => item.route === location.pathname)?.name || "";
+    }, [isUsingDefault, selectedSidebarItem, defaultSidebarItems, location.pathname]);
+
+
+    const handleItemClick = React.useCallback((item) => {
+        if (isUsingDefault) {
+            navigate(item.route);
+        } else {
+            onSidebarItemClick(item.name);
+        }
+    }, [isUsingDefault, navigate, onSidebarItemClick]);
+
+    return (
+        <Container version="v0">
+            <div className="flex w-full items-start">
+                {/* Memoized Sidebar */}
+                {showSidebar && (
+                    <MainLayoutSidebar
+                        sidebarTitle={sidebarTitle}
+                        items={resolvedItems}
+                        selectedItem={resolvedSelectedItem}
+                        isCollapsed={isSidebarCollapsed}
+                        onToggleCollapse={handleToggleSidebar}
+                        onItemClick={handleItemClick}
+                    />
+                )}
+
+                {/* Main Content Area */}
+                <div
+                    className={!showSidebar ? "w-full" : isSidebarCollapsed ? "w-95" : "w-80"}
+                    style={{ transition: "width 0.25s cubic-bezier(0.4, 0, 0.2, 1)", minWidth: 0 }}
+                >
+                    {/* Memoized Header & Tabs */}
+                    <MainLayoutHeader
+                        headerIcon={headerIcon}
+                        headerTitle={headerTitle}
+                        headerSub={headerSub}
+                        quickAction={quickAction}
+                        quickStyle={quickStyle}
+                        showTabControls={showTabControls}
+                        tabs={sanitizedTabs}
+                        activeTab={activeTab}
+                        onTabChange={onTabChange}
+                        filterDescription={filterDescription}
+                        filterInputs={filterInputs}
+                        hasActiveFilters={hasActiveFilters}
+                        onClearAllFilters={onClearAllFilters}
+                        showFilters={showFilters}
+                        onToggleFilters={handleToggleFilters}
+                    />
+
+                    {/* Children Content Area */}
+                    <div className="p-12 bg-forth">{children}</div>
+                </div>
+            </div>
+        </Container>
+    );
+});
+
+MainLayout.displayName = "MainLayout";
+
+export default MainLayout;
