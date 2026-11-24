@@ -893,6 +893,87 @@ const configData = {
   ],
 };
 
+export const ROLE_ACCESS_CONFIG = [
+  {
+    page: "Full_Access",
+    label: "Full Access",
+    permissions: ["Full_Access"],
+  },
+  {
+    page: "Dashboard",
+    label: "Dashboard",
+    permissions: ["view_dashboard"],
+  },
+  {
+    page: "Profile",
+    label: "Profile",
+    permissions: ["view_profile"],
+  },
+  {
+    page: "Products Category",
+    label: "Products Category",
+    permissions: [
+      "view_product_categories",
+      "edit_product_categories",
+      "trash_product_categories",
+    ],
+  },
+  {
+    page: "Blogs Category",
+    label: "Blogs Category",
+    permissions: [
+      "view_blog_categories",
+      "edit_blog_categories",
+      "trash_blog_categories",
+    ],
+  },
+  {
+    page: "Products",
+    label: "Products",
+    permissions: [
+      "view_products",
+      "edit_products",
+      "trash_products",
+    ],
+  },
+  {
+    page: "Blogs",
+    label: "Blogs",
+    permissions: [
+      "view_blogs",
+      "edit_blogs",
+      "trash_blogs",
+    ],
+  },
+  {
+    page: "SEO",
+    label: "SEO",
+    permissions: [
+      "view_seo",
+      "edit_seo",
+      "trash_seo",
+    ],
+  },
+  {
+    page: "System Users",
+    label: "System Users",
+    permissions: [
+      "view_systemuser",
+      "edit_systemuser",
+      "trash_systemuser",
+    ],
+  },
+  {
+    page: "Roles",
+    label: "Roles",
+    permissions: [
+      "view_roles",
+      "edit_roles",
+      "trash_roles",
+    ],
+  },
+];
+
 export {
   AVATAR_PALETTE,
   RATING_OPTIONS,

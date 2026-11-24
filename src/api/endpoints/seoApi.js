@@ -36,7 +36,10 @@ export const createSeoApi = crud.create;
 export const updateSeoApi = crud.update;
 export const deleteSeoApi = crud.delete;
 export const bulkDeleteSeoApi = crud.bulkDelete;
-export const seedSeoApi = () => handleRequest(() => axiosInstance.post("/api/seo/seed"));
+export const seedSeoApi = (force = false) =>
+  handleRequest(() =>
+    axiosInstance.post(force ? "/api/seo/seed?force=true" : "/api/seo/seed")
+  );
 
 export default {
   getAll: getSeoListApi,

@@ -32,6 +32,12 @@ const Button = React.memo(
     iconPosition = "left",
     iconFill,
     iconStroke,
+    colorHover,
+    bgHover,
+    borderHover,
+    hoverColor,
+    hoverBg,
+    hoverBorder,
     ...props
   }) => {
     const isOutline = variant === "outline";

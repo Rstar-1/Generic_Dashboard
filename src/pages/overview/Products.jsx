@@ -19,7 +19,8 @@ import {
 import { useCurrentUser } from "../../utils";
 import { normalizeCreator } from "../../feature/sliceHelper";
 import { useProducts } from "../../feature/productSlice";
-import { useProductCategories } from "../../feature/productCategorySlice";
+import { useProductCategories, normalizeCategory } from "../../feature/productCategorySlice";
+import { getCategoriesApi } from "../../api/endpoints/productCategoryApi";
 import { getProductsApi } from "../../api/endpoints/productApi";
 
 const ITEMS_PER_PAGE = 5;
@@ -57,43 +58,100 @@ const OverviewProducts = () => {
 
     const {
         categories,
-        getCategories,
+        allCategories,
+        getAllCategories,
     } = useProductCategories();
 
-    // Fetch categories on mount for filter dropdown and modal select (only if empty)
-    React.useEffect(() => {
-        if (!categories || categories.length === 0) {
-            getCategories({ isDeleted: false, limit: 100 });
+    // Core component states declared upfront to avoid TDZ / initialization order errors
+    const [activeTab, setActiveTab] = React.useState("all");
+    const [selectedCategory, setSelectedCategory] = React.useState("All Products");
+    const [searchQuery, setSearchQuery] = React.useState("");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+    const [categoryFilter, setCategoryFilter] = React.useState("all");
+    const [currentPage, setCurrentPage] = React.useState(1);
+    const [selectedProductIds, setSelectedProductIds] = React.useState([]);
+
+    // Modals state
+    const [isModalOpen, setIsModalOpen] = React.useState(false);
+    const [editingProduct, setEditingProduct] = React.useState(null);
+    const [isReviewModalOpen, setIsReviewModalOpen] = React.useState(false);
+    const [reviewTargetProduct, setReviewTargetProduct] = React.useState(null);
+
+    const [allCategoriesState, setAllCategoriesState] = React.useState([]);
+
+    const fetchAllCategoriesData = React.useCallback(async () => {
+        getAllCategories?.();
+        try {
+            const res = await getCategoriesApi({ isDeleted: false, limit: "all" });
+            const payload = res?.data !== undefined ? res.data : res;
+            const list =
+                payload?.categories ||
+                (Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : []);
+            if (Array.isArray(list) && list.length > 0) {
+                const norm = list.map(normalizeCategory);
+                setAllCategoriesState(norm);
+                try {
+                    localStorage.setItem("cachedProductCategories", JSON.stringify(norm));
+                } catch {}
+            }
+        } catch (err) {
+            console.error("Failed to load product categories:", err);
         }
-    }, [categories?.length, getCategories]);
+    }, [getAllCategories]);
+
+    // Always fetch all active product categories on mount and when modal opens
+    React.useEffect(() => {
+        fetchAllCategoriesData();
+    }, [fetchAllCategoriesData]);
+
+    React.useEffect(() => {
+        if (isModalOpen) {
+            fetchAllCategoriesData();
+        }
+    }, [isModalOpen, fetchAllCategoriesData]);
+
+    const activeCategories = React.useMemo(() => {
+        if (allCategoriesState.length > 0) return allCategoriesState;
+        if (allCategories && allCategories.length > 0) return allCategories;
+        return categories || [];
+    }, [allCategoriesState, allCategories, categories]);
 
     const dynamicCategoryFilterOptions = React.useMemo(() => {
         const opts = [{ label: "All Categories", value: "all" }];
-        (categories || []).forEach((c) => {
+        const seen = new Set();
+        (activeCategories || []).forEach((c) => {
             if (c.isDeleted) return;
-            const catId = c._id || c.id;
+            const catId = String(c._id || c.id || "");
             const name = c.categoryName || c.name;
-            if (catId && name) {
-                opts.push({ label: name, value: String(catId) });
+            if (catId && name && !seen.has(catId)) {
+                seen.add(catId);
+                opts.push({ label: name, value: catId });
             }
         });
         return opts;
-    }, [categories]);
+    }, [activeCategories]);
 
     const dynamicCategoryModalOptions = React.useMemo(() => {
         const opts = [];
-        (categories || []).forEach((c) => {
+        const seen = new Set();
+        (activeCategories || []).forEach((c) => {
             if (c.isDeleted) return;
-            const catId = c._id || c.id;
+            const catId = String(c._id || c.id || "");
             const name = c.categoryName || c.name;
-            if (catId && name) {
-                opts.push({ label: name, value: String(catId) });
+            if (catId && name && !seen.has(catId)) {
+                seen.add(catId);
+                opts.push({ label: name, value: catId });
             }
         });
+        if (editingProduct?.categoryId) {
+            const rawCatId = String(editingProduct.categoryId?._id || editingProduct.categoryId);
+            const rawCatName = editingProduct.categoryId?.categoryName || editingProduct.category || rawCatId;
+            if (rawCatId && !seen.has(rawCatId)) {
+                opts.unshift({ label: rawCatName, value: rawCatId });
+            }
+        }
         return opts;
-    }, [categories]);
-
-    const [activeTab, setActiveTab] = React.useState("all");
+    }, [activeCategories, editingProduct]);
 
     // Restrict trash tab to admin role only
     const visibleTabs = React.useMemo(() => {
@@ -106,19 +164,6 @@ const OverviewProducts = () => {
             setActiveTab("all");
         }
     }, [isAdmin, activeTab]);
-    const [selectedCategory, setSelectedCategory] = React.useState("All Products");
-    const [searchQuery, setSearchQuery] = React.useState("");
-    const [statusFilter, setStatusFilter] = React.useState("all");
-    const [categoryFilter, setCategoryFilter] = React.useState("all");
-    const [currentPage, setCurrentPage] = React.useState(1);
-    const [selectedProductIds, setSelectedProductIds] = React.useState([]);
-
-    // Modals
-    const [isModalOpen, setIsModalOpen] = React.useState(false);
-    const [editingProduct, setEditingProduct] = React.useState(null);
-
-    const [isReviewModalOpen, setIsReviewModalOpen] = React.useState(false);
-    const [reviewTargetProduct, setReviewTargetProduct] = React.useState(null);
 
     // Fetch products with backend query parameters
     const fetchProductData = React.useCallback(() => {

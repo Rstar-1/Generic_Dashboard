@@ -27,56 +27,85 @@ const DEFAULT_ROLE_OPTIONS = [
 
 
 
-const DEFAULT_PERMISSIONS = [
-  "Full_Access",
-  "dashboard",
-  "view_dashboard",
-  "view_profile",
-  "manage_profile",
-  "view_product_categories",
-  "manage_product_categories",
-  "view_blog_categories",
-  "manage_blog_categories",
-  "view_products",
-  "manage_products",
-  "view_blogs",
-  "manage_blogs",
-  "view_seo",
-  "manage_seo",
-  "view_systemuser",
-  "manage_users",
-  "view_roles",
-  "manage_roles",
-  "view_domain",
-  "manage_domain",
-  "view_architecture",
-  "view_campaign",
-  "manage_campaign",
-  "view_location",
-  "manage_location",
-  "view_leads",
-  "manage_leads",
-];
-
-const DEFAULT_PAGES = [
-  "Full_Access",
-  "Dashboard",
-  "Profile",
-  "Products Category",
-  "Blogs Category",
-  "Products",
-  "Blogs",
-  "SEO",
-  "System Users",
-  "Roles",
-  "Domain",
-  "Architecture",
-  "Campaign",
-  "Whatsapp Campaign",
-  "Gmail Campaign",
-  "SMS Campaign",
-  "Location",
-  "Leads",
+export const ROLE_ACCESS_CONFIG = [
+  {
+    page: "Full_Access",
+    label: "Full Access",
+    permissions: ["Full_Access"],
+  },
+  {
+    page: "Dashboard",
+    label: "Dashboard",
+    permissions: ["view_dashboard"],
+  },
+  {
+    page: "Profile",
+    label: "Profile",
+    permissions: ["view_profile"],
+  },
+  {
+    page: "Products Category",
+    label: "Products Category",
+    permissions: [
+      "view_product_categories",
+      "edit_product_categories",
+      "trash_product_categories",
+    ],
+  },
+  {
+    page: "Blogs Category",
+    label: "Blogs Category",
+    permissions: [
+      "view_blog_categories",
+      "edit_blog_categories",
+      "trash_blog_categories",
+    ],
+  },
+  {
+    page: "Products",
+    label: "Products",
+    permissions: [
+      "view_products",
+      "edit_products",
+      "trash_products",
+    ],
+  },
+  {
+    page: "Blogs",
+    label: "Blogs",
+    permissions: [
+      "view_blogs",
+      "edit_blogs",
+      "trash_blogs",
+    ],
+  },
+  {
+    page: "SEO",
+    label: "SEO",
+    permissions: [
+      "view_seo",
+      "edit_seo",
+      "trash_seo",
+    ],
+  },
+  {
+    page: "System Users",
+    label: "System Users",
+    permissions: [
+      "view_systemuser",
+      "edit_systemuser",
+      "trash_systemuser",
+    ],
+  },
+  {
+    page: "Roles",
+    label: "Roles",
+    permissions: [
+      "view_roles",
+      "edit_roles",
+      "trash_roles",
+    ],
+  },
 ];
 
 const Role = () => {
@@ -96,6 +125,7 @@ const Role = () => {
       setActiveTab("all");
     }
   }, [isAdmin, activeTab]);
+
   const [roleFilter, setRoleFilter] = React.useState("all");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("all");
@@ -143,7 +173,7 @@ const Role = () => {
     showToast("Role filters reset", "info");
   }, []);
 
-  const handleViewRole = React.useCallback(() => {}, []);
+  const handleViewRole = React.useCallback(() => { }, []);
 
   const handleEditRole = React.useCallback((row) => {
     setEditingRole(row);
@@ -228,20 +258,80 @@ const Role = () => {
   }, [roles]);
 
   const permissionOptions = React.useMemo(() => {
-    const set = new Set(DEFAULT_PERMISSIONS);
-    (roles || []).forEach((r) => Array.isArray(r.permissions) && r.permissions.forEach((p) => p && set.add(p)));
-    return Array.from(set)
-      .sort((a, b) => (a === "Full_Access" ? -1 : b === "Full_Access" ? 1 : a.localeCompare(b)))
-      .map((val) => ({ label: val, value: val }));
-  }, [roles]);
+    const list = [];
+    ROLE_ACCESS_CONFIG.forEach((item) => {
+      (item.permissions || []).forEach((perm) => {
+        if (perm && !list.some((o) => o.value === perm)) {
+          list.push({ label: perm, value: perm });
+        }
+      });
+    });
+    return list;
+  }, []);
 
   const pageOptions = React.useMemo(() => {
-    const set = new Set(DEFAULT_PAGES);
-    (roles || []).forEach((r) => Array.isArray(r.pages) && r.pages.forEach((p) => p && set.add(p)));
-    return Array.from(set)
-      .sort((a, b) => (a === "Full_Access" ? -1 : b === "Full_Access" ? 1 : a.localeCompare(b)))
-      .map((val) => ({ label: val, value: val }));
-  }, [roles]);
+    return ROLE_ACCESS_CONFIG.map((item) => ({
+      label: item.label || item.page,
+      value: item.page,
+    }));
+  }, []);
+
+  const [roleFormValues, setRoleFormValues] = React.useState({
+    rolename: "",
+    pages: ["Full_Access"],
+    permissions: ["Full_Access"],
+    isActive: true,
+  });
+
+  React.useEffect(() => {
+    if (isModalOpen) {
+      if (editingRole) {
+        setRoleFormValues({
+          rolename: editingRole.rolename || editingRole.name || "",
+          pages: Array.isArray(editingRole.pages) && editingRole.pages.length ? editingRole.pages : ["Full_Access"],
+          permissions: Array.isArray(editingRole.permissions) && editingRole.permissions.length ? editingRole.permissions : ["Full_Access"],
+          isActive: editingRole.isActive !== undefined ? Boolean(editingRole.isActive) : true,
+        });
+      } else {
+        setRoleFormValues({
+          rolename: "",
+          pages: ["Full_Access"],
+          permissions: ["Full_Access"],
+          isActive: true,
+        });
+      }
+    }
+  }, [isModalOpen, editingRole]);
+
+  const handleRoleFormChange = React.useCallback((name, value) => {
+    if (name === "pages") {
+      const selectedPages = Array.isArray(value) ? value : [value].filter(Boolean);
+      let mappedPerms = [];
+      if (selectedPages.includes("Full_Access")) {
+        mappedPerms = ["Full_Access"];
+      } else {
+        const permSet = new Set();
+        selectedPages.forEach((p) => {
+          const cfg = ROLE_ACCESS_CONFIG.find((item) => item.page === p);
+          if (cfg?.permissions) {
+            cfg.permissions.forEach((perm) => permSet.add(perm));
+          }
+        });
+        mappedPerms = Array.from(permSet);
+      }
+
+      setRoleFormValues((prev) => ({
+        ...prev,
+        pages: selectedPages,
+        permissions: mappedPerms,
+      }));
+    } else {
+      setRoleFormValues((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  }, []);
 
   // Form fields for Add / Edit Role Modal via generic CrudForm helper
   const formFields = React.useMemo(
@@ -426,6 +516,8 @@ const Role = () => {
         <FormBuilder
           key={editingRole ? (editingRole.id || editingRole._id) : "new-role"}
           fields={formFields}
+          values={roleFormValues}
+          onChange={handleRoleFormChange}
           submitType="json"
           onSubmit={handleFormSubmit}
           submitText={editingRole ? "Update Role" : "Submit & Save Role"}

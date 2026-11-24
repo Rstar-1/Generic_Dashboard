@@ -1,3 +1,6 @@
+import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { createAsyncThunk } from "@reduxjs/toolkit";
 import { createEntitySlice, normalizeCreator } from "./sliceHelper.js";
 import {
   getCategoriesApi,
@@ -54,6 +57,24 @@ export const normalizeCategory = (c) => {
   };
 };
 
+export const fetchAllCategories = createAsyncThunk(
+  "productCategories/fetchAllCategories",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await getCategoriesApi({ isDeleted: false, limit: "all" });
+      const raw = res?.data !== undefined ? res.data : res;
+      const list = raw?.categories || (Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []));
+      const normalized = list.map(normalizeCategory);
+      try {
+        localStorage.setItem("cachedProductCategories", JSON.stringify(normalized));
+      } catch {}
+      return normalized;
+    } catch (err) {
+      return rejectWithValue(err?.message || "Failed to load categories");
+    }
+  }
+);
+
 const entity = createEntitySlice({
   name: "productCategories",
   itemKey: "categories",
@@ -68,6 +89,14 @@ const entity = createEntitySlice({
     bulkDelete: bulkDeleteCategoriesApi,
   },
   normalizer: normalizeCategory,
+  initialState: {
+    allCategories: [],
+  },
+  extraReducers: (builder) => {
+    builder.addCase(fetchAllCategories.fulfilled, (state, action) => {
+      state.allCategories = action.payload;
+    });
+  },
 });
 
 export const {
@@ -105,7 +134,28 @@ export const selectCategoriesPagination = (state) =>
 export const selectCurrentCategory = (state) =>
   state.productCategories?.currentItem || state.categories?.currentItem || null;
 
+export const selectAllCategories = (state) =>
+  state.productCategories?.allCategories?.length
+    ? state.productCategories.allCategories
+    : state.productCategories?.categories || [];
+
 export const productCategorySlice = entity.slice;
-export const useProductCategories = entity.useHook;
-export const useCategories = entity.useHook;
+
+export const useProductCategories = () => {
+  const base = entity.useHook();
+  const dispatch = useDispatch();
+  const allCategories = useSelector(selectAllCategories);
+  const getAllCategories = React.useCallback(
+    () => dispatch(fetchAllCategories()),
+    [dispatch]
+  );
+  return {
+    ...base,
+    allCategories,
+    getAllCategories,
+    fetchAllCategories: getAllCategories,
+  };
+};
+
+export const useCategories = useProductCategories;
 export default entity.reducer;

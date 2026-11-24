@@ -1,3 +1,4 @@
+import { createAsyncThunk } from "@reduxjs/toolkit";
 import { createEntitySlice, normalizeCreator } from "./sliceHelper.js";
 import {
   getSeoListApi,
@@ -33,21 +34,87 @@ export {
 export const normalizeSeo = (s) => {
   if (!s || typeof s !== "object") return s;
   const id = s.id || (s._id?.$oid ? s._id.$oid : s._id) || "";
-  const pageTitle = s.pageTitle || s.title || "";
+  const pageName = s.page || s.name || s.pageName || "Page";
+  const pageTitle = s.pageTitle || s.title || pageName;
   const createdby = normalizeCreator(s.createdBy, s.createdby);
+
+  const breadcrumbsArr = Array.isArray(s.breadcrumbs)
+    ? s.breadcrumbs
+    : typeof s.breadcrumbs === "string"
+    ? (() => {
+        try {
+          return JSON.parse(s.breadcrumbs);
+        } catch {
+          return [];
+        }
+      })()
+    : [];
+
+  const breadcrumbsText =
+    s.breadcrumbsText ||
+    (breadcrumbsArr.length > 0
+      ? breadcrumbsArr.map((b) => b?.label || b).join(" > ")
+      : pageName);
+
+  const firstKeyword =
+    typeof s.keywords === "string"
+      ? s.keywords.split(",")[0]?.trim()
+      : Array.isArray(s.keywords)
+      ? s.keywords[0]
+      : "";
+  const targetKeyword = s.targetKeyword || firstKeyword || "SEO";
+
+  const path = s.path || "/";
+  const canonical =
+    s.canonical ||
+    (path.startsWith("http")
+      ? path
+      : `https://ashmitavinyls.com${path.startsWith("/") ? "" : "/"}${path}`);
+
+  const seoScore = s.seoScore || s.score || "92 / 100";
+  const status =
+    s.status ||
+    (s.noindex ? "NoIndex" : s.isActive !== false ? "Indexed" : "Inactive");
+  const lastCrawled = s.lastCrawled || s.updatedAt || s.createdAt || "2026-08-12";
 
   return {
     ...s,
     _id: id,
     id,
+    pageName,
+    name: s.name || pageName,
+    page: s.page || pageName,
+    path,
     pageTitle,
     title: pageTitle,
     createdby,
     createdBy: createdby,
+    creatorName: createdby.fullname || createdby.name || "Admin",
+    createdByName: createdby.fullname || createdby.name || "Admin",
+    breadcrumbs: breadcrumbsArr,
+    breadcrumbsText,
+    targetKeyword,
+    canonical,
+    seoScore,
+    status,
+    lastCrawled,
     isActive: Boolean(s.isActive ?? true),
     isDeleted: Boolean(s.isDeleted ?? false),
   };
 };
+
+export const seedInitialSeoThunk = createAsyncThunk(
+  "seos/seedInitialSeo",
+  async (force = false, { rejectWithValue, dispatch }) => {
+    try {
+      const res = await seedSeoApi(force);
+      dispatch(entity.thunks.fetchSeos());
+      return res;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data || err?.message || "Failed to seed SEO data");
+    }
+  }
+);
 
 const entity = createEntitySlice({
   name: "seos",
@@ -64,7 +131,7 @@ const entity = createEntitySlice({
   },
   normalizer: normalizeSeo,
   customHookMethods: {
-    seedInitialSeo: (dispatch) => () => dispatch(entity.thunks.fetchSeos()),
+    seedInitialSeo: (dispatch) => (force = false) => dispatch(seedInitialSeoThunk(force)),
   },
 });
 

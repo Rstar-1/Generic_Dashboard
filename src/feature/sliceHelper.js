@@ -471,6 +471,14 @@ export const createEntitySlice = ({
         (p) => dispatch(fetchThunk(p)),
         [dispatch]
       ),
+      [`get${capSingular}List`]: React.useCallback(
+        (p) => dispatch(fetchThunk(p)),
+        [dispatch]
+      ),
+      [`fetch${capSingular}List`]: React.useCallback(
+        (p) => dispatch(fetchThunk(p)),
+        [dispatch]
+      ),
       [`add${capSingular}`]: React.useCallback(
         (d) => dispatch(createThunk(d)),
         [dispatch]
@@ -503,9 +511,21 @@ export const createEntitySlice = ({
         (d) => dispatch(bulkDeleteThunk(d)),
         [dispatch]
       ),
+      [`bulkRemove${capSingular}`]: React.useCallback(
+        (d, perm) => dispatch(bulkDeleteThunk(d, perm)),
+        [dispatch]
+      ),
+      [`bulkDelete${capSingular}`]: React.useCallback(
+        (d, perm) => dispatch(bulkDeleteThunk(d, perm)),
+        [dispatch]
+      ),
       dispatch,
-      ...Object.fromEntries(
-        Object.entries(customHookMethods).map(([k, fn]) => [k, fn(dispatch)])
+      ...React.useMemo(
+        () =>
+          Object.fromEntries(
+            Object.entries(customHookMethods).map(([k, fn]) => [k, fn(dispatch)])
+          ),
+        [dispatch]
       ),
     };
   };

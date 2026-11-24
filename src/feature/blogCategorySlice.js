@@ -1,3 +1,6 @@
+import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { createAsyncThunk } from "@reduxjs/toolkit";
 import { createEntitySlice, normalizeCreator } from "./sliceHelper.js";
 import {
   getBlogCategoriesApi,
@@ -53,6 +56,24 @@ export const normalizeBlogCategory = (c) => {
   };
 };
 
+export const fetchAllBlogCategories = createAsyncThunk(
+  "blogCategories/fetchAllBlogCategories",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await getBlogCategoriesApi({ isDeleted: false, limit: "all" });
+      const raw = res?.data !== undefined ? res.data : res;
+      const list = raw?.categories || (Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []));
+      const normalized = list.map(normalizeBlogCategory);
+      try {
+        localStorage.setItem("cachedBlogCategories", JSON.stringify(normalized));
+      } catch {}
+      return normalized;
+    } catch (err) {
+      return rejectWithValue(err?.message || "Failed to load blog categories");
+    }
+  }
+);
+
 const entity = createEntitySlice({
   name: "blogCategories",
   itemKey: "categories",
@@ -67,6 +88,14 @@ const entity = createEntitySlice({
     bulkDelete: bulkDeleteBlogCategoriesApi,
   },
   normalizer: normalizeBlogCategory,
+  initialState: {
+    allCategories: [],
+  },
+  extraReducers: (builder) => {
+    builder.addCase(fetchAllBlogCategories.fulfilled, (state, action) => {
+      state.allCategories = action.payload;
+    });
+  },
 });
 
 export const {
@@ -96,6 +125,27 @@ export const {
   selectCurrentBlogCategory,
 } = entity.selectors;
 
+export const selectAllBlogCategories = (state) =>
+  state.blogCategories?.allCategories?.length
+    ? state.blogCategories.allCategories
+    : state.blogCategories?.categories || [];
+
 export const blogCategorySlice = entity.slice;
-export const useBlogCategories = entity.useHook;
+
+export const useBlogCategories = () => {
+  const base = entity.useHook();
+  const dispatch = useDispatch();
+  const allCategories = useSelector(selectAllBlogCategories);
+  const getAllBlogCategories = React.useCallback(
+    () => dispatch(fetchAllBlogCategories()),
+    [dispatch]
+  );
+  return {
+    ...base,
+    allCategories,
+    getAllBlogCategories,
+    fetchAllBlogCategories: getAllBlogCategories,
+  };
+};
+
 export default entity.reducer;

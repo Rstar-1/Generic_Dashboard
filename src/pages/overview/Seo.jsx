@@ -17,7 +17,6 @@ import {
     TABS,
 } from "../../utils/apiData";
 import { useSeo } from "../../feature/seoSlice";
-import { getSeoListApi } from "../../api/endpoints/seoApi";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -41,8 +40,8 @@ const Seo = () => {
     const {
         seos,
         total,
-        counts: backendCounts,
         loading,
+        counts: backendCounts,
         getSeoList,
         createSeo,
         updateSeo,
@@ -103,25 +102,6 @@ const Seo = () => {
         getSeoList(params);
     }, [currentPage, activeTab, statusFilter, typeFilter, searchQuery, getSeoList]);
 
-    const statusCounts = React.useMemo(() => {
-        if (backendCounts) {
-            return {
-                all: backendCounts.all ?? total,
-                active: backendCounts.active ?? 0,
-                inactive: backendCounts.inactive ?? 0,
-            };
-        }
-        const active = seos.filter((s) => s.isActive && !s.isDeleted).length;
-        const inactive = seos.filter((s) => !s.isActive && !s.isDeleted).length;
-        return {
-            all: total || (active + inactive),
-            active,
-            inactive,
-        };
-    }, [backendCounts, seos, total]);
-
-    const fetchStatusCounts = React.useCallback(() => {}, []);
-
     React.useEffect(() => {
         fetchSeoData();
     }, [fetchSeoData]);
@@ -132,7 +112,7 @@ const Seo = () => {
             const updated = (seos || []).find(
                 (s) => (s.id && s.id === viewingSeo.id) || (s._id && s._id === viewingSeo._id)
             );
-            if (updated) {
+            if (updated && (updated.updatedAt !== viewingSeo.updatedAt || updated.id !== viewingSeo.id)) {
                 setViewingSeo(updated);
             }
         }
@@ -140,9 +120,9 @@ const Seo = () => {
 
     // Dynamic sidebar items with real-time total active & inactive counts
     const sidebarItems = React.useMemo(() => {
-        const totalAll = activeTab === "trash" ? total : (statusCounts.all || total);
-        const totalActive = statusCounts.active;
-        const totalInactive = statusCounts.inactive;
+        const totalAll = activeTab === "trash" ? (backendCounts?.trash ?? total) : (backendCounts?.all ?? total);
+        const totalActive = backendCounts?.active ?? 0;
+        const totalInactive = backendCounts?.inactive ?? 0;
 
         return (seoSidebarData.items || []).map((item) => {
             let countVal = 0;
@@ -160,7 +140,7 @@ const Seo = () => {
                 count: countVal,
             };
         });
-    }, [statusCounts, total, activeTab]);
+    }, [backendCounts, total, activeTab]);
 
     // Handlers for search and filters
     const handleSearchChange = React.useCallback((val) => {
@@ -277,12 +257,11 @@ const Seo = () => {
                 );
                 setSelectedSeoIds((prev) => prev.filter((x) => x !== seoId && x !== row.id && x !== row._id));
                 fetchSeoData();
-                fetchStatusCounts();
             } catch (err) {
                 showToast(err?.message || "Failed to delete SEO configuration", "danger");
             }
         },
-        [activeTab, deleteSeo, fetchSeoData, fetchStatusCounts]
+        [activeTab, deleteSeo, fetchSeoData]
     );
 
     const handleBulkDelete = React.useCallback(async () => {
@@ -296,22 +275,20 @@ const Seo = () => {
             );
             setSelectedSeoIds([]);
             fetchSeoData();
-            fetchStatusCounts();
         } catch (err) {
             showToast(err?.message || "Failed to delete selected SEO configurations", "danger");
         }
-    }, [selectedSeoIds, activeTab, bulkDeleteSeo, fetchSeoData, fetchStatusCounts]);
+    }, [selectedSeoIds, activeTab, bulkDeleteSeo, fetchSeoData]);
 
     const handleSeedInitialData = React.useCallback(async () => {
         try {
             const res = await seedInitialSeo(true).unwrap();
             showToast(res?.message || "Successfully seeded initial SEO configurations!", "success");
             fetchSeoData();
-            fetchStatusCounts();
         } catch (err) {
             showToast(err?.message || "Failed to seed SEO data", "danger");
         }
-    }, [seedInitialSeo, fetchSeoData, fetchStatusCounts]);
+    }, [seedInitialSeo, fetchSeoData]);
 
     const handleExportSeo = React.useCallback(() => {
         navigator.clipboard?.writeText(JSON.stringify(seos, null, 2));
@@ -353,7 +330,9 @@ const Seo = () => {
                 isActive: sanitizeCrudFormData(formData, { userRole: currentUser, isEditing: Boolean(editingSeo) }).isActive,
             };
 
-            if (currentUser?.id || currentUser?._id) {
+            if (editingSeo?.createdBy) {
+                payload.createdBy = editingSeo.createdBy?._id || editingSeo.createdBy?.id || editingSeo.createdBy;
+            } else if (currentUser?.id || currentUser?._id) {
                 payload.createdBy = currentUser.id || currentUser._id;
             }
 
@@ -368,12 +347,11 @@ const Seo = () => {
                 setIsSeoModalOpen(false);
                 setEditingSeo(null);
                 fetchSeoData();
-                fetchStatusCounts();
             } catch (err) {
                 showToast(err?.message || "Failed to save SEO configuration", "danger");
             }
         },
-        [editingSeo, currentUser, updateSeo, createSeo, fetchSeoData, fetchStatusCounts]
+        [editingSeo, currentUser, updateSeo, createSeo, fetchSeoData]
     );
 
     const hasActiveFilters = React.useMemo(
@@ -638,6 +616,11 @@ const Seo = () => {
                                         src={viewingSeo.image}
                                         alt={viewingSeo.title || "OpenGraph Preview"}
                                         className="w-full h-160 object-cover bg-forth border-b border-ec"
+                                        referrerPolicy="no-referrer"
+                                        crossOrigin="anonymous"
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = "none";
+                                        }}
                                     />
                                 ) : (
                                     <div className="w-full h-100 flex items-center justify-center bg-forth text-gray font-12">

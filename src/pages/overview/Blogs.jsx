@@ -19,7 +19,8 @@ import {
 import { useCurrentUser } from "../../utils";
 import { normalizeCreator } from "../../feature/sliceHelper";
 import { useBlogs } from "../../feature/blogSlice";
-import { useBlogCategories } from "../../feature/blogCategorySlice";
+import { useBlogCategories, normalizeBlogCategory } from "../../feature/blogCategorySlice";
+import { getBlogCategoriesApi } from "../../api/endpoints/blogCategoryApi";
 import { getBlogsApi } from "../../api/endpoints/blogApi";
 
 const ITEMS_PER_PAGE = 5;
@@ -52,43 +53,100 @@ const OverviewBlogs = () => {
 
     const {
         categories,
-        getBlogCategories,
+        allCategories,
+        getAllBlogCategories,
     } = useBlogCategories();
 
-    // Fetch categories on mount for filter dropdown and modal select (only if empty)
-    React.useEffect(() => {
-        if (!categories || categories.length === 0) {
-            getBlogCategories({ isDeleted: false, limit: 100 });
+    // Core component states declared upfront to avoid TDZ / initialization order errors
+    const [activeTab, setActiveTab] = React.useState("all");
+    const [selectedCategory, setSelectedCategory] = React.useState("All Articles");
+    const [searchQuery, setSearchQuery] = React.useState("");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+    const [categoryFilter, setCategoryFilter] = React.useState("all");
+    const [currentPage, setCurrentPage] = React.useState(1);
+    const [selectedBlogIds, setSelectedBlogIds] = React.useState([]);
+
+    // Modals state
+    const [isModalOpen, setIsModalOpen] = React.useState(false);
+    const [editingBlog, setEditingBlog] = React.useState(null);
+    const [isReviewModalOpen, setIsReviewModalOpen] = React.useState(false);
+    const [reviewTargetBlog, setReviewTargetBlog] = React.useState(null);
+
+    const [allCategoriesState, setAllCategoriesState] = React.useState([]);
+
+    const fetchAllCategoriesData = React.useCallback(async () => {
+        getAllBlogCategories?.();
+        try {
+            const res = await getBlogCategoriesApi({ isDeleted: false, limit: "all" });
+            const payload = res?.data !== undefined ? res.data : res;
+            const list =
+                payload?.categories ||
+                (Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : []);
+            if (Array.isArray(list) && list.length > 0) {
+                const norm = list.map(normalizeBlogCategory);
+                setAllCategoriesState(norm);
+                try {
+                    localStorage.setItem("cachedBlogCategories", JSON.stringify(norm));
+                } catch {}
+            }
+        } catch (err) {
+            console.error("Failed to load blog categories:", err);
         }
-    }, [categories?.length, getBlogCategories]);
+    }, [getAllBlogCategories]);
+
+    // Always fetch all active blog categories on mount and when modal opens
+    React.useEffect(() => {
+        fetchAllCategoriesData();
+    }, [fetchAllCategoriesData]);
+
+    React.useEffect(() => {
+        if (isModalOpen) {
+            fetchAllCategoriesData();
+        }
+    }, [isModalOpen, fetchAllCategoriesData]);
+
+    const activeCategories = React.useMemo(() => {
+        if (allCategoriesState.length > 0) return allCategoriesState;
+        if (allCategories && allCategories.length > 0) return allCategories;
+        return categories || [];
+    }, [allCategoriesState, allCategories, categories]);
 
     const dynamicCategoryFilterOptions = React.useMemo(() => {
         const opts = [{ label: "All Categories", value: "all" }];
-        (categories || []).forEach((c) => {
+        const seen = new Set();
+        (activeCategories || []).forEach((c) => {
             if (c.isDeleted) return;
-            const catId = c._id || c.id;
+            const catId = String(c._id || c.id || "");
             const name = c.categoryName || c.name;
-            if (catId && name) {
-                opts.push({ label: name, value: String(catId) });
+            if (catId && name && !seen.has(catId)) {
+                seen.add(catId);
+                opts.push({ label: name, value: catId });
             }
         });
         return opts;
-    }, [categories]);
+    }, [activeCategories]);
 
     const dynamicCategoryModalOptions = React.useMemo(() => {
         const opts = [];
-        (categories || []).forEach((c) => {
+        const seen = new Set();
+        (activeCategories || []).forEach((c) => {
             if (c.isDeleted) return;
-            const catId = c._id || c.id;
+            const catId = String(c._id || c.id || "");
             const name = c.categoryName || c.name;
-            if (catId && name) {
-                opts.push({ label: name, value: String(catId) });
+            if (catId && name && !seen.has(catId)) {
+                seen.add(catId);
+                opts.push({ label: name, value: catId });
             }
         });
+        if (editingBlog?.categoryId) {
+            const rawCatId = String(editingBlog.categoryId?._id || editingBlog.categoryId);
+            const rawCatName = editingBlog.categoryId?.categoryName || editingBlog.category || rawCatId;
+            if (rawCatId && !seen.has(rawCatId)) {
+                opts.unshift({ label: rawCatName, value: rawCatId });
+            }
+        }
         return opts;
-    }, [categories]);
-
-    const [activeTab, setActiveTab] = React.useState("all");
+    }, [activeCategories, editingBlog]);
 
     // Restrict trash tab to admin role only
     const visibleTabs = React.useMemo(() => {
@@ -101,19 +159,6 @@ const OverviewBlogs = () => {
             setActiveTab("all");
         }
     }, [isAdmin, activeTab]);
-    const [selectedCategory, setSelectedCategory] = React.useState("All Articles");
-    const [searchQuery, setSearchQuery] = React.useState("");
-    const [statusFilter, setStatusFilter] = React.useState("all");
-    const [categoryFilter, setCategoryFilter] = React.useState("all");
-    const [currentPage, setCurrentPage] = React.useState(1);
-    const [selectedBlogIds, setSelectedBlogIds] = React.useState([]);
-
-    // Modals
-    const [isModalOpen, setIsModalOpen] = React.useState(false);
-    const [editingBlog, setEditingBlog] = React.useState(null);
-
-    const [isReviewModalOpen, setIsReviewModalOpen] = React.useState(false);
-    const [reviewTargetBlog, setReviewTargetBlog] = React.useState(null);
 
     // Fetch blogs with backend query parameters
     const fetchBlogData = React.useCallback(() => {

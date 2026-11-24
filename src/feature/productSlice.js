@@ -41,14 +41,34 @@ export const normalizeProduct = (p) => {
   const productName = p.productName || p.title || p.name || "";
   const categoryObj =
     typeof p.categoryId === "object" && p.categoryId !== null ? p.categoryId : {};
-  const categoryName =
+  let categoryName =
     categoryObj.categoryName ||
     categoryObj.name ||
-    (typeof p.category === "string"
+    (typeof p.category === "string" && !p.category.match(/^[0-9a-fA-F]{24}$/)
       ? p.category
-      : typeof p.categoryId === "string"
+      : "");
+
+  if (!categoryName) {
+    const rawCatId = String(p.categoryId?._id || p.categoryId || "");
+    if (rawCatId) {
+      try {
+        const rawCached = localStorage.getItem("cachedProductCategories");
+        if (rawCached) {
+          const list = JSON.parse(rawCached);
+          const found = list.find((c) => String(c._id) === rawCatId || String(c.id) === rawCatId);
+          if (found) categoryName = found.categoryName || found.name || "";
+        }
+      } catch {}
+    }
+  }
+
+  if (!categoryName) {
+    categoryName = typeof p.category === "string" && !p.category.match(/^[0-9a-fA-F]{24}$/)
+      ? p.category
+      : (typeof p.categoryId === "string" && !p.categoryId.match(/^[0-9a-fA-F]{24}$/)
       ? p.categoryId
       : "General");
+  }
 
   const createdby = normalizeCreator(p.createdBy, p.createdby);
 

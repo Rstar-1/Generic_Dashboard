@@ -149,18 +149,18 @@ export const getRoleFormFields = ({ editingRole, permissionOptions = [], pageOpt
             validation: { required: true },
         },
         {
-            name: "permissions",
-            label: "Permissions",
-            type: "multiselect",
-            options: permissionOptions,
-            defaultValue: editingRole?.permissions?.length ? editingRole.permissions : ["Full_Access"],
-        },
-        {
             name: "pages",
             label: "Allowed Pages",
             type: "multiselect",
             options: pageOptions,
             defaultValue: editingRole?.pages?.length ? editingRole.pages : ["Full_Access"],
+        },
+        {
+            name: "permissions",
+            label: "Permissions",
+            type: "multiselect",
+            options: permissionOptions,
+            defaultValue: editingRole?.permissions?.length ? editingRole.permissions : ["Full_Access"],
         },
         ...(statusField ? [statusField] : []),
     ];
