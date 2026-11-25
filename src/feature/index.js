@@ -13,6 +13,7 @@ import blogCategoryReducer from "./blogCategorySlice.js";
 import roleReducer from "./roleSlice.js";
 import userReducer from "./userSlice.js";
 import seoReducer from "./seoSlice.js";
+import domainReducer from "./domainSlice.js";
 
 // Re-export individual reducers
 export {
@@ -25,6 +26,7 @@ export {
   roleReducer,
   userReducer,
   seoReducer,
+  domainReducer,
 };
 
 // Slices
@@ -36,6 +38,7 @@ export { blogCategorySlice } from "./blogCategorySlice.js";
 export { roleSlice } from "./roleSlice.js";
 export { userSlice } from "./userSlice.js";
 export { seoSlice } from "./seoSlice.js";
+export { domainSlice } from "./domainSlice.js";
 
 // Combined reducer map for Redux store configuration
 export const featureReducers = {
@@ -48,6 +51,7 @@ export const featureReducers = {
   roles: roleReducer,
   users: userReducer,
   seos: seoReducer,
+  domain: domainReducer,
 };
 
 // Re-export all actions, thunks, selectors, normalizers, and hooks
@@ -59,5 +63,6 @@ export * from "./blogCategorySlice.js";
 export * from "./roleSlice.js";
 export * from "./userSlice.js";
 export * from "./seoSlice.js";
+export * from "./domainSlice.js";
 
 export default featureReducers;

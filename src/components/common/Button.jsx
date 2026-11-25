@@ -38,6 +38,7 @@ const Button = React.memo(
     hoverColor,
     hoverBg,
     hoverBorder,
+    size,
     ...props
   }) => {
     const isOutline = variant === "outline";

@@ -16,16 +16,18 @@ import {
     getNestedValue,
     canPerformAction,
     getCurrentRole,
+    getCurrentUser,
     hasPermission,
     useCurrentUser,
-    isAdminOrDevAdmin
+    isAdminOrDevAdmin,
+    isFullAccess,
 } from '../../utils';
 import { AVATAR_PALETTE } from '../../utils/apiData';
 
 export { formatDate, Badge, BadgeList };
 
 const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, onViewClick, actions, editTitle, deleteTitle, viewTitle, entity, currentRole, allowAllRoleActions, showActionsForAllRoles }) => {
-    const activeRole = currentRole || getCurrentRole() || "admin";
+    const activeRole = currentRole || (typeof getCurrentUser === "function" ? getCurrentUser() : null) || getCurrentRole() || "guest";
     const activeEntity = col.entity || entity || (typeof window !== "undefined" ? window.location?.pathname : "");
 
     const rowActions = col.actions || actions;
@@ -36,15 +38,7 @@ const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, 
             showActionsForAllRoles ||
             col?.allowAllRoleActions ||
             col?.showActionsForAllRoles ||
-            ["productcategory", "blogcategory", "products", "blogs", "review"].some((e) =>
-                String(activeEntity).toLowerCase().replace(/[^a-z0-9]/g, "").includes(e)
-            ) ||
-            (typeof window !== "undefined" && (
-                window.location?.pathname?.includes("/category/blogs") ||
-                window.location?.pathname?.includes("/overview/blogs") ||
-                window.location?.pathname?.includes("/overview/products") ||
-                window.location?.pathname?.includes("/category/products")
-            ))
+            (activeRole && (isAdminOrDevAdmin(activeRole) || isFullAccess(activeRole?.permissions || activeRole?.pages || activeRole)))
         );
 
         if (Array.isArray(rowActions) && rowActions.length > 0) {
@@ -64,9 +58,15 @@ const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, 
         if (!editFn && !deleteFn && !hasView) return [];
 
         const list = [];
-        const canView = col.canView !== undefined ? col.canView : (hasView ? true : (isBypass ? true : canPerformAction(activeRole, "view", activeEntity)));
-        const canEdit = col.canEdit !== undefined ? col.canEdit : (isBypass ? Boolean(editFn) : canPerformAction(activeRole, "edit", activeEntity));
-        const canDelete = col.canDelete !== undefined ? col.canDelete : (isBypass ? Boolean(deleteFn) : canPerformAction(activeRole, "delete", activeEntity));
+        const canView = col.canView !== undefined
+            ? Boolean(col.canView)
+            : (isBypass ? Boolean(hasView) : (Boolean(hasView) && canPerformAction(activeRole, "view", activeEntity)));
+        const canEdit = col.canEdit !== undefined
+            ? Boolean(col.canEdit)
+            : (isBypass ? Boolean(editFn) : (Boolean(editFn) && canPerformAction(activeRole, "edit", activeEntity)));
+        const canDelete = col.canDelete !== undefined
+            ? Boolean(col.canDelete)
+            : (isBypass ? Boolean(deleteFn) : (Boolean(deleteFn) && canPerformAction(activeRole, "delete", activeEntity)));
 
         if (canView) {
             list.push({
@@ -100,7 +100,7 @@ const ActionButtons = React.memo(({ row, rowIdx, col, onEdit, onDelete, onView, 
             });
         }
         return list;
-    }, [col, actions, rowActions, onEdit, onDelete, onView, activeRole, activeEntity, row, rowIdx, viewTitle, editTitle, deleteTitle, allowAllRoleActions, showActionsForAllRoles]);
+    }, [col, actions, rowActions, onEdit, onDelete, onView, onViewClick, activeRole, activeEntity, row, rowIdx, viewTitle, editTitle, deleteTitle, allowAllRoleActions, showActionsForAllRoles]);
 
     if (!allowedActions.length) {
         return <span className="mini-text text-gray" style={{ display: "inline-block", minWidth: "20px", textAlign: "center" }}>-</span>;
@@ -280,7 +280,9 @@ const TableCell = React.memo(({
     deleteTitle,
     viewTitle,
     itemName,
+    entity,
     currentRole,
+    userRole,
     allowAllRoleActions,
     showActionsForAllRoles,
 }) => {
@@ -382,8 +384,8 @@ const TableCell = React.memo(({
                 editTitle={editTitle}
                 deleteTitle={deleteTitle}
                 viewTitle={viewTitle}
-                entity={col.entity || itemName}
-                currentRole={currentRole}
+                entity={col.entity || entity || itemName}
+                currentRole={currentRole || userRole}
                 allowAllRoleActions={allowAllRoleActions}
                 showActionsForAllRoles={showActionsForAllRoles}
             />
@@ -1102,6 +1104,9 @@ const Table = ({
     allowInactive = true,
     allowAllRoleActions = false,
     showActionsForAllRoles = false,
+    entity,
+    currentRole,
+    userRole: propUserRole,
     onEdit,
     onDelete,
     onView,
@@ -1199,8 +1204,9 @@ const Table = ({
         }
     }, [onSelectRow]);
 
-    const { user: currentUser, role: userRole } = useCurrentUser();
-    const isAdmin = React.useMemo(() => isAdminOrDevAdmin(userRole || currentUser), [userRole, currentUser]);
+    const { user: hookUser, role: hookRole } = useCurrentUser();
+    const effectiveRole = currentRole || propUserRole || hookUser || hookRole;
+    const isAdmin = React.useMemo(() => isAdminOrDevAdmin(effectiveRole), [effectiveRole]);
 
     // Show table data for all roles (including active & inactive records when showInactive is true)
     const displayData = React.useMemo(() => {
@@ -1319,10 +1325,11 @@ const Table = ({
         deleteTitle,
         viewTitle,
         itemName,
-        currentRole: userRole,
+        entity: entity || itemName,
+        currentRole: effectiveRole,
         allowAllRoleActions,
         showActionsForAllRoles,
-    }), [onEdit, onDelete, onView, actions, editTitle, deleteTitle, viewTitle, itemName, userRole, allowAllRoleActions, showActionsForAllRoles]);
+    }), [onEdit, onDelete, onView, actions, editTitle, deleteTitle, viewTitle, itemName, entity, effectiveRole, allowAllRoleActions, showActionsForAllRoles]);
 
     return (
         <>

@@ -9,3 +9,4 @@ export * from "./roleApi.js";
 export * from "./userApi.js";
 export * from "./authApi.js";
 export * from "./seoApi.js";
+export * from "./domainApi.js";

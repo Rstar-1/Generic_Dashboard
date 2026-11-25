@@ -2,6 +2,7 @@ import React from "react";
 import Modal from "../../common/Modal";
 import FormBuilder from "../FormBuilder";
 import { getCurrentUser, getCurrentRole } from "../../../utils";
+import { ROLE_ACCESS_CONFIG } from "../../../utils/apiData";
 
 /**
  * Helper to determine if a user/role has Admin or Dev Admin privileges
@@ -137,8 +138,55 @@ export const getUserFormFields = ({ editingUser, roleOptions = [], userRole } = 
 /**
  * Generic field generator for Roles & Permissions
  */
-export const getRoleFormFields = ({ editingRole, permissionOptions = [], pageOptions = [], userRole } = {}) => {
+export const getRoleFormFields = ({ editingRole, permissionOptions, pageOptions, userRole } = {}) => {
     const statusField = getPublishedStatusField(editingRole, userRole);
+    const resolvedPageOptions = (pageOptions && pageOptions.length > 0)
+        ? pageOptions
+        : (ROLE_ACCESS_CONFIG || []).map((it) => ({
+            label: it.label || it.page,
+            value: it.page,
+        }));
+
+    const resolvedPermissionOptions = (permissionOptions && permissionOptions.length > 0)
+        ? permissionOptions
+        : (() => {
+            const list = [];
+            (ROLE_ACCESS_CONFIG || []).forEach((item) => {
+                (item.permissions || []).forEach((perm) => {
+                    if (perm && !list.some((o) => o.value === perm)) {
+                        list.push({ label: perm, value: perm });
+                    }
+                });
+            });
+            return list;
+        })();
+
+    // Filter editingRole.permissions to only retain valid permissions from ROLE_ACCESS_CONFIG
+    const validPermSet = new Set(resolvedPermissionOptions.map((o) => o.value));
+    let initialPermissions = Array.isArray(editingRole?.permissions)
+        ? editingRole.permissions.filter((p) => validPermSet.has(p))
+        : [];
+
+    let initialPages = Array.isArray(editingRole?.pages) ? editingRole.pages : [];
+
+    // If initialPermissions is empty but editingRole has pages, derive from pages
+    if (!initialPermissions.length && initialPages.length) {
+        const derived = [];
+        initialPages.forEach((pg) => {
+            const match = (ROLE_ACCESS_CONFIG || []).find((c) => c.page === pg || c.label === pg);
+            if (match) derived.push(...match.permissions);
+        });
+        initialPermissions = Array.from(new Set(derived));
+    }
+
+    if (!initialPermissions.length) {
+        initialPermissions = ["Full_Access"];
+    }
+
+    if (!initialPages.length) {
+        initialPages = ["Full_Access"];
+    }
+
     return [
         {
             name: "rolename",
@@ -152,15 +200,15 @@ export const getRoleFormFields = ({ editingRole, permissionOptions = [], pageOpt
             name: "pages",
             label: "Allowed Pages",
             type: "multiselect",
-            options: pageOptions,
-            defaultValue: editingRole?.pages?.length ? editingRole.pages : ["Full_Access"],
+            options: resolvedPageOptions,
+            defaultValue: initialPages,
         },
         {
             name: "permissions",
             label: "Permissions",
             type: "multiselect",
-            options: permissionOptions,
-            defaultValue: editingRole?.permissions?.length ? editingRole.permissions : ["Full_Access"],
+            options: resolvedPermissionOptions,
+            defaultValue: initialPermissions,
         },
         ...(statusField ? [statusField] : []),
     ];
@@ -513,6 +561,13 @@ export const getBlogFormFields = ({ editingBlog, categoryOptions = [], userRole 
             placeholder: "Short brief overview of the article...",
         },
         {
+            name: "quote",
+            label: "Featured Quote",
+            type: "text",
+            defaultValue: editingBlog ? (editingBlog.quote || "") : "",
+            placeholder: "e.g. Featured Quote",
+        },
+        {
             name: "description",
             label: "Article Full Content",
             type: "textarea",
@@ -522,11 +577,12 @@ export const getBlogFormFields = ({ editingBlog, categoryOptions = [], userRole 
             style: { width: "95%" },
         },
         {
-            name: "quote",
-            label: "Featured Quote",
-            type: "text",
-            defaultValue: editingBlog ? (editingBlog.quote || "") : "",
-            placeholder: "e.g. Featured Quote",
+            name: "badges",
+            label: "Article Tags",
+            type: "bulk-badge",
+            addText: "Add Tag",
+            defaultValue: editingBlog && Array.isArray(editingBlog.badges) ? editingBlog.badges : [],
+            placeholder: "e.g. Warehouse, Compliance, Energy Efficiency",
         },
         {
             name: "image",
@@ -535,14 +591,6 @@ export const getBlogFormFields = ({ editingBlog, categoryOptions = [], userRole 
             accept: "image/*",
             multiple: false,
             defaultValue: editingBlog ? (editingBlog.image || "") : [],
-        },
-        {
-            name: "badges",
-            label: "Article Tags",
-            type: "bulk-badge",
-            addText: "Add Tag",
-            defaultValue: editingBlog && Array.isArray(editingBlog.badges) ? editingBlog.badges : [],
-            placeholder: "e.g. Warehouse, Compliance, Energy Efficiency",
         },
         {
             name: "specifications",

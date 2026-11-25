@@ -422,9 +422,11 @@ export const createEntitySlice = ({
     },
   });
 
+  const EMPTY_ARRAY = [];
+
   // Selectors
   const selectors = {
-    [`select${capItemKey}`]: (state) => state[name]?.[itemKey] || [],
+    [`select${capItemKey}`]: (state) => state[name]?.[itemKey] || EMPTY_ARRAY,
     [`select${capItemKey}Loading`]: (state) => Boolean(state[name]?.loading),
     [`select${capItemKey}Error`]: (state) => state[name]?.error || null,
     [`select${capItemKey}Total`]: (state) => state[name]?.total || 0,
@@ -452,7 +454,43 @@ export const createEntitySlice = ({
     const pagination = useSelector(selectors[`select${capItemKey}Pagination`]);
     const counts = useSelector(selectors[`select${capItemKey}Counts`]);
 
-    return {
+    const getItems = React.useCallback(
+      (p) => dispatch(fetchThunk(p)),
+      [dispatch]
+    );
+    const addItem = React.useCallback(
+      (d) => dispatch(createThunk(d)),
+      [dispatch]
+    );
+    const editItem = React.useCallback(
+      (id, d) => dispatch(updateThunk({ id, data: d })),
+      [dispatch]
+    );
+    const removeItem = React.useCallback(
+      (id) => dispatch(deleteThunk(id)),
+      [dispatch]
+    );
+    const bulkRemoveItems = React.useCallback(
+      (d, perm) =>
+        dispatch(
+          bulkDeleteThunk(
+            typeof d === "object" && !Array.isArray(d)
+              ? d
+              : { ids: Array.isArray(d) ? d : [d], permanent: Boolean(perm) }
+          )
+        ),
+      [dispatch]
+    );
+
+    const customMethods = React.useMemo(
+      () =>
+        Object.fromEntries(
+          Object.entries(customHookMethods).map(([k, fn]) => [k, fn(dispatch)])
+        ),
+      [dispatch]
+    );
+
+    return React.useMemo(() => ({
       [itemKey]: items,
       loading,
       error,
@@ -463,71 +501,40 @@ export const createEntitySlice = ({
       pagination,
       counts,
       statusCounts: counts,
-      [`get${capPlural}`]: React.useCallback(
-        (p) => dispatch(fetchThunk(p)),
-        [dispatch]
-      ),
-      [`fetch${capPlural}`]: React.useCallback(
-        (p) => dispatch(fetchThunk(p)),
-        [dispatch]
-      ),
-      [`get${capSingular}List`]: React.useCallback(
-        (p) => dispatch(fetchThunk(p)),
-        [dispatch]
-      ),
-      [`fetch${capSingular}List`]: React.useCallback(
-        (p) => dispatch(fetchThunk(p)),
-        [dispatch]
-      ),
-      [`add${capSingular}`]: React.useCallback(
-        (d) => dispatch(createThunk(d)),
-        [dispatch]
-      ),
-      [`create${capSingular}`]: React.useCallback(
-        (d) => dispatch(createThunk(d)),
-        [dispatch]
-      ),
-      [`edit${capSingular}`]: React.useCallback(
-        (id, d) => dispatch(updateThunk({ id, data: d })),
-        [dispatch]
-      ),
-      [`update${capSingular}`]: React.useCallback(
-        (id, d) => dispatch(updateThunk({ id, data: d })),
-        [dispatch]
-      ),
-      [`remove${capSingular}`]: React.useCallback(
-        (id) => dispatch(deleteThunk(id)),
-        [dispatch]
-      ),
-      [`delete${capSingular}`]: React.useCallback(
-        (id) => dispatch(deleteThunk(id)),
-        [dispatch]
-      ),
-      [`bulkRemove${capPlural}`]: React.useCallback(
-        (d) => dispatch(bulkDeleteThunk(d)),
-        [dispatch]
-      ),
-      [`bulkDelete${capPlural}`]: React.useCallback(
-        (d) => dispatch(bulkDeleteThunk(d)),
-        [dispatch]
-      ),
-      [`bulkRemove${capSingular}`]: React.useCallback(
-        (d, perm) => dispatch(bulkDeleteThunk(d, perm)),
-        [dispatch]
-      ),
-      [`bulkDelete${capSingular}`]: React.useCallback(
-        (d, perm) => dispatch(bulkDeleteThunk(d, perm)),
-        [dispatch]
-      ),
+      [`get${capPlural}`]: getItems,
+      [`fetch${capPlural}`]: getItems,
+      [`get${capSingular}List`]: getItems,
+      [`fetch${capSingular}List`]: getItems,
+      [`add${capSingular}`]: addItem,
+      [`create${capSingular}`]: addItem,
+      [`edit${capSingular}`]: editItem,
+      [`update${capSingular}`]: editItem,
+      [`remove${capSingular}`]: removeItem,
+      [`delete${capSingular}`]: removeItem,
+      [`bulkRemove${capPlural}`]: bulkRemoveItems,
+      [`bulkDelete${capPlural}`]: bulkRemoveItems,
+      [`bulkRemove${capSingular}`]: bulkRemoveItems,
+      [`bulkDelete${capSingular}`]: bulkRemoveItems,
       dispatch,
-      ...React.useMemo(
-        () =>
-          Object.fromEntries(
-            Object.entries(customHookMethods).map(([k, fn]) => [k, fn(dispatch)])
-          ),
-        [dispatch]
-      ),
-    };
+      ...customMethods,
+    }), [
+      items,
+      loading,
+      error,
+      total,
+      page,
+      limit,
+      totalPages,
+      pagination,
+      counts,
+      getItems,
+      addItem,
+      editItem,
+      removeItem,
+      bulkRemoveItems,
+      dispatch,
+      customMethods,
+    ]);
   };
 
   return {

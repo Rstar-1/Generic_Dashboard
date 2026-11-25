@@ -1,6 +1,6 @@
 import React from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { canAccessPage, useCurrentUser } from "../utils";
+import { canAccessPage, getFirstAllowedRoute, useCurrentUser } from "../utils";
 
 // 🧩 Layout & Loader
 import Layout from "../components/layout/Layout";
@@ -20,15 +20,29 @@ const ProtectedRoute = React.memo(({ page, children }) => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // When logged in, allow access for all authenticated roles
-  if (page && user && !canAccessPage(user || role, page)) {
-    // If strict RBAC is enabled and user doesn't have page access, fallback
-    return <Navigate to="/dashboard" replace />;
+  // When logged in, verify role access according to allowed pages and permissions
+  if (page && !canAccessPage(user || role, page)) {
+    const fallback = getFirstAllowedRoute(user || role);
+    return <Navigate to={fallback} replace />;
   }
 
   return children;
 });
 ProtectedRoute.displayName = "ProtectedRoute";
+
+const IndexRoute = React.memo(() => {
+  const { user, role } = useCurrentUser();
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const isLoggedIn = Boolean(token && token !== "null" && token !== "undefined");
+
+  if (!isLoggedIn) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  const fallback = getFirstAllowedRoute(user || role);
+  return <Navigate to={fallback} replace />;
+});
+IndexRoute.displayName = "IndexRoute";
 
 // 📦 Lazy Pages
 const Dashboard = React.lazy(() => import("../pages/dashboard/Dashboard"));
@@ -60,7 +74,7 @@ function AppRoutes() {
     <React.Suspense fallback={<Loader />}>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route index element={<IndexRoute />} />
           <Route
             path="dashboard"
             element={

@@ -38,6 +38,15 @@ export const getNestedValue = (obj, path, fallback = undefined) => {
   return fallback;
 };
 
+export const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    if (!file || typeof file === "string") return resolve(file || "");
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+
 export const isColorCode = (str) =>
   typeof str === "string" && (str.startsWith("#") || str.startsWith("rgb"));
 
@@ -344,7 +353,7 @@ export const normalizePageIdentifier = (pageOrRoute = "", parentGroup = "") => {
     )
       return "System Users";
     if (low === "role" || low === "roles") return "Roles";
-    if (low === "domain" || low === "domains") return "Domain";
+    if (low === "domain" || low === "domains" || low === "domian" || low === "domians") return "Domain";
     if (low === "profile") return "Profile";
   }
 
@@ -366,7 +375,7 @@ export const normalizePageIdentifier = (pageOrRoute = "", parentGroup = "") => {
   if (low === "role" || low === "roles") return "Roles";
   if (low === "profile") return "Profile";
   if (low === "dashboard") return "Dashboard";
-  if (low === "domain" || low === "domains") return "Domain";
+  if (low === "domain" || low === "domains" || low === "domian" || low === "domians") return "Domain";
   if (low === "architecture") return "Architecture";
   if (low === "location") return "Location";
   if (low === "leads" || low === "lead") return "Leads";
@@ -386,6 +395,21 @@ export const normalizePageIdentifier = (pageOrRoute = "", parentGroup = "") => {
   return str;
 };
 
+export const ROLE_PAGE_PERMISSIONS_MAP = {
+  "Dashboard": ["view_dashboard"],
+  "Profile": ["view_profile"],
+  "Domain": ["view_domain"],
+  "Domian": ["view_domain"],
+  "Products Category": ["view_product_categories", "edit_product_categories", "trash_product_categories"],
+  "Blogs Category": ["view_blog_categories", "edit_blog_categories", "trash_blog_categories"],
+  "Products": ["view_products", "edit_products", "trash_products"],
+  "Blogs": ["view_blogs", "edit_blogs", "trash_blogs"],
+  "SEO": ["view_seo", "edit_seo", "trash_seo"],
+  "System Users": ["view_systemuser", "edit_systemuser", "trash_systemuser"],
+  "Roles": ["view_roles", "edit_roles", "trash_roles"],
+  "Full_Access": ["Full_Access"],
+};
+
 export const canAccessPage = (roleOrUser, pageOrRoute, parentGroup = "") => {
   if (!pageOrRoute) return true;
   const config = getRoleConfig(roleOrUser);
@@ -395,12 +419,14 @@ export const canAccessPage = (roleOrUser, pageOrRoute, parentGroup = "") => {
   const target = normalizePageIdentifier(
     pageOrRoute,
     parentGroup,
-  ).toLowerCase();
+  );
+  const targetLow = target.toLowerCase();
   const raw = String(pageOrRoute).toLowerCase().trim();
-  const cleanTarget = target.replace(/[^a-z0-9]/g, "");
+  const cleanTarget = targetLow.replace(/[^a-z0-9]/g, "");
   const cleanRaw = raw.replace(/[^a-z0-9]/g, "");
 
-  return (config.pages || []).some((p) => {
+  // 1. Direct page match in config.pages
+  const hasPage = (config.pages || []).some((p) => {
     const pl = String(p || "")
       .toLowerCase()
       .trim();
@@ -408,10 +434,11 @@ export const canAccessPage = (roleOrUser, pageOrRoute, parentGroup = "") => {
     const cleanP = pl.replace(/[^a-z0-9]/g, "");
 
     if (
-      pl === target ||
+      pl === targetLow ||
       pl === raw ||
       cleanP === cleanTarget ||
-      cleanP === cleanRaw
+      cleanP === cleanRaw ||
+      ((cleanTarget === "domain" || cleanTarget === "domian") && (cleanP === "domain" || cleanP === "domian"))
     ) {
       return true;
     }
@@ -424,38 +451,63 @@ export const canAccessPage = (roleOrUser, pageOrRoute, parentGroup = "") => {
       return false;
     }
 
-    // Specific campaign channels (SMS, WhatsApp, Gmail) require their own explicit page permission
-    // and must not be implicitly granted by generic "Campaign"
     if (
-      (cleanTarget === "smscampaign" ||
-        cleanTarget === "whatsappcampaign" ||
-        cleanTarget === "gmailcampaign") &&
-      cleanP === "campaign"
+      (cleanTarget === "productscategory" || cleanTarget === "blogscategory") &&
+      !cleanP.includes("category")
     ) {
       return false;
     }
 
-    // A broad "Campaign" check (e.g. for parent menu group or /campaign root) is granted if the role has "Campaign" or any specific campaign
-    if (cleanTarget === "campaign" && cleanP.includes("campaign")) {
-      return true;
-    }
-
-    // Do not let generic "campaign" in cleanP match specific campaign targets via substring fallback
-    if (cleanP === "campaign" && cleanTarget !== "campaign") {
-      return false;
-    }
-
-    return (
-      (cleanTarget && cleanP.includes(cleanTarget)) ||
-      (cleanRaw && cleanP.includes(cleanRaw))
-    );
+    return false;
   });
+
+  if (hasPage) return true;
+
+  // 2. Permission-based match: check if user has corresponding permissions for this page
+  const pagePerms = ROLE_PAGE_PERMISSIONS_MAP[target] || [];
+  if (pagePerms.length > 0) {
+    const userPerms = (config.permissions || []).map((p) => String(p).toLowerCase().trim());
+    if (userPerms.includes("full_access") || userPerms.includes("*")) return true;
+    const hasPerm = pagePerms.some((p) => userPerms.includes(p.toLowerCase()));
+    if (hasPerm) return true;
+  }
+
+  return false;
+};
+
+export const getFirstAllowedRoute = (roleOrUser) => {
+  const config = getRoleConfig(roleOrUser);
+  if (isFullAccess(config.pages) || isFullAccess(config.permissions)) {
+    return "/dashboard";
+  }
+
+  const PRIORITY_ROUTES = [
+    { page: "Dashboard", route: "/dashboard" },
+    { page: "Products", route: "/overview/products" },
+    { page: "Blogs", route: "/overview/blogs" },
+    { page: "Products Category", route: "/category/products" },
+    { page: "Blogs Category", route: "/category/blogs" },
+    { page: "SEO", route: "/overview/seo" },
+    { page: "Domain", route: "/settings/domain" },
+    { page: "Domian", route: "/settings/domain" },
+    { page: "System Users", route: "/settings/users" },
+    { page: "Roles", route: "/settings/roles" },
+    { page: "Profile", route: "/profile" },
+  ];
+
+  for (const item of PRIORITY_ROUTES) {
+    if (canAccessPage(roleOrUser, item.page)) {
+      return item.route;
+    }
+  }
+
+  return "/dashboard";
 };
 
 export const hasPermission = (roleOrUser, permissionKey) => {
   if (!permissionKey) return true;
   const config = getRoleConfig(roleOrUser);
-  if (isFullAccess(config.permissions)) return true;
+  if (isFullAccess(config.permissions) || isFullAccess(config.pages)) return true;
 
   const k = String(permissionKey).toLowerCase().trim();
   const cleanK = k.replace(/[^a-z0-9]/g, "");
@@ -466,7 +518,7 @@ export const hasPermission = (roleOrUser, permissionKey) => {
       ? k.replace("trash_", "delete_")
       : k;
 
-  return (config.permissions || []).some((perm) => {
+  const hasDirect = (config.permissions || []).some((perm) => {
     const p = String(perm || "")
       .toLowerCase()
       .trim();
@@ -475,21 +527,31 @@ export const hasPermission = (roleOrUser, permissionKey) => {
 
     const cleanP = p.replace(/[^a-z0-9]/g, "");
     if (cleanP === cleanK) return true;
-
-    // Check if permission covers manage action or simple entity
-    if (p.startsWith("manage_")) {
-      const managed = p.replace("manage_", "").replace(/[^a-z0-9]/g, "");
-      if (cleanK.includes(managed)) return true;
-    }
-    if (k.endsWith(`_${p}`) || cleanK === `view${cleanP}`) return true;
-
     return false;
   });
+
+  if (hasDirect) return true;
+
+  // If role explicitly has a permissions array, do not fall back to page allowance
+  if (Array.isArray(config.permissions) && config.permissions.length > 0) {
+    return false;
+  }
+
+  // View permission fallback from page allowance only when permissions array is not defined
+  if (cleanK.startsWith("view")) {
+    for (const [pageName, perms] of Object.entries(ROLE_PAGE_PERMISSIONS_MAP)) {
+      if (perms.some((p) => p.replace(/[^a-z0-9]/g, "") === cleanK)) {
+        if (canAccessPage(roleOrUser, pageName)) return true;
+      }
+    }
+  }
+
+  return false;
 };
 
 export const canPerformAction = (roleOrUser, action = "view", entity = "") => {
   const config = getRoleConfig(roleOrUser);
-  if (isFullAccess(config.permissions)) return true;
+  if (isFullAccess(config.permissions) || isFullAccess(config.pages)) return true;
 
   const rawEnt = String(
     entity || (typeof window !== "undefined" ? window.location?.pathname : ""),
@@ -497,9 +559,6 @@ export const canPerformAction = (roleOrUser, action = "view", entity = "") => {
   const ent = rawEnt.replace(/[^a-z0-9]/g, "");
   if (!ent) return true;
   const act = String(action).toLowerCase().trim();
-
-  // View actions are permitted for anyone viewing the page/data
-  if (act === "view") return true;
 
   // Resolve entity aliases to match role permission names
   let baseEnt = ent;
@@ -509,24 +568,26 @@ export const canPerformAction = (roleOrUser, action = "view", entity = "") => {
       : "";
   if (
     ent.includes("blogcat") ||
-    (ent.includes("categor") && currentPath.includes("blog"))
+    ent.includes("blog_cat") ||
+    (ent.includes("categor") && (currentPath.includes("blog") || ent.includes("blog")))
   )
-    baseEnt = "blogcategory";
+    baseEnt = "blog_categories";
   else if (
     ent.includes("productcat") ||
-    (ent.includes("categor") && currentPath.includes("product"))
+    ent.includes("product_cat") ||
+    (ent.includes("categor") && (currentPath.includes("product") || ent.includes("product")))
   )
-    baseEnt = "productcategory";
+    baseEnt = "product_categories";
+  else if (ent.includes("review"))
+    baseEnt = currentPath.includes("blog") || ent.includes("blog") ? "blogs" : "products";
   else if (ent.includes("user")) baseEnt = "systemuser";
+  else if (ent.includes("domain") || ent.includes("domian")) baseEnt = "domain";
   else if (ent.includes("role")) baseEnt = "roles";
   else if (ent.includes("article") || ent.includes("blog")) baseEnt = "blogs";
-  else if (ent.includes("section") || ent.includes("cms")) baseEnt = "cms";
-  else if (ent.includes("page") || ent.includes("seo")) baseEnt = "seo";
-  else if (ent.includes("order")) baseEnt = "orders";
-  else if (ent.includes("lead")) baseEnt = "leads";
-  else if (ent.includes("customer")) baseEnt = "customers";
+  else if (ent.includes("seo") || ent.includes("page")) baseEnt = "seo";
   else if (ent.includes("product")) baseEnt = "products";
-  else if (ent.includes("transaction")) baseEnt = "transactions";
+  else if (ent.includes("dashboard")) baseEnt = "dashboard";
+  else if (ent.includes("profile")) baseEnt = "profile";
 
   if (act === "delete" || act === "trash") {
     return (
@@ -534,8 +595,20 @@ export const canPerformAction = (roleOrUser, action = "view", entity = "") => {
       hasPermission(config, `delete_${baseEnt}`)
     );
   }
+  if (act === "edit" || act === "update") {
+    return hasPermission(config, `edit_${baseEnt}`);
+  }
+  if (act === "add" || act === "create") {
+    return (
+      hasPermission(config, `add_${baseEnt}`) ||
+      hasPermission(config, `create_${baseEnt}`) ||
+      hasPermission(config, `edit_${baseEnt}`)
+    );
+  }
+  if (act === "view" || act === "read") {
+    return hasPermission(config, `view_${baseEnt}`);
+  }
   if (hasPermission(config, `${act}_${baseEnt}`)) return true;
-  if (hasPermission(config, `manage_${baseEnt}`)) return true;
   return false;
 };
 

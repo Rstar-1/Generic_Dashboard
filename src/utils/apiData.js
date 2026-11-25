@@ -37,57 +37,26 @@ const RATING_OPTIONS = [
 /**
  * Generic navigation tabs configuration for MainLayout header
  */
-const TABS = [
-  { name: "All", value: "all" },
+const createTabs = (allName = "All", extra = []) => [
+  { name: allName, value: "all" },
+  ...extra,
   { name: "Trash", value: "trash" },
 ];
 
-TABS.default = [
-  { name: "All", value: "all" },
-  { name: "Trash", value: "trash" },
-];
-
-TABS.products = [
-  { name: "All Products", value: "all" },
+const TABS = createTabs("All");
+TABS.default = TABS;
+TABS.products = createTabs("All Products", [
   { name: "Reviews", value: "reviews" },
-  { name: "Trash", value: "trash" },
-];
-
-TABS.blogs = [
-  { name: "All Articles", value: "all" },
+]);
+TABS.blogs = createTabs("All Articles", [
   { name: "Reviews", value: "reviews" },
-  { name: "Trash", value: "trash" },
-];
-
-TABS.productCategories = [
-  { name: "All Categories", value: "all" },
-  { name: "Trash", value: "trash" },
-];
-
-TABS.blogCategories = [
-  { name: "All Categories", value: "all" },
-  { name: "Trash", value: "trash" },
-];
-
-TABS.leads = [
-  { name: "All Leads", value: "all" },
-  { name: "Trash", value: "trash" },
-];
-
-TABS.seo = [
-  { name: "All Pages", value: "all" },
-  { name: "Trash", value: "trash" },
-];
-
-TABS.roles = [
-  { name: "All Roles", value: "all" },
-  { name: "Trash", value: "trash" },
-];
-
-TABS.users = [
-  { name: "All Users", value: "all" },
-  { name: "Trash", value: "trash" },
-];
+]);
+TABS.productCategories = createTabs("All Categories");
+TABS.blogCategories = createTabs("All Categories");
+TABS.leads = createTabs("All Leads");
+TABS.seo = createTabs("All Pages");
+TABS.roles = createTabs("All Roles");
+TABS.users = createTabs("All Users");
 
 const menuData = [
   {
@@ -160,20 +129,6 @@ const menuData = [
       },
     ],
   },
-  // {
-  //   name: "Architecture",
-  //   route: "/architecture",
-  //   icon: "Code",
-  //   status: true,
-  //   role: ["admin", "vendor", "Manager"],
-  // },
-  // {
-  //   name: "Meta",
-  //   route: "/meta",
-  //   icon: "Layers",
-  //   status: true,
-  //   role: ["admin", "vendor", "Manager"],
-  // },
   {
     name: "Campaign",
     status: true,
@@ -259,10 +214,6 @@ const commonTableColumns = [
     header: "Actions",
     accessor: "actions",
     ui: "actions",
-    allowAllRoleActions: true,
-    canView: true,
-    canEdit: true,
-    canDelete: true,
     style: { minWidth: "130px" },
   },
 ];
@@ -604,24 +555,6 @@ const blogsTableColumns = [
     className: "text-center",
     style: { minWidth: "60px" },
   },
-  // {
-  //   header: "Tags",
-  //   accessor: "tags",
-  //   ui: "arr-badge",
-  //   style: { minWidth: "240px" },
-  // },
-  // {
-  //   header: "Read Time",
-  //   accessor: "readTime",
-  //   ui: "text",
-  //   style: { minWidth: "100px" },
-  // },
-  // {
-  //   header: "Short Description",
-  //   accessor: "shortDesc",
-  //   ui: "desc",
-  //   style: { minWidth: "120px" },
-  // },
   ...commonTableColumns,
 ];
 
@@ -682,10 +615,6 @@ const reviewsTableColumns = [
     header: "Actions",
     accessor: "actions",
     ui: "actions",
-    allowAllRoleActions: true,
-    canView: true,
-    canEdit: true,
-    canDelete: true,
     style: { minWidth: "110px" },
   },
 ];
@@ -769,50 +698,32 @@ const seoTableColumns = [
   ...commonTableColumns,
 ];
 
-const productCategoriesSidebarData = {
-  title: "Category Status",
+const createStatusSidebarData = (title, allName) => ({
+  title,
   items: [
-    { name: "All Categories", color: "#1e74db", status: "all" },
+    { name: allName, color: "#1e74db", status: "all" },
     { name: "Active", color: "#10b981", status: "Active" },
     { name: "Inactive", color: "#ef4444", status: "Inactive" },
   ],
-};
+});
 
-const productsSidebarData = {
-  title: "Product Status",
-  items: [
-    { name: "All Products", color: "#1e74db", status: "all" },
-    { name: "Active", color: "#10b981", status: "Active" },
-    { name: "Inactive", color: "#ef4444", status: "Inactive" },
-  ],
-};
-
-const blogCategoriesSidebarData = {
-  title: "Category Status",
-  items: [
-    { name: "All Categories", color: "#1e74db", status: "all" },
-    { name: "Active", color: "#10b981", status: "Active" },
-    { name: "Inactive", color: "#ef4444", status: "Inactive" },
-  ],
-};
-
-const blogsSidebarData = {
-  title: "Article Status",
-  items: [
-    { name: "All Articles", color: "#1e74db", status: "all" },
-    { name: "Active", color: "#10b981", status: "Active" },
-    { name: "Inactive", color: "#ef4444", status: "Inactive" },
-  ],
-};
-
-const seoSidebarData = {
-  title: "SEO Status",
-  items: [
-    { name: "All Pages", color: "#1e74db", status: "all" },
-    { name: "Active", color: "#10b981", status: "Active" },
-    { name: "Inactive", color: "#ef4444", status: "Inactive" },
-  ],
-};
+const productCategoriesSidebarData = createStatusSidebarData(
+  "Category Status",
+  "All Categories",
+);
+const productsSidebarData = createStatusSidebarData(
+  "Product Status",
+  "All Products",
+);
+const blogCategoriesSidebarData = createStatusSidebarData(
+  "Category Status",
+  "All Categories",
+);
+const blogsSidebarData = createStatusSidebarData(
+  "Article Status",
+  "All Articles",
+);
+const seoSidebarData = createStatusSidebarData("SEO Status", "All Pages");
 
 const seoSiteInfo = {
   name: "Ashmita Vinyls",
@@ -838,61 +749,6 @@ const seoSiteInfo = {
   },
 };
 
-const seoData = [
-  {
-    id: "SEO-001",
-    pageKey: "home",
-    pageName: "Home Page",
-    path: "/home",
-    route: "/home",
-    title: "PVC Vinyl Products Supplier in India | Ashmita Vinyls",
-    metaTitle: "PVC Vinyl Products Supplier in India | Ashmita Vinyls",
-    description:
-      "Explore high-grade PVC strip curtains, industrial vinyl rolls, polar freezer curtains, and mounting accessories from Ashmita Vinyls across India.",
-    keywords:
-      "PVC vinyl products, PVC strip curtains, industrial vinyl rolls, polar freezer curtains, Ashmita Vinyls, Mumbai vinyl supplier",
-    targetKeyword: "PVC vinyl products",
-    breadcrumbs: [{ label: "Home", path: "/home" }],
-    breadcrumbsText: "Home",
-    canonical: "https://ashmitavinyls.com/home",
-    createdDate: "2026-01-15",
-    updatedDate: "2026-09-25",
-    seoScore: "98 / 100",
-    status: "Active",
-    isActive: true,
-    isDeleted: false,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-05T12:17:38.020Z",
-    createdby: {
-      name: "Admin",
-      mobile: "",
-      avatar: "",
-    },
-  },
-];
-
-const seoFaqsData = [
-  {
-    question: "What is Ashmita Vinyls?",
-    answer:
-      "Ashmita Vinyls is a premier manufacturer and supplier of commercial and industrial PVC vinyl products, strip curtains, and hanging systems across India.",
-  },
-  {
-    question: "What types of PVC strip curtains are available?",
-    answer:
-      "We offer standard transparent, ribbed double-rib, polar freezer grade (-40°C), anti-static, anti-insect amber yellow, and welding screen PVC curtains.",
-  },
-];
-
-const configData = {
-  Header: [
-    {
-      HeaderTopBar: true,
-      HeaderBottomBar: true,
-    },
-  ],
-};
-
 export const ROLE_ACCESS_CONFIG = [
   {
     page: "Full_Access",
@@ -908,6 +764,11 @@ export const ROLE_ACCESS_CONFIG = [
     page: "Profile",
     label: "Profile",
     permissions: ["view_profile"],
+  },
+  {
+    page: "Domian",
+    label: "Domian",
+    permissions: ["view_domain"],
   },
   {
     page: "Products Category",
@@ -930,47 +791,27 @@ export const ROLE_ACCESS_CONFIG = [
   {
     page: "Products",
     label: "Products",
-    permissions: [
-      "view_products",
-      "edit_products",
-      "trash_products",
-    ],
+    permissions: ["view_products", "edit_products", "trash_products"],
   },
   {
     page: "Blogs",
     label: "Blogs",
-    permissions: [
-      "view_blogs",
-      "edit_blogs",
-      "trash_blogs",
-    ],
+    permissions: ["view_blogs", "edit_blogs", "trash_blogs"],
   },
   {
     page: "SEO",
     label: "SEO",
-    permissions: [
-      "view_seo",
-      "edit_seo",
-      "trash_seo",
-    ],
+    permissions: ["view_seo", "edit_seo", "trash_seo"],
   },
   {
     page: "System Users",
     label: "System Users",
-    permissions: [
-      "view_systemuser",
-      "edit_systemuser",
-      "trash_systemuser",
-    ],
+    permissions: ["view_systemuser", "edit_systemuser", "trash_systemuser"],
   },
   {
     page: "Roles",
     label: "Roles",
-    permissions: [
-      "view_roles",
-      "edit_roles",
-      "trash_roles",
-    ],
+    permissions: ["view_roles", "edit_roles", "trash_roles"],
   },
 ];
 
@@ -980,7 +821,6 @@ export {
   STATUS_OPTIONS,
   TABS,
   commonTableColumns,
-  configData,
   formatDate,
   menuData,
   usersTableColumns,
@@ -999,6 +839,4 @@ export {
   seoTableColumns,
   seoSidebarData,
   seoSiteInfo,
-  seoData,
-  seoFaqsData,
 };

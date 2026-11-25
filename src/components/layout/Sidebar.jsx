@@ -6,7 +6,7 @@ import Fields from "../forms/Fields";
 
 import { menuData } from "../../utils/apiData";
 import { resolveImagePath } from "../../utils/imageResolver";
-import { getFirstValue, canAccessPage, useCurrentUser, setCurrentUser } from "../../utils";
+import { getFirstValue, canAccessPage, getFirstAllowedRoute, useCurrentUser, setCurrentUser } from "../../utils";
 import { useAuth } from "../../feature/authSlice";
 import { getUserProfileApi } from "../../api";
 
@@ -245,7 +245,7 @@ const extractImageValue = (val) => {
 };
 
 const SidebarProfile = React.memo(
-  ({ isCollapsed, userImage, userName, userMobile, firstLetter, isLoggedIn }) => {
+  ({ isCollapsed, userImage, userName, userMobile, firstLetter, targetRoute = "/dashboard" }) => {
     const [profileHovered, setProfileHovered] = React.useState(false);
     const [imgError, setImgError] = React.useState(false);
 
@@ -268,7 +268,7 @@ const SidebarProfile = React.memo(
       >
         <div className="w-full bordh" style={{ paddingTop: "6px" }}>
           <NavLink
-            to={isLoggedIn ? "/profile" : "/dashboard"}
+            to={targetRoute}
             onMouseEnter={() => setProfileHovered(true)}
             onMouseLeave={() => setProfileHovered(false)}
             title={isCollapsed ? userName : undefined}
@@ -632,7 +632,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, user: userProp }) => {
         userName={userName}
         userMobile={userMobile}
         firstLetter={firstLetter}
-        isLoggedIn={isLoggedIn}
+        targetRoute={
+          isLoggedIn
+            ? (canAccessPage(user || displayRole, "Profile") ? "/profile" : getFirstAllowedRoute(user || displayRole))
+            : "/dashboard"
+        }
       />
     </div>
   );
