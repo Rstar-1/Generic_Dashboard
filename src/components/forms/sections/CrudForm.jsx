@@ -226,61 +226,152 @@ export const getRoleFormFields = ({
 /**
  * Generic field generator for Lead inquiries
  */
-export const getLeadFormFields = ({ editingLead, userRole } = {}) => {
+export const getLeadFormFields = ({
+    editingLead,
+    userRole,
+    productOptions = [],
+    selectedCategory,
+    onCategoryChange,
+} = {}) => {
     const statusField = getPublishedStatusField(editingLead, userRole);
-    return [
-        {
-            name: "name",
-            label: "Lead Full Name",
-            type: "text",
-            defaultValue: editingLead?.name || "",
-            placeholder: "e.g. Rahul Sharma",
-            validation: { required: true },
+    const currentCategory = (selectedCategory || editingLead?.category || "enquiry").toLowerCase();
+
+    const categoryField = {
+        name: "category",
+        label: "Lead Category",
+        type: "select",
+        options: [
+            { label: "Enquiry", value: "enquiry" },
+            { label: "Manual", value: "manual" },
+            { label: "Product", value: "product" },
+        ],
+        defaultValue: currentCategory,
+        value: currentCategory,
+        onChange: (val) => {
+            const nextVal = typeof val === "object" ? (val?.value || val?.target?.value) : val;
+            onCategoryChange?.(nextVal);
         },
-        {
-            name: "mobile",
-            label: "Mobile Number",
-            type: "tel",
-            defaultValue: editingLead?.mobile || "",
-            placeholder: "e.g. 9876543210",
-            validation: { required: true, mobile: true },
-        },
-        {
-            name: "email",
-            label: "Email Address",
-            type: "email",
-            defaultValue: editingLead?.email || "",
-            placeholder: "e.g. rahul@company.com",
-            validation: { email: true },
-        },
-        {
-            name: "location",
-            label: "Location",
-            type: "text",
-            defaultValue: editingLead?.location || "",
-            placeholder: "e.g. Mumbai, Maharashtra",
-        },
-        {
-            name: "severity",
-            label: "Severity",
-            type: "select",
-            options: [
-                { label: "Low", value: "low" },
-                { label: "Medium", value: "medium" },
-                { label: "High", value: "high" },
-            ],
-            defaultValue: editingLead?.severity ? editingLead.severity.toLowerCase() : "low",
-        },
-        {
-            name: "description",
-            label: "Requirement Details & Notes",
-            type: "textarea",
-            defaultValue: editingLead?.description || "",
-            placeholder: "Enter enquiry requirements, projected order volume, commercial terms...",
-            style: { width: '95%' }
-        },
-        statusField,
-    ].filter(Boolean);
+        validation: { required: true },
+    };
+
+    const nameField = {
+        name: "name",
+        label: "Lead Full Name",
+        type: "text",
+        defaultValue: editingLead?.name || "",
+        placeholder: "e.g. Rahul Sharma",
+        validation: currentCategory === "product" ? {} : { required: true },
+    };
+
+    const mobileField = {
+        name: "mobile",
+        label: "Mobile Number",
+        type: "tel",
+        defaultValue: editingLead?.mobile || "",
+        placeholder: "e.g. 9876543210",
+        validation: currentCategory === "product" ? { mobile: true } : { required: true, mobile: true },
+    };
+
+    const emailField = {
+        name: "email",
+        label: "Email Address",
+        type: "email",
+        defaultValue: editingLead?.email || "",
+        placeholder: "e.g. rahul@company.com",
+        validation: { email: true },
+    };
+
+    const locationField = {
+        name: "location",
+        label: "Location",
+        type: "text",
+        defaultValue: editingLead?.location || "",
+        placeholder: "e.g. Mumbai, Maharashtra",
+    };
+
+    const productsDefaultVal = Array.isArray(editingLead?.products)
+        ? editingLead.products.map((p) => p?._id || p?.id || p)
+        : editingLead?.products ? [editingLead.products] : [];
+
+    const productsField = {
+        name: "products",
+        label: "Select Products",
+        type: "multiselect",
+        options: productOptions,
+        defaultValue: productsDefaultVal,
+        value: productsDefaultVal,
+        placeholder: "Select Products...",
+        validation: { required: true },
+    };
+
+    const severityField = {
+        name: "severity",
+        label: "Severity",
+        type: "select",
+        options: [
+            { label: "Low", value: "low" },
+            { label: "Medium", value: "medium" },
+            { label: "High", value: "high" },
+        ],
+        defaultValue: editingLead?.severity ? editingLead.severity.toLowerCase() : "low",
+    };
+
+    const descriptionField = {
+        name: "description",
+        label: "Requirement Details & Notes",
+        type: "textarea",
+        defaultValue: editingLead?.description || editingLead?.notes || "",
+        placeholder: "Enter enquiry requirements, projected order volume, commercial terms...",
+        style: { width: "95%" },
+    };
+
+    let fields = [];
+    if (currentCategory === "enquiry") {
+        fields = [
+            categoryField,
+            nameField,
+            emailField,
+            mobileField,
+            severityField,
+            descriptionField,
+            statusField,
+        ];
+    } else if (currentCategory === "manual") {
+        fields = [
+            categoryField,
+            nameField,
+            emailField,
+            mobileField,
+            locationField,
+            severityField,
+            descriptionField,
+            statusField,
+        ];
+    } else if (currentCategory === "product") {
+        fields = [
+            categoryField,
+            productsField,
+            nameField,
+            emailField,
+            mobileField,
+            severityField,
+            descriptionField,
+            statusField,
+        ];
+    } else {
+        fields = [
+            categoryField,
+            nameField,
+            emailField,
+            mobileField,
+            locationField,
+            severityField,
+            descriptionField,
+            statusField,
+        ];
+    }
+
+    return fields.filter(Boolean);
 };
 
 export const PRODUCT_UNIT_OPTIONS = [

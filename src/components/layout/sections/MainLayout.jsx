@@ -472,6 +472,7 @@ const MainLayout = React.memo(({
     onAddOpen,
     onEditOpen,
     getFormFields,
+    productOptions = [],
     formFields: staticFormFields,
     formSubmitType = "json",
     formCols = "1",
@@ -665,6 +666,14 @@ const MainLayout = React.memo(({
     const [roleSelectedPages, setRoleSelectedPages] = React.useState(null);
     const [roleSelectedPermissions, setRoleSelectedPermissions] = React.useState(null);
 
+    // Dynamic lead category state for modal
+    const [leadSelectedCategory, setLeadSelectedCategory] = React.useState("enquiry");
+
+    const handleLeadCategoryChange = React.useCallback((cat) => {
+        const nextVal = typeof cat === "object" ? (cat?.value || cat?.target?.value) : cat;
+        setLeadSelectedCategory(String(nextVal || "enquiry").toLowerCase().trim());
+    }, []);
+
     const handleRolePagesChange = React.useCallback((newPages) => {
         let pagesArr = Array.isArray(newPages) ? newPages : [newPages].filter(Boolean);
         if (pagesArr.length > 1 && pagesArr.includes("Full_Access")) {
@@ -691,8 +700,12 @@ const MainLayout = React.memo(({
             } else if (name === "permissions") {
                 handleRolePermissionsChange(value);
             }
+        } else if (entityName === "Lead" || entityName === "Leads") {
+            if (name === "category") {
+                handleLeadCategoryChange(value);
+            }
         }
-    }, [entityName, handleRolePagesChange, handleRolePermissionsChange]);
+    }, [entityName, handleRolePagesChange, handleRolePermissionsChange, handleLeadCategoryChange]);
 
     React.useEffect(() => {
         if (entityName === "User" && !isPrivilegedUser && loggedInUserRoleKey) {
@@ -874,6 +887,9 @@ const MainLayout = React.memo(({
                     formFields: (ctx) => getLeadFormFields({
                         editingLead: ctx.editingLead || ctx.editingItem,
                         userRole: activeRole,
+                        productOptions: productOptions || [],
+                        selectedCategory: leadSelectedCategory,
+                        onCategoryChange: handleLeadCategoryChange,
                     }),
                 };
             default:
@@ -917,6 +933,9 @@ const MainLayout = React.memo(({
         roleSelectedPermissions,
         handleRolePagesChange,
         handleRolePermissionsChange,
+        productOptions,
+        leadSelectedCategory,
+        handleLeadCategoryChange,
     ]);
 
     // Internal state management via useTableState
@@ -1130,14 +1149,12 @@ const MainLayout = React.memo(({
                 break;
         }
 
-        if (
-            !effectiveIsAdmin &&
-            ["Product", "Product Category", "Blog", "Blog Category", "SEO", "Lead", "Leads"].includes(entityName)
-        ) {
-            const uid = getActiveCreatorId(currentUser);
-            if (uid) {
-                params.userId = uid;
-                params.createdBy = uid;
+        const scopedEntities = ["Product", "Product Category", "Blog", "Blog Category", "SEO", "Lead", "Leads"];
+        if (scopedEntities.includes(entityName) && !effectiveIsAdmin) {
+            const uId = getActiveCreatorId(currentUser);
+            if (uId) {
+                params.userId = uId;
+                params.createdBy = uId;
             }
         }
 
@@ -1159,6 +1176,8 @@ const MainLayout = React.memo(({
         activeStatus,
         entityName,
         isPrivilegedUser,
+        effectiveIsAdmin,
+        currentUser,
         loggedInUserRoleKey,
         loggedInUserRoleId,
         loggedInUserRoleName,
@@ -1167,8 +1186,6 @@ const MainLayout = React.memo(({
         categoryFilter,
         seoTypeFilter,
         leadSeverityFilter,
-        effectiveIsAdmin,
-        currentUser,
         JSON.stringify(extraFilters || {}),
     ]);
 
@@ -1226,6 +1243,8 @@ const MainLayout = React.memo(({
         if (entityName === "Role") {
             setRoleSelectedPages(["Full_Access"]);
             setRoleSelectedPermissions(["Full_Access"]);
+        } else if (entityName === "Lead" || entityName === "Leads") {
+            setLeadSelectedCategory("enquiry");
         }
         setInternalIsModalOpen(true);
     }, [onAddOpen, entityName]);
@@ -1240,6 +1259,8 @@ const MainLayout = React.memo(({
         if (entityName === "Role") {
             setRoleSelectedPages(null);
             setRoleSelectedPermissions(null);
+        } else if (entityName === "Lead" || entityName === "Leads") {
+            setLeadSelectedCategory("enquiry");
         }
     }, [controlledOnCloseModal, entityName]);
 
@@ -1251,6 +1272,8 @@ const MainLayout = React.memo(({
             setRoleSelectedPages(rawPages);
             const rawPerms = Array.isArray(row.permissions) && row.permissions.length ? row.permissions : getPermissionsForPages(rawPages);
             setRoleSelectedPermissions(rawPerms);
+        } else if ((entityName === "Lead" || entityName === "Leads") && row) {
+            setLeadSelectedCategory(String(row.category || "enquiry").toLowerCase().trim());
         }
         setInternalIsModalOpen(true);
     }, [onEditOpen, entityName]);
@@ -1270,6 +1293,12 @@ const MainLayout = React.memo(({
             } else {
                 setRoleSelectedPages(null);
                 setRoleSelectedPermissions(null);
+            }
+        } else if (entityName === "Lead" || entityName === "Leads") {
+            if (isModalOpen && editingItem) {
+                setLeadSelectedCategory(String(editingItem.category || "enquiry").toLowerCase().trim());
+            } else if (!isModalOpen) {
+                setLeadSelectedCategory("enquiry");
             }
         }
     }, [entityName, isModalOpen, editingItem]);
@@ -1583,6 +1612,11 @@ const MainLayout = React.memo(({
             }
             payload.permissions = cleanPerms.length ? cleanPerms : ["Full_Access"];
             payload.pages = Array.isArray(payload.pages) && payload.pages.length ? payload.pages : ["Full_Access"];
+        } else if (entityName === "Lead" || entityName === "Leads") {
+            payload.category = formData.category || leadSelectedCategory || "enquiry";
+            if (payload.category === "product" && formData.products) {
+                payload.products = Array.isArray(formData.products) ? formData.products : [formData.products];
+            }
         }
 
         if (transformPayload) {
@@ -1867,11 +1901,15 @@ const MainLayout = React.memo(({
                 editingSeo: editingItem,
                 editingRole: editingItem,
                 editingUser: editingItem,
+                editingLead: editingItem,
                 editingItem,
                 userRole: activeRole,
                 currentUser,
                 roleOptions: dynamicRoleOptions,
                 categoryOptions: dynamicCategoryOptions,
+                productOptions: productOptions || [],
+                selectedCategory: leadSelectedCategory,
+                onCategoryChange: handleLeadCategoryChange,
             });
         }
         if (entityConfig.formFields) {
@@ -1882,51 +1920,74 @@ const MainLayout = React.memo(({
                 editingSeo: editingItem,
                 editingRole: editingItem,
                 editingUser: editingItem,
+                editingLead: editingItem,
                 editingItem,
                 userRole: activeRole,
                 currentUser,
+                productOptions: productOptions || [],
+                selectedCategory: leadSelectedCategory,
+                onCategoryChange: handleLeadCategoryChange,
             });
         }
         return staticFormFields || [];
-    }, [getFormFields, entityConfig, staticFormFields, editingItem, activeRole, currentUser, dynamicRoleOptions, dynamicCategoryOptions]);
+    }, [getFormFields, entityConfig, staticFormFields, editingItem, activeRole, currentUser, dynamicRoleOptions, dynamicCategoryOptions, productOptions, leadSelectedCategory, handleLeadCategoryChange]);
 
     // Data filtering per entity
     const resolvedData = React.useMemo(() => {
         let list = Array.isArray(data) ? data : [];
 
-        // For non-admin roles in content/product/lead management, restrict view to own added items + admin added items
-        if (
-            !effectiveIsAdmin &&
-            ["Product", "Product Category", "Blog", "Blog Category", "SEO", "Lead", "Leads"].includes(entityName) &&
-            (currentUser?._id || currentUser?.id)
-        ) {
-            const currentId = String(currentUser?._id || currentUser?.id || "").trim();
-            const currentCode = String(currentUser?.id || "").trim();
-            const currentName = String(currentUser?.fullname || currentUser?.name || "").toLowerCase().trim();
+        // Scoped creator-or-admin safeguard for non-admin users
+        const scopedEntities = ["Product", "Product Category", "Blog", "Blog Category", "SEO", "Lead", "Leads"];
+        if (scopedEntities.includes(entityName) && !effectiveIsAdmin) {
+            const currentUserId = String(currentUser?._id || currentUser?.id || currentUser?.userId || "").trim().toLowerCase();
+            const currentUserName = String(currentUser?.fullname || currentUser?.name || "").trim().toLowerCase();
+            const currentUserEmail = String(currentUser?.email || "").trim().toLowerCase();
+            const currentUserMobile = String(currentUser?.mobile || currentUser?.phone || "").trim();
 
             list = list.filter((item) => {
-                const creator = item?.createdby || item?.createdBy;
-                const norm = normalizeCreator ? normalizeCreator(creator, item?.createdby) : creator;
+                if (!item) return false;
+                const creator = item.createdBy || item.createdby;
+                // If item has no creator (system seeded or default data), show to all
+                if (!creator) return true;
 
-                const creatorId = String(norm?._id || norm?.id || creator?._id || creator?.id || (typeof creator === "string" ? creator : "")).trim();
-                const creatorCode = String(norm?.id || creator?.id || "").trim();
-                const creatorName = String(norm?.fullname || norm?.name || creator?.fullname || creator?.name || "").toLowerCase().trim();
-                const creatorRole = String(norm?.role || creator?.role || "").toLowerCase().trim();
+                const creatorId = String(
+                    creator?._id ||
+                    creator?.id ||
+                    creator?.userId ||
+                    (typeof creator === "string" ? creator : "")
+                ).trim().toLowerCase();
+                const creatorName = String(creator?.fullname || creator?.name || "").trim().toLowerCase();
+                const creatorEmail = String(creator?.email || "").trim().toLowerCase();
+                const creatorMobile = String(creator?.mobile || creator?.phone || "").trim();
+                const creatorRole = String(
+                    creator?.role ||
+                    creator?.rolename ||
+                    creator?.roleId?.rolename ||
+                    creator?.roleId?.name ||
+                    ""
+                ).trim().toLowerCase();
 
-                const isOwn =
-                    (currentId && creatorId && (creatorId === currentId || creatorCode === currentId)) ||
-                    (currentCode && (creatorId === currentCode || creatorCode === currentCode)) ||
-                    (currentName && creatorName && creatorName === currentName);
+                // 1. Is item created by this logged in user?
+                if (currentUserId && creatorId === currentUserId) return true;
+                if (currentUserName && creatorName && creatorName === currentUserName) return true;
+                if (currentUserEmail && creatorEmail && creatorEmail === currentUserEmail) return true;
+                if (currentUserMobile && creatorMobile && creatorMobile === currentUserMobile) return true;
 
-                const isAdminCreated =
+                // 2. Is item created by an Admin user?
+                if (
                     creatorRole === "admin" ||
                     creatorRole === "dev_admin" ||
-                    creatorName === "admin" ||
-                    !creator ||
-                    creatorId === "" ||
-                    norm?.name === "Admin";
+                    creatorRole === "devadmin" ||
+                    creatorRole === "dev admin" ||
+                    creatorRole === "administrator" ||
+                    creatorRole.includes("admin") ||
+                    creatorName === "admin"
+                ) {
+                    return true;
+                }
 
-                return isOwn || isAdminCreated;
+                // Any other non-admin user's items are hidden from this user
+                return false;
             });
         }
 
@@ -2023,13 +2084,17 @@ const MainLayout = React.memo(({
             default:
                 return list;
         }
-    }, [data, entityName, permissionFilter, roleFilter, isPrivilegedUser, loggedInUserRoleKey, loggedInUserRoleId, userRoleFilter, roles, categoryFilter, seoTypeFilter, leadSeverityFilter, tableState.selectedCategory, effectiveIsAdmin, currentUser]);
+    }, [data, entityName, effectiveIsAdmin, currentUser, permissionFilter, roleFilter, isPrivilegedUser, loggedInUserRoleKey, loggedInUserRoleId, userRoleFilter, roles, categoryFilter, seoTypeFilter, leadSeverityFilter, tableState.selectedCategory]);
 
     const resolvedShowSidebar = entityConfig.showSidebar;
 
     const currentTableData = isReviewsTab ? paginatedReviews : resolvedData;
     const currentTableColumns = isReviewsTab ? reviewsTableColumns : columns;
-    const currentTotalItems = isReviewsTab ? filteredReviews.length : (total !== undefined ? total : resolvedData.length);
+    const currentTotalItems = isReviewsTab
+        ? filteredReviews.length
+        : (!effectiveIsAdmin && ["Product", "Product Category", "Blog", "Blog Category", "SEO", "Lead", "Leads"].includes(entityName))
+        ? resolvedData.length
+        : (total !== undefined ? total : resolvedData.length);
     const currentTableTitle = isReviewsTab
         ? (entityName === "Product" ? "Product Reviews & Ratings" : "Reader Feedback & Reviews")
         : entityConfig.tableTitle;

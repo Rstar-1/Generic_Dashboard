@@ -321,6 +321,12 @@ const leadsTableColumns = [
     style: { minWidth: "90px" },
   },
   {
+    header: "Category",
+    accessor: "category",
+    ui: "code",
+    style: { minWidth: "95px" },
+  },
+  {
     header: "Created By",
     accessor: "createdby",
     ui: "profile",
