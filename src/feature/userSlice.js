@@ -1,3 +1,4 @@
+import { createAsyncThunk } from "@reduxjs/toolkit";
 import { createEntitySlice } from "./sliceHelper.js";
 import {
   getUsersApi,
@@ -14,6 +15,8 @@ import {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useBulkDeleteUsersMutation,
+  resetPasswordApi,
+  useResetPasswordMutation,
 } from "../api/endpoints/userApi.js";
 
 export {
@@ -26,6 +29,8 @@ export {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useBulkDeleteUsersMutation,
+  resetPasswordApi,
+  useResetPasswordMutation,
 };
 
 export const normalizeUser = (u) => {
@@ -86,6 +91,18 @@ export const normalizeUser = (u) => {
   };
 };
 
+export const resetPasswordThunk = createAsyncThunk(
+  "users/resetPassword",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const res = await resetPasswordApi(payload);
+      return res?.data !== undefined ? res.data : res;
+    } catch (err) {
+      return rejectWithValue(err.message || "Failed to reset password");
+    }
+  }
+);
+
 const entity = createEntitySlice({
   name: "users",
   itemKey: "users",
@@ -98,6 +115,9 @@ const entity = createEntitySlice({
     delete: deleteUserApi,
     bulkDelete: bulkDeleteUsersApi,
   },
+  customHookMethods: {
+    resetPassword: (dispatch) => (data) => dispatch(resetPasswordThunk(data)),
+  },
   normalizer: normalizeUser,
 });
 
@@ -108,6 +128,8 @@ export const {
   deleteUser,
   bulkDeleteUsers,
 } = entity.thunks;
+
+export const resetPassword = resetPasswordThunk;
 
 export const {
   clearUserError,

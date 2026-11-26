@@ -29,6 +29,12 @@ export const userApi = apiSlice.injectEndpoints({
       query: (data) => ({ url: "/api/users/profile", method: "PUT", data }),
       invalidatesTags: ["User"],
     }),
+
+    // Reset password mutation
+    resetPassword: builder.mutation({
+      query: (data) => ({ url: "/api/auth/reset-password", method: "POST", data }),
+      invalidatesTags: ["User"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -39,6 +45,7 @@ export const {
   useGetUserByIdQuery,
   useGetUserProfileQuery,
   useUpdateProfileMutation,
+  useResetPasswordMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
   useBulkDeleteUsersMutation,
@@ -65,11 +72,15 @@ export const updateProfileApi = (data) =>
     );
   });
 
+export const resetPasswordApi = (data) =>
+  handleRequest(() => axiosInstance.post("/api/auth/reset-password", data));
+
 export default {
   getUsers: getUsersApi,
   getUserById: getUserByIdApi,
   getUserProfile: getUserProfileApi,
   updateProfile: updateProfileApi,
+  resetPassword: resetPasswordApi,
   updateUser: updateUserApi,
   deleteUser: deleteUserApi,
   bulkDeleteUsers: bulkDeleteUsersApi,

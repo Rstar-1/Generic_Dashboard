@@ -405,6 +405,7 @@ export const ROLE_PAGE_PERMISSIONS_MAP = {
   "Products": ["view_products", "edit_products", "trash_products"],
   "Blogs": ["view_blogs", "edit_blogs", "trash_blogs"],
   "SEO": ["view_seo", "edit_seo", "trash_seo"],
+  "Leads": ["view_leads", "edit_leads", "trash_leads"],
   "System Users": ["view_systemuser", "edit_systemuser", "trash_systemuser"],
   "Roles": ["view_roles", "edit_roles", "trash_roles"],
   "Full_Access": ["Full_Access"],
@@ -580,6 +581,7 @@ export const canPerformAction = (roleOrUser, action = "view", entity = "") => {
     baseEnt = "product_categories";
   else if (ent.includes("review"))
     baseEnt = currentPath.includes("blog") || ent.includes("blog") ? "blogs" : "products";
+  else if (ent.includes("lead")) baseEnt = "leads";
   else if (ent.includes("user")) baseEnt = "systemuser";
   else if (ent.includes("domain") || ent.includes("domian")) baseEnt = "domain";
   else if (ent.includes("role")) baseEnt = "roles";

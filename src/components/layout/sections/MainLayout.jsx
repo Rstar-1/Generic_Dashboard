@@ -15,6 +15,7 @@ import {
     ROLE_ACCESS_CONFIG,
     reviewsTableColumns,
     seoSiteInfo,
+    getPermissionsForPages,
 } from "../../../utils/apiData";
 import { canAccessPage, useCurrentUser, fileToBase64, isAdminOrDevAdmin, canPerformAction, isFullAccess } from "../../../utils";
 import {
@@ -24,6 +25,7 @@ import {
     getProductFormFields,
     getBlogFormFields,
     getSeoFormFields,
+    getLeadFormFields,
     getProductReviewFormFields,
     getBlogReviewFormFields,
 } from "../../forms/sections/CrudForm";
@@ -222,24 +224,62 @@ MainLayoutHeader.displayName = "MainLayoutHeader";
 /**
  * Normalizes sidebar item counts across different API payload structures
  */
-export const resolveItemCount = (item, sidebarCounts, activeTab) => {
+export const resolveItemCount = (item, sidebarCounts, activeTab, data = []) => {
     if (!item) return undefined;
     if (typeof item.count === "number") return item.count;
-    if (!sidebarCounts || typeof sidebarCounts !== "object") return undefined;
 
-    const key = (item.role || item.status || item.name || "").toLowerCase().trim();
-    if (!key) return undefined;
+    if (sidebarCounts && typeof sidebarCounts === "object") {
+        const keysToCheck = [
+            item.status,
+            item.severity,
+            item.role,
+            item.name,
+            item.name?.replace(/\s+(leads?|products?|blogs?|categories|articles?)/i, ""),
+            item.name?.toLowerCase().includes("active") && !item.name?.toLowerCase().includes("inactive") ? "active" : null,
+            item.name?.toLowerCase().includes("inactive") ? "inactive" : null,
+            item.name?.toLowerCase().includes("high") ? "high" : null,
+            item.name?.toLowerCase().includes("medium") ? "medium" : null,
+            item.name?.toLowerCase().includes("low") ? "low" : null,
+        ].filter(Boolean).map((k) => String(k).toLowerCase().trim());
 
-    if (sidebarCounts[key] !== undefined && typeof sidebarCounts[key] === "number") {
-        return sidebarCounts[key];
+        for (const k of keysToCheck) {
+            if (sidebarCounts[k] !== undefined && typeof sidebarCounts[k] === "number") {
+                return sidebarCounts[k];
+            }
+            if (activeTab && sidebarCounts[activeTab]?.[k] !== undefined) {
+                return sidebarCounts[activeTab][k];
+            }
+        }
+
+        if (keysToCheck.includes("all") && typeof sidebarCounts.total === "number") {
+            return sidebarCounts.total;
+        }
     }
 
-    if (activeTab && sidebarCounts[activeTab]?.[key] !== undefined) {
-        return sidebarCounts[activeTab][key];
-    }
+    // Dynamic fallback calculation from data array
+    if (Array.isArray(data) && data.length > 0) {
+        const nameLow = String(item.name || "").toLowerCase();
+        const statusLow = String(item.status || "").toLowerCase();
+        const sevLow = String(item.severity || "").toLowerCase();
 
-    if (key === "all" && typeof sidebarCounts.total === "number") {
-        return sidebarCounts.total;
+        if (statusLow === "active" || (nameLow.includes("active") && !nameLow.includes("inactive"))) {
+            return data.filter((d) => d.isActive !== false && !d.isDeleted).length;
+        }
+        if (statusLow === "inactive" || nameLow.includes("inactive")) {
+            return data.filter((d) => d.isActive === false && !d.isDeleted).length;
+        }
+        if (sevLow === "high" || nameLow.includes("high")) {
+            return data.filter((d) => String(d.severity || "").toLowerCase() === "high" && !d.isDeleted).length;
+        }
+        if (sevLow === "medium" || nameLow.includes("medium")) {
+            return data.filter((d) => String(d.severity || "").toLowerCase() === "medium" && !d.isDeleted).length;
+        }
+        if (sevLow === "low" || nameLow.includes("low")) {
+            return data.filter((d) => String(d.severity || "").toLowerCase() === "low" && !d.isDeleted).length;
+        }
+        if (statusLow === "all" || nameLow.includes("all")) {
+            return data.filter((d) => !d.isDeleted).length;
+        }
     }
 
     return undefined;
@@ -613,12 +653,46 @@ const MainLayout = React.memo(({
     const [userCategory, setUserCategory] = React.useState(() => (!isPrivilegedUser && loggedInUserRoleName ? `${loggedInUserRoleName.charAt(0).toUpperCase() + loggedInUserRoleName.slice(1)} Users` : "All Users"));
     const [categoryFilter, setCategoryFilter] = React.useState("all");
     const [seoTypeFilter, setSeoTypeFilter] = React.useState("all");
+    const [leadSeverityFilter, setLeadSeverityFilter] = React.useState("all");
 
     // Review modal & SEO audit modal states
     const [isReviewModalOpen, setIsReviewModalOpen] = React.useState(false);
     const [reviewTargetItem, setReviewTargetItem] = React.useState(null);
     const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
     const [viewingSeo, setViewingSeo] = React.useState(null);
+
+    // Dynamic role pages & permissions linking state for modal
+    const [roleSelectedPages, setRoleSelectedPages] = React.useState(null);
+    const [roleSelectedPermissions, setRoleSelectedPermissions] = React.useState(null);
+
+    const handleRolePagesChange = React.useCallback((newPages) => {
+        let pagesArr = Array.isArray(newPages) ? newPages : [newPages].filter(Boolean);
+        if (pagesArr.length > 1 && pagesArr.includes("Full_Access")) {
+            if (pagesArr[0] === "Full_Access") {
+                pagesArr = pagesArr.filter((p) => p !== "Full_Access");
+            } else {
+                pagesArr = ["Full_Access"];
+            }
+        }
+        setRoleSelectedPages(pagesArr);
+        const perms = getPermissionsForPages(pagesArr);
+        setRoleSelectedPermissions(perms);
+    }, []);
+
+    const handleRolePermissionsChange = React.useCallback((newPerms) => {
+        const permsArr = Array.isArray(newPerms) ? newPerms : [newPerms].filter(Boolean);
+        setRoleSelectedPermissions(permsArr);
+    }, []);
+
+    const handleModalFormChange = React.useCallback((name, value) => {
+        if (entityName === "Role") {
+            if (name === "pages") {
+                handleRolePagesChange(value);
+            } else if (name === "permissions") {
+                handleRolePermissionsChange(value);
+            }
+        }
+    }, [entityName, handleRolePagesChange, handleRolePermissionsChange]);
 
     React.useEffect(() => {
         if (entityName === "User" && !isPrivilegedUser && loggedInUserRoleKey) {
@@ -704,6 +778,10 @@ const MainLayout = React.memo(({
                         pageOptions: rolePageOptions,
                         permissionOptions: rolePermissionOptions,
                         userRole: activeRole,
+                        selectedPages: roleSelectedPages !== null ? roleSelectedPages : (ctx.editingRole || ctx.editingItem)?.pages,
+                        selectedPermissions: roleSelectedPermissions !== null ? roleSelectedPermissions : (ctx.editingRole || ctx.editingItem)?.permissions,
+                        onPagesChange: handleRolePagesChange,
+                        onPermissionsChange: handleRolePermissionsChange,
                     }),
                 };
             case "User":
@@ -781,6 +859,23 @@ const MainLayout = React.memo(({
                         userRole: activeRole,
                     }),
                 };
+            case "Lead":
+            case "Leads":
+                return {
+                    showSidebar: showSidebar !== undefined ? showSidebar : true,
+                    sidebarTitle: sidebarTitle || sidebarData?.title || "Lead Statuses",
+                    tableTitle: tableTitle || "Lead Inquiries & Prospects",
+                    tableSubtitle: tableSubtitle || "Track prospective client inquiries, qualification severities, and pipeline conversions",
+                    searchPlaceholder: searchPlaceholder || "Search leads by client name, mobile, email, or location...",
+                    addBtnText: addBtnText || "Add Lead",
+                    headerIcon: headerIcon || "Box",
+                    headerTitle: headerTitle || "Leads Overview",
+                    headerSub: headerSub || "Manage client inquiries, follow-up severity classifications, and conversions",
+                    formFields: (ctx) => getLeadFormFields({
+                        editingLead: ctx.editingLead || ctx.editingItem,
+                        userRole: activeRole,
+                    }),
+                };
             default:
                 return {
                     showSidebar: showSidebar !== undefined ? showSidebar : true,
@@ -818,6 +913,10 @@ const MainLayout = React.memo(({
         dynamicRoleOptions,
         dynamicCategoryOptions,
         activeRole,
+        roleSelectedPages,
+        roleSelectedPermissions,
+        handleRolePagesChange,
+        handleRolePermissionsChange,
     ]);
 
     // Internal state management via useTableState
@@ -880,12 +979,29 @@ const MainLayout = React.memo(({
 
     const isUsingDefault = rawItems === defaultSidebarItems;
 
+    // Automatically derive generic active/inactive counts if not provided by backend
+    const effectiveSidebarCounts = React.useMemo(() => {
+        const base = (sidebarCounts && typeof sidebarCounts === "object") ? sidebarCounts : {};
+        if (base.active !== undefined && base.inactive !== undefined) {
+            return base;
+        }
+        const list = Array.isArray(data) ? data : [];
+        const active = list.filter((it) => it.isActive !== false && !it.isDeleted).length;
+        const inactive = list.filter((it) => it.isActive === false && !it.isDeleted).length;
+        return {
+            ...base,
+            all: base.all !== undefined ? base.all : (total || list.length),
+            active: base.active !== undefined ? base.active : active,
+            inactive: base.inactive !== undefined ? base.inactive : inactive,
+        };
+    }, [sidebarCounts, data, total]);
+
     const resolvedItems = React.useMemo(() => {
         return rawItems.map((item) => {
-            const count = resolveItemCount(item, sidebarCounts, activeTab);
+            const count = resolveItemCount(item, effectiveSidebarCounts, activeTab, data);
             return count !== undefined ? { ...item, count } : item;
         });
-    }, [rawItems, sidebarCounts, activeTab]);
+    }, [rawItems, effectiveSidebarCounts, activeTab, data]);
 
     const resolvedSelectedItem = React.useMemo(() => {
         if (entityName === "User") return selectedSidebarItem || userCategory || tableState.selectedCategory;
@@ -905,6 +1021,29 @@ const MainLayout = React.memo(({
             setUserCategory(targetCategory);
             setUserRoleFilter(targetRole);
             tableState.setSelectedCategory(targetCategory);
+            tableState.setCurrentPage(1);
+        } else if (entityName === "Lead" || entityName === "Leads") {
+            const targetName = item.name || "";
+            const targetStatus = item.status || (
+                targetName.toLowerCase().includes("active") && !targetName.toLowerCase().includes("inactive")
+                    ? "Active"
+                    : targetName.toLowerCase().includes("inactive")
+                    ? "Inactive"
+                    : "all"
+            );
+            const targetSev = item.severity || (
+                targetName.toLowerCase().includes("high")
+                    ? "high"
+                    : targetName.toLowerCase().includes("medium")
+                    ? "medium"
+                    : targetName.toLowerCase().includes("low")
+                    ? "low"
+                    : "all"
+            );
+
+            tableState.setSelectedCategory(targetName || "All Leads");
+            tableState.handleStatusFilterChange(targetStatus);
+            setLeadSeverityFilter(targetSev);
             tableState.setCurrentPage(1);
         } else {
             tableState.handleSidebarItemClick(item.name || item.role || item.status || item);
@@ -980,6 +1119,13 @@ const MainLayout = React.memo(({
                 }
                 break;
             }
+            case "Lead":
+            case "Leads": {
+                if (leadSeverityFilter && leadSeverityFilter !== "all") {
+                    params.severity = leadSeverityFilter;
+                }
+                break;
+            }
             default:
                 break;
         }
@@ -1009,6 +1155,7 @@ const MainLayout = React.memo(({
         roleFilter,
         categoryFilter,
         seoTypeFilter,
+        leadSeverityFilter,
         JSON.stringify(extraFilters || {}),
     ]);
 
@@ -1063,8 +1210,12 @@ const MainLayout = React.memo(({
     const handleOpenAddModal = React.useCallback(() => {
         if (onAddOpen) onAddOpen();
         setInternalEditingItem(null);
+        if (entityName === "Role") {
+            setRoleSelectedPages(["Full_Access"]);
+            setRoleSelectedPermissions(["Full_Access"]);
+        }
         setInternalIsModalOpen(true);
-    }, [onAddOpen]);
+    }, [onAddOpen, entityName]);
 
     const handleCloseModal = React.useCallback(() => {
         if (controlledOnCloseModal) {
@@ -1073,13 +1224,42 @@ const MainLayout = React.memo(({
             setInternalIsModalOpen(false);
             setInternalEditingItem(null);
         }
-    }, [controlledOnCloseModal]);
+        if (entityName === "Role") {
+            setRoleSelectedPages(null);
+            setRoleSelectedPermissions(null);
+        }
+    }, [controlledOnCloseModal, entityName]);
 
     const handleEdit = React.useCallback((row) => {
         if (onEditOpen) onEditOpen(row);
         setInternalEditingItem(row);
+        if (entityName === "Role" && row) {
+            const rawPages = Array.isArray(row.pages) && row.pages.length ? row.pages : ["Full_Access"];
+            setRoleSelectedPages(rawPages);
+            const rawPerms = Array.isArray(row.permissions) && row.permissions.length ? row.permissions : getPermissionsForPages(rawPages);
+            setRoleSelectedPermissions(rawPerms);
+        }
         setInternalIsModalOpen(true);
-    }, [onEditOpen]);
+    }, [onEditOpen, entityName]);
+
+    React.useEffect(() => {
+        if (entityName === "Role") {
+            if (isModalOpen) {
+                if (editingItem) {
+                    const rawPages = Array.isArray(editingItem.pages) && editingItem.pages.length ? editingItem.pages : ["Full_Access"];
+                    setRoleSelectedPages(rawPages);
+                    const rawPerms = Array.isArray(editingItem.permissions) && editingItem.permissions.length ? editingItem.permissions : getPermissionsForPages(rawPages);
+                    setRoleSelectedPermissions(rawPerms);
+                } else if (roleSelectedPages === null) {
+                    setRoleSelectedPages(["Full_Access"]);
+                    setRoleSelectedPermissions(["Full_Access"]);
+                }
+            } else {
+                setRoleSelectedPages(null);
+                setRoleSelectedPermissions(null);
+            }
+        }
+    }, [entityName, isModalOpen, editingItem]);
 
     const handleView = React.useCallback((row) => {
         if (entityName === "SEO") {
@@ -1580,6 +1760,35 @@ const MainLayout = React.memo(({
         ];
     }, [entityName, dynamicSeoTypeOptions, seoTypeFilter, activeStatus, tableState]);
 
+    const defaultLeadFilterFields = React.useMemo(() => {
+        if (entityName !== "Lead" && entityName !== "Leads") return null;
+        return [
+            {
+                type: "select",
+                label: "Lead Status",
+                options: STATUS_OPTIONS,
+                value: activeStatus,
+                onChange: tableState.handleStatusFilterChange,
+            },
+            {
+                type: "select",
+                label: "Severity",
+                options: [
+                    { label: "All Severities", value: "all" },
+                    { label: "High", value: "high" },
+                    { label: "Medium", value: "medium" },
+                    { label: "Low", value: "low" },
+                ],
+                value: leadSeverityFilter,
+                onChange: (val) => {
+                    const next = typeof val === "string" ? val : (val?.value || val?.target?.value || "all");
+                    setLeadSeverityFilter(next);
+                    tableState.setCurrentPage(1);
+                },
+            },
+        ];
+    }, [entityName, activeStatus, leadSeverityFilter, tableState]);
+
     const resolvedFilterInputs = filterInputs || (
         (filterFields && filterFields.length > 0) ? (
             <FilterForm fields={filterFields} />
@@ -1589,6 +1798,8 @@ const MainLayout = React.memo(({
             <FilterForm fields={defaultCatalogFilterFields} />
         ) : defaultSeoFilterFields ? (
             <FilterForm fields={defaultSeoFilterFields} />
+        ) : defaultLeadFilterFields ? (
+            <FilterForm fields={defaultLeadFilterFields} />
         ) : showStatusFilter ? (
             <FilterForm
                 fields={[
@@ -1606,7 +1817,7 @@ const MainLayout = React.memo(({
 
     const hasActiveFilters = controlledHasActiveFilters !== undefined
         ? controlledHasActiveFilters
-        : (activeStatus !== "all" || Boolean(activeSearch) || activeTab !== "all" || roleFilter !== "all" || permissionFilter !== "all" || categoryFilter !== "all" || seoTypeFilter !== "all" || (entityName === "User" && isPrivilegedUser && userRoleFilter !== "all"));
+        : (activeStatus !== "all" || Boolean(activeSearch) || activeTab !== "all" || roleFilter !== "all" || permissionFilter !== "all" || categoryFilter !== "all" || seoTypeFilter !== "all" || leadSeverityFilter !== "all" || (entityName === "User" && isPrivilegedUser && userRoleFilter !== "all"));
 
     const handleClearAllFilters = React.useCallback(() => {
         if (controlledOnClearAllFilters) {
@@ -1619,6 +1830,7 @@ const MainLayout = React.memo(({
             setPermissionFilter("all");
             setCategoryFilter("all");
             setSeoTypeFilter("all");
+            setLeadSeverityFilter("all");
             if (entityName === "User") {
                 if (isPrivilegedUser) {
                     setUserRoleFilter("all");
@@ -1737,10 +1949,32 @@ const MainLayout = React.memo(({
                 }
                 return list;
             }
+            case "Lead":
+            case "Leads": {
+                if (leadSeverityFilter !== "all") {
+                    const targetSev = leadSeverityFilter.toLowerCase();
+                    list = list.filter((it) => String(it.severity || "").toLowerCase() === targetSev);
+                }
+                if (tableState.selectedCategory && tableState.selectedCategory !== "All Leads" && tableState.selectedCategory !== "All") {
+                    const sel = tableState.selectedCategory.toLowerCase();
+                    if (sel.includes("active") && !sel.includes("inactive")) {
+                        list = list.filter((it) => it.isActive !== false);
+                    } else if (sel.includes("inactive")) {
+                        list = list.filter((it) => it.isActive === false);
+                    } else if (sel.includes("high")) {
+                        list = list.filter((it) => String(it.severity || "").toLowerCase() === "high");
+                    } else if (sel.includes("medium")) {
+                        list = list.filter((it) => String(it.severity || "").toLowerCase() === "medium");
+                    } else if (sel.includes("low")) {
+                        list = list.filter((it) => String(it.severity || "").toLowerCase() === "low");
+                    }
+                }
+                return list;
+            }
             default:
                 return list;
         }
-    }, [data, entityName, permissionFilter, roleFilter, isPrivilegedUser, loggedInUserRoleKey, loggedInUserRoleId, userRoleFilter, roles, categoryFilter, seoTypeFilter]);
+    }, [data, entityName, permissionFilter, roleFilter, isPrivilegedUser, loggedInUserRoleKey, loggedInUserRoleId, userRoleFilter, roles, categoryFilter, seoTypeFilter, leadSeverityFilter, tableState.selectedCategory]);
 
     const resolvedShowSidebar = entityConfig.showSidebar;
 
@@ -1936,6 +2170,7 @@ const MainLayout = React.memo(({
                                     key={editingItem ? (editingItem.id || editingItem._id) : "new-crud-item"}
                                     fields={resolvedFormFields}
                                     submitType={formSubmitType}
+                                    onChange={handleModalFormChange}
                                     onSubmit={handleFormSubmit}
                                     submitText={
                                         editingItem

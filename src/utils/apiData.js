@@ -373,9 +373,6 @@ const leadsSidebarData = {
     { name: "All Leads", color: "#1e74db", status: "all" },
     { name: "Active Leads", color: "#10b981", status: "Active" },
     { name: "Inactive Leads", color: "#64748b", status: "Inactive" },
-    { name: "High Severity", color: "#ef4444", severity: "high" },
-    { name: "Medium Severity", color: "#f59e0b", severity: "medium" },
-    { name: "Low Severity", color: "#10b981", severity: "low" },
   ],
 };
 
@@ -771,6 +768,11 @@ export const ROLE_ACCESS_CONFIG = [
     permissions: ["view_domain"],
   },
   {
+    page: "Leads",
+    label: "Leads",
+    permissions: ["view_leads", "edit_leads", "trash_leads"],
+  },
+  {
     page: "Products Category",
     label: "Products Category",
     permissions: [
@@ -814,6 +816,28 @@ export const ROLE_ACCESS_CONFIG = [
     permissions: ["view_roles", "edit_roles", "trash_roles"],
   },
 ];
+
+export const getPermissionsForPages = (pages) => {
+  if (!Array.isArray(pages) || pages.length === 0) return [];
+  const list = [];
+  pages.forEach((pg) => {
+    if (!pg) return;
+    const cleanPg = String(pg).trim().toLowerCase();
+    const config = (ROLE_ACCESS_CONFIG || []).find(
+      (c) =>
+        String(c.page || "").trim().toLowerCase() === cleanPg ||
+        String(c.label || "").trim().toLowerCase() === cleanPg
+    );
+    if (config?.permissions) {
+      config.permissions.forEach((perm) => {
+        if (perm && !list.includes(perm)) {
+          list.push(perm);
+        }
+      });
+    }
+  });
+  return list;
+};
 
 export {
   AVATAR_PALETTE,

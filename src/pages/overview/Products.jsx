@@ -29,6 +29,7 @@ const OverviewProducts = () => {
             sidebarCounts={counts || { all: total }}
             tabs={TABS.products || TABS}
             tableTitle="Product Catalog"
+            maxVisibleColumns='6'
             formCols='2'
             modalSize='xl'
             columns={productsTableColumns}

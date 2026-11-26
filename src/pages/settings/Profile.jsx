@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Icon from "../../components/common/Icon";
 import Image from "../../components/common/Image";
+import Button from "../../components/common/Button";
+import Container from "../../components/common/Container";
 import Skeleton from "../../components/common/Skeleton";
+import FormBuilder from "../../components/forms/FormBuilder";
 import { showToast } from "../../components/common/Toast";
 import {
   getUserProfileApi,
@@ -9,6 +12,7 @@ import {
   getUserByIdApi,
   updateUserApi,
 } from "../../api";
+import { resetPasswordApi } from "../../api/endpoints/userApi";
 import {
   getCurrentUser,
   setCurrentUser,
@@ -16,13 +20,925 @@ import {
   fileToBase64,
 } from "../../utils";
 import { useRoles } from "../../feature/roleSlice";
+import { useUsers } from "../../feature/userSlice";
 
+// Navigation tabs array requested for mapping
+const PROFILE_TABS = [
+  {
+    id: "account",
+    title: "Account Information",
+    subtitle: "Change your information",
+    icon: (
+      <Icon name="Users" width="17" height="17" stroke="currentColor" className="flex" />
+    ),
+  },
+  {
+    id: "address",
+    title: "Address",
+    subtitle: "Change your Address",
+    icon: <Icon name="MapPin" width="17" height="17" stroke="currentColor" className="flex" />,
+  },
+  {
+    id: "social",
+    title: "Social Media",
+    subtitle: "Change your Media",
+    icon: <Icon name="Globe" width="17" height="17" stroke="currentColor" className="flex" />,
+  },
+  {
+    id: "password",
+    title: "Password",
+    subtitle: "Change your Password",
+    icon: <Icon name="Lock" width="17" height="17" stroke="currentColor" />,
+  },
+];
+
+/**
+ * Address serialization helpers
+ * Parses stored single string into form fields and converts form fields into a single string
+ */
+export const parseAddressString = (addrStr) => {
+  if (!addrStr || typeof addrStr !== "string") {
+    if (typeof addrStr === "object" && addrStr !== null) {
+      return {
+        street: addrStr.street || addrStr.line1 || "",
+        apt: addrStr.apt || addrStr.line2 || "",
+        city: addrStr.city || "",
+        state: addrStr.state || "",
+      };
+    }
+    return { street: "", apt: "", city: "", state: "" };
+  }
+  const trimmed = addrStr.trim();
+  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+    try {
+      const obj = JSON.parse(trimmed);
+      return {
+        street: obj.street || obj.line1 || "",
+        apt: obj.apt || obj.line2 || "",
+        city: obj.city || "",
+        state: obj.state || "",
+      };
+    } catch { }
+  }
+  const parts = trimmed.split(",").map((s) => s.trim());
+  if (parts.length >= 4) {
+    return {
+      street: parts.slice(0, parts.length - 3).join(", "),
+      apt: parts[parts.length - 3] || "",
+      city: parts[parts.length - 2] || "",
+      state: parts[parts.length - 1] || "",
+    };
+  }
+  if (parts.length === 3) {
+    return {
+      street: parts[0] || "",
+      apt: "",
+      city: parts[1] || "",
+      state: parts[2] || "",
+    };
+  }
+  if (parts.length === 2) {
+    return {
+      street: parts[0] || "",
+      apt: "",
+      city: parts[1] || "",
+      state: "",
+    };
+  }
+  return {
+    street: parts[0] || "",
+    apt: "",
+    city: "",
+    state: "",
+  };
+};
+
+export const formatAddressString = (addr) => {
+  if (!addr) return "";
+  if (typeof addr === "string") return addr.trim();
+  const { street = "", apt = "", city = "", state = "" } = addr;
+  return [street, apt, city, state]
+    .map((s) => (s || "").trim())
+    .filter(Boolean)
+    .join(", ");
+};
+
+/**
+ * Social media parsing and serialization helpers
+ * Parses stored array of [{ field: value }] into an object and formats form object back into array
+ */
+export const parseSocialArray = (social) => {
+  const result = {
+    website: "",
+    gst: "",
+    instagram: "",
+    whatsapp: "",
+    facebook: "",
+    linkedin: "",
+    twitter: "",
+    youtube: "",
+  };
+  if (!social) return result;
+  let arr = social;
+  if (typeof social === "string") {
+    try {
+      arr = JSON.parse(social);
+    } catch {
+      return result;
+    }
+  }
+  if (Array.isArray(arr)) {
+    arr.forEach((item) => {
+      if (!item || typeof item !== "object") return;
+      if ("field" in item && "value" in item) {
+        const k = String(item.field || "").trim().toLowerCase();
+        if (k) result[k] = String(item.value || "").trim();
+      } else {
+        Object.entries(item).forEach(([k, v]) => {
+          const cleanK = String(k || "").trim().toLowerCase();
+          if (cleanK) result[cleanK] = String(v || "").trim();
+        });
+      }
+    });
+  } else if (typeof arr === "object") {
+    Object.entries(arr).forEach(([k, v]) => {
+      const cleanK = String(k || "").trim().toLowerCase();
+      if (cleanK) result[cleanK] = String(v || "").trim();
+    });
+  }
+  return result;
+};
+
+export const formatSocialArray = (socialObj) => {
+  if (!socialObj || typeof socialObj !== "object") return [];
+  const fields = ["website", "gst", "instagram", "whatsapp", "facebook", "linkedin", "twitter", "youtube"];
+  return fields
+    .map((f) => {
+      const val = (socialObj[f] || "").trim();
+      return val ? { [f]: val } : null;
+    })
+    .filter(Boolean);
+};
+
+/**
+ * 1. Account Information Section (Personal Details, Avatar, Role)
+ */
+const AccountSection = React.memo(
+  ({
+    profile,
+    resolvedAvatar,
+    onDeletePhoto,
+    onUpdateAccount,
+    saving,
+    fileInputRef,
+  }) => {
+    const accountFields = useMemo(
+      () => [
+        {
+          name: "fullname",
+          label: "Full Name",
+          type: "text",
+          placeholder: "e.g. Monir UX Designer",
+          defaultValue: profile.fullname || "",
+          validation: { required: true },
+        },
+        {
+          name: "email",
+          label: "Email Address",
+          type: "email",
+          placeholder: "e.g. monir@example.com",
+          defaultValue: profile.email || "",
+          validation: { required: true, email: true },
+        },
+        {
+          name: "mobile",
+          label: "Mobile Number",
+          type: "tel",
+          placeholder: "e.g. 9876543210",
+          defaultValue: profile.mobile || "",
+          validation: { required: true },
+        },
+        {
+          name: "roleName",
+          label: "Assigned Role",
+          type: "text",
+          defaultValue: profile.roleName || "Admin",
+          disabled: true,
+        },
+      ],
+      [profile.fullname, profile.email, profile.mobile, profile.roleName]
+    );
+
+    return (
+      <div>
+        <div className="bg-white p-15 rounded-5">
+          <div className="flex items-center gap-8">
+            <span style={{ width: "3px", height: "22px", background: "var(--primary)" }} />
+            <h3 className="title-text font-600 text-dark">Personal Informations</h3>
+          </div>
+          <p className="small-text text-gray font-400 mt-3">
+            Manage your personal details and keep your account up to date.
+          </p>
+        </div>
+
+        <div className="mt-8 bg-white p-15 rounded-5">
+          <div className="w-full h-200 rounded-5 overflow-hidden relative">
+            <Image
+              src={resolvedAvatar}
+              alt={profile.fullname || "User Profile"}
+              className="w-full h-full object-cover bg-forth border-ec"
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+            />
+            <Button
+              icon='Upload'
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              title="Upload photo"
+              className='absolute bottom-0 right-0 rounded-30 m-5'
+              version='icon'
+            />
+          </div>
+
+          <div className="mt-15 bg-forth p-20 rounded-5">
+            <FormBuilder
+              col="2"
+              smcol="1"
+              fields={accountFields}
+              onSubmit={onUpdateAccount}
+              submitType="json"
+              submitText={saving ? "Updating..." : "Update Account"}
+              buttonBg="primary"
+              buttonVersion="v2"
+              isSubmitting={saving}
+              buttonClassName="flex justify-start mt-20"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
+AccountSection.displayName = "AccountSection";
+
+/**
+ * 2. Password Change Section
+ */
+const PasswordSection = React.memo(({ onUpdatePassword, saving }) => {
+  const passwordFields = useMemo(
+    () => [
+      {
+        name: "currentPassword",
+        label: "Current Password",
+        type: "password",
+        placeholder: "Enter current password",
+        validation: { required: true },
+        colSpan: 1,
+      },
+      {
+        name: "newPassword",
+        label: "New Password",
+        type: "password",
+        placeholder: "Enter new password (min 6 characters)",
+        validation: { required: true, minLength: 6 },
+        colSpan: 1,
+      },
+      {
+        name: "confirmPassword",
+        label: "Confirm New Password",
+        type: "password",
+        placeholder: "Confirm your new password",
+        validation: { required: true },
+        colSpan: 1,
+      },
+    ],
+    []
+  );
+
+  return (
+    <div>
+      <div className="bg-white p-15 rounded-5">
+        <div className="flex items-center gap-8">
+          <span style={{ width: "3px", height: "22px", background: "var(--primary)" }} />
+          <h3 className="title-text font-600 text-dark">Change Password</h3>
+        </div>
+        <p className="small-text text-gray font-400 mt-3">
+          Ensure your account is using a secure and random password to stay protected.
+        </p>
+      </div>
+      <div className="mt-8 bg-white p-15 rounded-5">
+        <div className="w-50 bg-forth p-20 rounded-5">
+          <FormBuilder
+            col="1"
+            smcol="1"
+            fields={passwordFields}
+            onSubmit={onUpdatePassword}
+            submitType="json"
+            submitText={saving ? "Updating Password..." : "Update Password"}
+            buttonBg="primary"
+            buttonVersion="v1"
+            isSubmitting={saving}
+            buttonClassName="mt-20"
+          />
+        </div>
+      </div>
+    </div>
+  );
+});
+PasswordSection.displayName = "PasswordSection";
+
+/**
+ * 3. Address Section
+ */
+const AddressSection = React.memo(({ profile, onUpdateAddress, saving }) => {
+  const rawAddresses = useMemo(() => {
+    if (Array.isArray(profile.address) && profile.address.length > 0) {
+      const list = profile.address
+        .map((a) => (typeof a === "string" ? a : String(a || "")).trim())
+        .filter(Boolean);
+      return list.length > 0 ? list : [""];
+    }
+    return [""];
+  }, [profile.address]);
+
+  const [addressList, setAddressList] = useState(() => rawAddresses.map(parseAddressString));
+
+  useEffect(() => {
+    setAddressList(rawAddresses.map(parseAddressString));
+  }, [rawAddresses]);
+
+  const handleAddAddress = useCallback(() => {
+    setAddressList((prev) => [...prev, { street: "", apt: "", city: "", state: "" }]);
+  }, []);
+
+  const handleRemoveAddress = useCallback(
+    async (idx) => {
+      const nextList = addressList.filter((_, i) => i !== idx);
+      const finalList = nextList.length > 0 ? nextList : [{ street: "", apt: "", city: "", state: "" }];
+      setAddressList(finalList);
+
+      const stringArray = finalList.map(formatAddressString).filter(Boolean);
+      await onUpdateAddress(stringArray);
+    },
+    [addressList, onUpdateAddress]
+  );
+
+  const handleFieldChange = useCallback((index, fieldName, value, updatedForm) => {
+    setAddressList((prev) => {
+      const next = [...prev];
+      next[index] = {
+        ...(next[index] || {}),
+        ...(updatedForm || {}),
+        [fieldName]: value,
+      };
+      return next;
+    });
+  }, []);
+
+  const handleSaveAllAddresses = useCallback(async () => {
+    for (let i = 0; i < addressList.length; i++) {
+      const a = addressList[i];
+      const hasAnyField = Boolean(a.street?.trim() || a.apt?.trim() || a.city?.trim() || a.state?.trim());
+      if (hasAnyField && (!a.street?.trim() || !a.city?.trim() || !a.state?.trim())) {
+        showToast(`Please complete required fields (Street, City, State) in Address ${i + 1}`, "warning");
+        return;
+      }
+    }
+
+    const stringArray = addressList.map(formatAddressString).filter(Boolean);
+    await onUpdateAddress(stringArray);
+  }, [addressList, onUpdateAddress]);
+
+  return (
+    <div>
+      <div className="bg-white p-15 rounded-5 flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-8">
+            <span style={{ width: "3px", height: "22px", background: "var(--primary)" }} />
+            <h3 className="title-text font-600 text-dark">Address Information</h3>
+          </div>
+          <p className="small-text text-gray font-400 mt-3">
+            Manage your residential street, apartment, city, and state information.
+          </p>
+        </div>
+        <Button
+          type="button"
+          version="v2"
+          bg="primary"
+          icon="Plus"
+          text="Add Address"
+          onClick={handleAddAddress}
+        />
+      </div>
+
+      <div className="mt-8 bg-white p-15 rounded-5">
+        <div className="grid-cols-2 sm-grid-cols-1 gap-12">
+          {addressList.map((addrObj, index) => {
+            const fields = [
+              {
+                name: "street",
+                label: "Street Address / Line 1",
+                type: "text",
+                placeholder: "Street Number / Line 1",
+                defaultValue: addrObj.street || "",
+                validation: { required: true },
+              },
+              {
+                name: "apt",
+                label: "Apt / House Number / Line 2",
+                type: "text",
+                placeholder: "Apt / House Number",
+                defaultValue: addrObj.apt || "",
+              },
+              {
+                name: "city",
+                label: "City",
+                type: "text",
+                placeholder: "City",
+                defaultValue: addrObj.city || "",
+                validation: { required: true },
+              },
+              {
+                name: "state",
+                label: "State / Region",
+                type: "text",
+                placeholder: "State",
+                defaultValue: addrObj.state || "",
+                validation: { required: true },
+              },
+            ];
+
+            return (
+              <div key={`address-card-${index}`} className="bg-forth p-20 rounded-5">
+                <div className="flex items-center justify-between mb-15">
+                  <h5 className="headmini-text text-dark font-600">
+                    {index === 0 ? "Address 1 (Primary)" : `Address ${index + 1}`}
+                  </h5>
+                  {addressList.length > 1 && (
+                    <Button
+                      type="button"
+                      version="icon"
+                      bg="transparent"
+                      color="danger"
+                      icon="Trash"
+                      iconWidth="16"
+                      iconHeight="16"
+                      title="Remove Address"
+                      onClick={() => handleRemoveAddress(index)}
+                    />
+                  )}
+                </div>
+                <FormBuilder
+                  key={`form-builder-addr-${index}-${addrObj.street}-${addrObj.city}`}
+                  col="1"
+                  smcol="1"
+                  fields={fields}
+                  showButton={false}
+                  showSubmitButton={false}
+                  onChange={(name, value, updatedForm) =>
+                    handleFieldChange(index, name, value, updatedForm)
+                  }
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-20">
+          <Button
+            type="button"
+            version="v1"
+            bg="primary"
+            disabled={saving}
+            onClick={handleSaveAllAddresses}
+          >
+            {saving ? "Updating Address..." : "Update Address"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+});
+AddressSection.displayName = "AddressSection";
+
+/**
+ * 4. Social Media & Business Handles Section
+ */
+const SocialSection = React.memo(({ profile, onUpdateSocial, saving }) => {
+  const parsedSocial = useMemo(() => parseSocialArray(profile.social), [profile.social]);
+  const [formData, setFormData] = useState(parsedSocial);
+
+  useEffect(() => {
+    setFormData(parsedSocial);
+  }, [parsedSocial]);
+
+  const socialFields = useMemo(
+    () => [
+      {
+        name: "website",
+        label: "Website URL",
+        type: "text",
+        placeholder: "e.g. ashmitavinyls.com",
+        defaultValue: parsedSocial.website || "",
+      },
+      {
+        name: "gst",
+        label: "GST Number",
+        type: "text",
+        placeholder: "e.g. 27AAAAA0000A1Z5",
+        defaultValue: parsedSocial.gst || "",
+      },
+      {
+        name: "instagram",
+        label: "Instagram Profile / Handle",
+        type: "text",
+        placeholder: "e.g. ashmitaenterprises.co.in",
+        defaultValue: parsedSocial.instagram || "",
+      },
+      {
+        name: "whatsapp",
+        label: "WhatsApp Number / Link",
+        type: "text",
+        placeholder: "e.g. +91 9876543210 or ashmitaenterprises.co.in",
+        defaultValue: parsedSocial.whatsapp || "",
+      },
+      {
+        name: "facebook",
+        label: "Facebook Profile / Page",
+        type: "text",
+        placeholder: "e.g. ashmitaenterprises.co.in",
+        defaultValue: parsedSocial.facebook || "",
+      },
+      {
+        name: "youtube",
+        label: "YouTube Channel / Handle",
+        type: "text",
+        placeholder: "e.g. ashmitaenterprises.co.in",
+        defaultValue: parsedSocial.youtube || "",
+      },
+      {
+        name: "linkedin",
+        label: "LinkedIn Profile / URL",
+        type: "text",
+        placeholder: "e.g. linkedin.com/company/ashmita",
+        defaultValue: parsedSocial.linkedin || "",
+      },
+      {
+        name: "twitter",
+        label: "Twitter / X Profile",
+        type: "text",
+        placeholder: "e.g. @ashmitavinyls",
+        defaultValue: parsedSocial.twitter || "",
+      },
+    ],
+    [parsedSocial]
+  );
+
+  const handleFormChange = useCallback((name, value, allValues) => {
+    setFormData((prev) => ({
+      ...prev,
+      ...(allValues || {}),
+      [name]: value,
+    }));
+  }, []);
+
+  const handleSubmit = useCallback(
+    async (values) => {
+      await onUpdateSocial({ ...formData, ...(values || {}) });
+    },
+    [formData, onUpdateSocial]
+  );
+
+  return (
+    <div>
+      <div className="bg-white p-15 rounded-5">
+        <div className="flex items-center gap-8">
+          <span style={{ width: "3px", height: "22px", background: "var(--primary)" }} />
+          <h3 className="title-text font-600 text-dark">Social Media & Business Links</h3>
+        </div>
+        <p className="small-text text-gray font-400 mt-3">
+          Manage your business website, GST registration, and social media handles.
+        </p>
+      </div>
+
+      <div className="mt-8 bg-white p-15 rounded-5">
+        <div className="bg-forth p-20 rounded-5">
+          <FormBuilder
+            col="2"
+            smcol="1"
+            fields={socialFields}
+            onChange={handleFormChange}
+            onSubmit={handleSubmit}
+            submitType="json"
+            submitText={saving ? "Updating..." : "Update Social Media"}
+            buttonBg="primary"
+            buttonVersion="v2"
+            isSubmitting={saving}
+            buttonClassName="flex justify-start mt-20"
+          />
+        </div>
+
+        {/* Visual Cards Matching User Uploaded Design */}
+        <div className="mt-20 border-t pt-20">
+          {/* Your Business */}
+          <div>
+            <h4 className="mid-text font-600 text-dark mb-12">Your Business</h4>
+            <div className="bg-white rounded-5 border-ec overflow-hidden">
+              {formData.website ? (
+                <a
+                  href={formData.website.startsWith("http") ? formData.website : `https://${formData.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-12 hover:bg-forth transition-all"
+                >
+                  <div className="flex items-center gap-12">
+                    <div
+                      className="flex items-center justify-center rounded-8 text-white"
+                      style={{ width: "48px", height: "48px", background: "#1e293b", flexShrink: 0 }}
+                    >
+                      <Icon name="Globe" width="22" height="22" stroke="white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-6">
+                        <span className="font-600 text-dark headmini-text">{formData.website}</span>
+                        <Icon name="ExternalLink" width="14" height="14" stroke="#94a3b8" />
+                      </div>
+                      <p className="mini-text text-gray font-400">Website</p>
+                    </div>
+                  </div>
+                </a>
+              ) : (
+                <div className="p-15 text-gray mini-text italic">No website entered yet</div>
+              )}
+
+              {formData.gst && (
+                <div className="flex items-center gap-12 p-12 border-t border-ec">
+                  <div
+                    className="flex items-center justify-center rounded-8 text-white"
+                    style={{ width: "48px", height: "48px", background: "#334155", flexShrink: 0 }}
+                  >
+                    <Icon name="FileText" width="20" height="20" stroke="white" />
+                  </div>
+                  <div>
+                    <span className="font-600 text-dark headmini-text">{formData.gst}</span>
+                    <p className="mini-text text-gray font-400">GST Registration</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Social Handles */}
+          <div className="mt-20">
+            <h4 className="mid-text font-600 text-dark mb-12">Social Handles</h4>
+            <div className="bg-white rounded-5 border-ec overflow-hidden flex flex-col">
+              {/* Instagram */}
+              {formData.instagram && (
+                <a
+                  href={formData.instagram.startsWith("http") ? formData.instagram : `https://instagram.com/${formData.instagram.replace(/^@/, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-12 hover:bg-forth transition-all bordb"
+                >
+                  <div className="flex items-center gap-12">
+                    <div
+                      className="flex items-center justify-center rounded-8 text-white"
+                      style={{
+                        width: "48px",
+                        height: "48px",
+                        background: "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Icon name="Instagram" width="22" height="22" fill="white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-6">
+                        <span className="font-600 text-dark headmini-text">{formData.instagram}</span>
+                        <Icon name="ExternalLink" width="14" height="14" stroke="#94a3b8" />
+                      </div>
+                      <p className="mini-text text-gray font-400">Instagram</p>
+                    </div>
+                  </div>
+                </a>
+              )}
+
+              {/* Facebook */}
+              {formData.facebook && (
+                <a
+                  href={formData.facebook.startsWith("http") ? formData.facebook : `https://facebook.com/${formData.facebook}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-12 hover:bg-forth transition-all bordb"
+                >
+                  <div className="flex items-center gap-12">
+                    <div
+                      className="flex items-center justify-center rounded-8 text-white"
+                      style={{ width: "48px", height: "48px", background: "#1877f2", flexShrink: 0 }}
+                    >
+                      <Icon name="Facebook" width="22" height="22" fill="white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-6">
+                        <span className="font-600 text-dark headmini-text">{formData.facebook}</span>
+                        <Icon name="ExternalLink" width="14" height="14" stroke="#94a3b8" />
+                      </div>
+                      <p className="mini-text text-gray font-400">Facebook</p>
+                    </div>
+                  </div>
+                </a>
+              )}
+
+              {/* YouTube */}
+              {formData.youtube && (
+                <a
+                  href={formData.youtube.startsWith("http") ? formData.youtube : `https://youtube.com/${formData.youtube.startsWith("@") ? formData.youtube : `@${formData.youtube}`}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-12 hover:bg-forth transition-all bordb"
+                >
+                  <div className="flex items-center gap-12">
+                    <div
+                      className="flex items-center justify-center rounded-8 text-white"
+                      style={{ width: "48px", height: "48px", background: "#ff0000", flexShrink: 0 }}
+                    >
+                      <Icon name="YouTube" width="22" height="22" fill="white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-6">
+                        <span className="font-600 text-dark headmini-text">{formData.youtube}</span>
+                        <Icon name="ExternalLink" width="14" height="14" stroke="#94a3b8" />
+                      </div>
+                      <p className="mini-text text-gray font-400">Youtube</p>
+                    </div>
+                  </div>
+                </a>
+              )}
+
+              {/* WhatsApp */}
+              {formData.whatsapp && (
+                <a
+                  href={formData.whatsapp.startsWith("http") ? formData.whatsapp : `https://wa.me/${formData.whatsapp.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-12 hover:bg-forth transition-all bordb"
+                >
+                  <div className="flex items-center gap-12">
+                    <div
+                      className="flex items-center justify-center rounded-8 text-white"
+                      style={{ width: "48px", height: "48px", background: "#22c55e", flexShrink: 0 }}
+                    >
+                      <Icon name="WhatsApp" width="22" height="22" fill="white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-6">
+                        <span className="font-600 text-dark headmini-text">{formData.whatsapp}</span>
+                        <Icon name="ExternalLink" width="14" height="14" stroke="#94a3b8" />
+                      </div>
+                      <p className="mini-text text-gray font-400">WhatsApp</p>
+                    </div>
+                  </div>
+                </a>
+              )}
+
+              {/* LinkedIn */}
+              {formData.linkedin && (
+                <a
+                  href={formData.linkedin.startsWith("http") ? formData.linkedin : `https://linkedin.com/in/${formData.linkedin}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-12 hover:bg-forth transition-all bordb"
+                >
+                  <div className="flex items-center gap-12">
+                    <div
+                      className="flex items-center justify-center rounded-8 text-white"
+                      style={{ width: "48px", height: "48px", background: "#0a66c2", flexShrink: 0 }}
+                    >
+                      <Icon name="LinkedIn" width="22" height="22" fill="white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-6">
+                        <span className="font-600 text-dark headmini-text">{formData.linkedin}</span>
+                        <Icon name="ExternalLink" width="14" height="14" stroke="#94a3b8" />
+                      </div>
+                      <p className="mini-text text-gray font-400">LinkedIn</p>
+                    </div>
+                  </div>
+                </a>
+              )}
+
+              {/* Twitter */}
+              {formData.twitter && (
+                <a
+                  href={formData.twitter.startsWith("http") ? formData.twitter : `https://x.com/${formData.twitter.replace(/^@/, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-12 hover:bg-forth transition-all"
+                >
+                  <div className="flex items-center gap-12">
+                    <div
+                      className="flex items-center justify-center rounded-8 text-white"
+                      style={{ width: "48px", height: "48px", background: "#0f172a", flexShrink: 0 }}
+                    >
+                      <Icon name="Twitter" width="22" height="22" fill="white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-6">
+                        <span className="font-600 text-dark headmini-text">{formData.twitter}</span>
+                        <Icon name="ExternalLink" width="14" height="14" stroke="#94a3b8" />
+                      </div>
+                      <p className="mini-text text-gray font-400">Twitter / X</p>
+                    </div>
+                  </div>
+                </a>
+              )}
+
+              {!formData.instagram && !formData.facebook && !formData.youtube && !formData.whatsapp && !formData.linkedin && !formData.twitter && (
+                <div className="p-15 text-gray mini-text italic">No social handles added yet. Enter your handles above and click Update Social Media.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+SocialSection.displayName = "SocialSection";
+
+/**
+ * 4. Top Profile Completeness Gauge Card
+ */
+const CompleteProfileCard = React.memo(({ completionPercentage, isOtpVerified, onVerify }) => (
+  <div
+    className="rounded-5 p-20 text-white relative overflow-hidden bg-primary"
+  >
+    <div className="flex items-center gap-12">
+      <div style={{ position: "relative", width: "64px", height: "64px", flexShrink: 0 }}>
+        <svg width="64" height="64" viewBox="0 0 64 64" style={{ transform: "rotate(-90deg)" }}>
+          <circle cx="32" cy="32" r="26" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="5" fill="none" />
+          <circle
+            cx="32"
+            cy="32"
+            r="26"
+            stroke="#f59e0b"
+            strokeWidth="5"
+            strokeDasharray={163.36}
+            strokeDashoffset={163.36 - (163.36 * completionPercentage) / 100}
+            strokeLinecap="round"
+            fill="none"
+            style={{ transition: "stroke-dashoffset 0.6s ease" }}
+          />
+        </svg>
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: "700",
+            fontSize: "14px",
+          }}
+        >
+          {completionPercentage}%
+        </div>
+      </div>
+
+      <div>
+        <h4 className="font-500 mid-text text-white capitalize">Complete profile</h4>
+        <p className="font-400 mini-text text-white text-muted mt-3">
+          Complete your profile to unlock all features!
+        </p>
+      </div>
+    </div>
+
+    <Button
+      type="button"
+      version="v3"
+      bg="white"
+      color="primary"
+      className="mt-12 font-500 rounded-full"
+      onClick={onVerify}
+      icon="Box"
+      text={isOtpVerified ? "Identity Verified" : "Verify Identity"}
+    />
+  </div>
+));
+CompleteProfileCard.displayName = "CompleteProfileCard";
+
+/**
+ * Main Profile Component
+ */
 const Profile = () => {
   const { roles, getRoles, fetchRoles: fetchRolesList } = useRoles();
+  const { resetPassword: resetPasswordUser } = useUsers();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("account"); // 'account' | 'password' | 'payment' | 'invite'
+  const [activeTab, setActiveTab] = useState("account"); // 'account' | 'password' | 'address'
   const [previewImage, setPreviewImage] = useState("");
 
   const fileInputRef = useRef(null);
@@ -37,30 +953,11 @@ const Profile = () => {
     mobile: "",
     image: "",
     address: ["", ""],
+    social: [],
     roleId: "",
     roleName: "Admin",
     isOtpVerified: false,
     isActive: true,
-  });
-
-  // Local form state representing the fields in the UI
-  const [formData, setFormData] = useState({
-    fullname: "",
-    email: "",
-    mobile: "",
-    street: "",
-    apt: "",
-    city: "",
-    state: "",
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-
-  const [showPassword, setShowPassword] = useState({
-    current: false,
-    new: false,
-    confirm: false,
   });
 
   // Load roles on mount
@@ -91,11 +988,38 @@ const Profile = () => {
         u.role ||
         "Admin";
 
-      const addr = Array.isArray(u.address)
-        ? [u.address[0] || "", u.address[1] || ""]
-        : typeof u.address === "string"
-        ? [u.address, ""]
-        : ["", ""];
+      let addrList = [];
+      if (Array.isArray(u.address)) {
+        addrList = u.address
+          .map((a) => (typeof a === "string" ? a : String(a || "")).trim())
+          .filter(Boolean);
+      } else if (typeof u.address === "string" && u.address.trim()) {
+        try {
+          const parsed = JSON.parse(u.address);
+          if (Array.isArray(parsed)) {
+            addrList = parsed.map(String).map((s) => s.trim()).filter(Boolean);
+          } else {
+            addrList = [u.address.trim()];
+          }
+        } catch {
+          addrList = [u.address.trim()];
+        }
+      }
+      if (addrList.length === 0) {
+        addrList = [""];
+      }
+
+      let socialList = [];
+      if (Array.isArray(u.social)) {
+        socialList = u.social;
+      } else if (typeof u.social === "string" && u.social.trim()) {
+        try {
+          const parsed = JSON.parse(u.social);
+          if (Array.isArray(parsed)) socialList = parsed;
+        } catch {}
+      } else if (u.social && typeof u.social === "object") {
+        socialList = Object.entries(u.social).map(([k, v]) => ({ [k]: v }));
+      }
 
       return {
         _id: u._id || rawId,
@@ -104,7 +1028,8 @@ const Profile = () => {
         email: (u.email || "").toLowerCase().trim(),
         mobile: u.mobile || "",
         image: u.image || u.avatar || "",
-        address: addr,
+        address: addrList,
+        social: socialList,
         roleId: u.roleId?._id || u.roleId || matchedRole?._id || "",
         roleName: rName,
         isOtpVerified: Boolean(u.isOtpVerified),
@@ -114,40 +1039,7 @@ const Profile = () => {
     [roles]
   );
 
-  // Populate local form fields from user object
-  const syncFormData = useCallback((userData) => {
-    if (!userData) return;
-    const addr = userData.address || ["", ""];
-
-    let street = "";
-    let apt = "";
-    if (addr[0]) {
-      const parts = addr[0].split(",").map((s) => s.trim());
-      street = parts[0] || "";
-      apt = parts.slice(1).join(", ") || "";
-    }
-
-    let city = "";
-    let state = "";
-    if (addr[1]) {
-      const parts = addr[1].split(",").map((s) => s.trim());
-      city = parts[0] || "";
-      state = parts.slice(1).join(", ") || "";
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      fullname: userData.fullname || "",
-      email: userData.email || "",
-      mobile: userData.mobile || "",
-      street: street || (addr[0] || ""),
-      apt: apt || "",
-      city: city || (addr[1] || ""),
-      state: state || "",
-    }));
-  }, []);
-
-  // Fetch Profile data via API
+  // Fetch Profile data via user API
   const fetchProfile = useCallback(async () => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
@@ -165,7 +1057,7 @@ const Profile = () => {
           try {
             const byIdRes = await getUserByIdApi(cachedId);
             remoteUser = byIdRes?.data !== undefined ? byIdRes.data : byIdRes;
-          } catch {}
+          } catch { }
         }
       }
 
@@ -174,7 +1066,6 @@ const Profile = () => {
 
       if (normalized) {
         setProfile(normalized);
-        syncFormData(normalized);
         setCurrentUser(normalized);
       }
     } catch {
@@ -183,7 +1074,7 @@ const Profile = () => {
       setLoading(false);
       isFetchingRef.current = false;
     }
-  }, [normalizeUserData, syncFormData]);
+  }, [normalizeUserData]);
 
   useEffect(() => {
     fetchProfile();
@@ -192,142 +1083,242 @@ const Profile = () => {
   // Profile completion calculation for the gauge
   const completionPercentage = useMemo(() => {
     let score = 0;
-    if (formData.fullname?.trim()) score += 20;
-    if (formData.email?.trim()) score += 20;
-    if (formData.mobile?.trim()) score += 20;
+    if (profile.fullname?.trim()) score += 20;
+    if (profile.email?.trim()) score += 20;
+    if (profile.mobile?.trim()) score += 20;
     if (profile.image || previewImage) score += 20;
-    if (formData.street?.trim() || formData.city?.trim() || profile.address?.[0]) score += 20;
+    if (profile.address?.some((a) => Boolean(a && a.trim()))) score += 20;
     return score;
-  }, [formData, profile.image, profile.address, previewImage]);
+  }, [profile.fullname, profile.email, profile.mobile, profile.image, profile.address, previewImage]);
 
   // Handle Photo Upload
-  const handlePhotoUpload = async (e) => {
+  const handlePhotoUpload = useCallback(async (e) => {
     const file = e.target.files?.[0];
     if (file) {
       try {
         const base64 = await fileToBase64(file);
         setPreviewImage(base64);
         setProfile((prev) => ({ ...prev, image: base64 }));
-        showToast("Profile image selected. Click Update to save changes.", "info");
+        showToast("Profile image selected. Click Update Account to save.", "info");
       } catch {
         showToast("Failed to process image file", "danger");
       }
     }
-  };
+  }, []);
 
   // Handle Photo Delete
-  const handleDeletePhoto = () => {
+  const handleDeletePhoto = useCallback(() => {
     setPreviewImage("");
     setProfile((prev) => ({ ...prev, image: "" }));
     if (fileInputRef.current) fileInputRef.current.value = "";
-    showToast("Profile image removed. Click Update to save changes.", "info");
-  };
+    showToast("Profile image removed. Click Update Account to save.", "info");
+  }, []);
 
-  // Handle Form Input change
-  const handleChange = (field, val) => {
-    setFormData((prev) => ({ ...prev, [field]: val }));
-  };
-
-  // Handle Profile Update
-  const handleUpdate = async (e) => {
-    e?.preventDefault();
-
-    if (!formData.fullname.trim()) {
-      showToast("Please enter your full name", "warning");
-      return;
-    }
-    if (!formData.email.trim()) {
-      showToast("Please enter a valid email address", "warning");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const line1 = [formData.street, formData.apt].filter(Boolean).join(", ");
-      const line2 = [formData.city, formData.state].filter(Boolean).join(", ");
-
-      const payload = {
-        id: profile.id,
-        fullname: formData.fullname.trim(),
-        email: formData.email.toLowerCase().trim(),
-        mobile: formData.mobile.trim(),
-        image: profile.image || previewImage || "",
-        address: [line1, line2],
-        isOtpVerified: Boolean(profile.isOtpVerified),
-        isActive: Boolean(profile.isActive),
-      };
-
-      let updatedResponse = null;
+  // Update Account Information
+  const handleUpdateAccount = useCallback(
+    async (formData) => {
+      setSaving(true);
       try {
-        const res = await updateProfileApi(payload);
-        updatedResponse = res?.data !== undefined ? res.data : res;
-      } catch {
-        const targetId = profile._id || profile.id;
-        if (targetId) {
-          const res = await updateUserApi(targetId, payload);
-          updatedResponse = res?.data !== undefined ? res.data : res;
+        const payload = {
+          id: profile.id,
+          fullname: (formData.fullname || "").trim(),
+          email: (formData.email || "").toLowerCase().trim(),
+          mobile: (formData.mobile || "").trim(),
+          image: profile.image || previewImage || "",
+          address: profile.address || ["", ""],
+          social: profile.social || [],
+          isOtpVerified: Boolean(profile.isOtpVerified),
+          isActive: Boolean(profile.isActive),
+        };
+
+        let updated = null;
+        try {
+          const res = await updateProfileApi(payload);
+          updated = res?.data !== undefined ? res.data : res;
+        } catch {
+          const targetId = profile._id || profile.id;
+          if (targetId) {
+            const res = await updateUserApi(targetId, payload);
+            updated = res?.data !== undefined ? res.data : res;
+          }
         }
+
+        const merged = normalizeUserData(updated || { ...profile, ...payload });
+        if (merged) {
+          setProfile(merged);
+          setCurrentUser(merged);
+        }
+        showToast("Account details updated successfully!", "success");
+      } catch (err) {
+        showToast(err?.message || "Failed to update account details", "danger");
+      } finally {
+        setSaving(false);
       }
+    },
+    [profile, previewImage, normalizeUserData]
+  );
 
-      const merged = normalizeUserData(updatedResponse || { ...profile, ...payload });
-      if (merged) {
-        setProfile(merged);
-        syncFormData(merged);
-        setCurrentUser(merged);
+  // Update Password via /api/auth/reset-password
+  const handleUpdatePassword = useCallback(
+    async (formData) => {
+      const currentPassword = (formData.currentPassword || "").trim();
+      const newPassword = (formData.newPassword || "").trim();
+      const confirmPassword = (formData.confirmPassword || "").trim();
+
+      if (!currentPassword) {
+        showToast("Current password is required", "danger");
+        return;
       }
-      showToast("Profile updated successfully!", "success");
-    } catch (err) {
-      showToast(err?.message || "Failed to update profile", "danger");
-    } finally {
-      setSaving(false);
-    }
-  };
+      if (!newPassword) {
+        showToast("New password is required", "danger");
+        return;
+      }
+      if (newPassword.length < 6) {
+        showToast("New password must be at least 6 characters", "danger");
+        return;
+      }
+      if (newPassword === currentPassword) {
+        showToast("New password cannot be the same as current password", "danger");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        showToast("New passwords do not match", "danger");
+        return;
+      }
+      setSaving(true);
+      try {
+        const payload = {
+          id: profile._id || profile.id,
+          userId: profile.id || profile._id,
+          email: profile.email || undefined,
+          mobile: profile.mobile || undefined,
+          currentPassword,
+          password: newPassword,
+        };
 
-  // Handle Password Update
-  const handlePasswordUpdate = async (e) => {
-    e?.preventDefault();
-    if (!formData.newPassword) {
-      showToast("Please enter a new password", "warning");
-      return;
-    }
-    if (formData.newPassword.length < 6) {
-      showToast("Password must be at least 6 characters long", "warning");
-      return;
-    }
-    if (formData.newPassword !== formData.confirmPassword) {
-      showToast("Passwords do not match", "danger");
-      return;
-    }
+        if (typeof resetPasswordUser === "function") {
+          await resetPasswordUser(payload).unwrap();
+        } else {
+          await resetPasswordApi(payload);
+        }
+        showToast("Password updated successfully!", "success");
+        setActiveTab("account");
+      } catch (err) {
+        showToast(err?.message || (typeof err === "string" ? err : "Failed to change password"), "danger");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [profile._id, profile.id, profile.email, profile.mobile, resetPasswordUser]
+  );
 
-    setSaving(true);
-    try {
-      const payload = {
-        id: profile.id,
-        password: formData.newPassword.trim(),
-      };
-      await updateProfileApi(payload);
-      showToast("Password changed successfully!", "success");
-      setFormData((prev) => ({
-        ...prev,
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      }));
-    } catch (err) {
-      showToast(err?.message || "Failed to change password", "danger");
-    } finally {
-      setSaving(false);
-    }
-  };
+  // Update Address
+  const handleUpdateAddress = useCallback(
+    async (addressData) => {
+      setSaving(true);
+      try {
+        let addressArray = [];
+        if (Array.isArray(addressData)) {
+          addressArray = addressData
+            .map((a) => (typeof a === "string" ? a.trim() : formatAddressString(a)))
+            .filter(Boolean);
+        } else if (addressData && typeof addressData === "object") {
+          addressArray = [formatAddressString(addressData)].filter(Boolean);
+        } else if (typeof addressData === "string" && addressData.trim()) {
+          addressArray = [addressData.trim()];
+        }
 
-  // Handle Verify Identity action
-  const handleVerifyIdentity = () => {
+        const payload = {
+          id: profile.id,
+          fullname: profile.fullname,
+          email: profile.email,
+          mobile: profile.mobile,
+          image: profile.image || previewImage || "",
+          address: addressArray,
+          social: profile.social || [],
+          isOtpVerified: Boolean(profile.isOtpVerified),
+          isActive: Boolean(profile.isActive),
+        };
+
+        let updated = null;
+        try {
+          const res = await updateProfileApi(payload);
+          updated = res?.data !== undefined ? res.data : res;
+        } catch {
+          const targetId = profile._id || profile.id;
+          if (targetId) {
+            const res = await updateUserApi(targetId, payload);
+            updated = res?.data !== undefined ? res.data : res;
+          }
+        }
+
+        const merged = normalizeUserData(updated || { ...profile, address: addressArray });
+        if (merged) {
+          setProfile(merged);
+          setCurrentUser(merged);
+        }
+        showToast("Address updated successfully!", "success");
+      } catch (err) {
+        showToast(err?.message || "Failed to update address", "danger");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [profile, previewImage, normalizeUserData]
+  );
+
+  // Update Social Media & Business Handles
+  const handleUpdateSocial = useCallback(
+    async (socialData) => {
+      setSaving(true);
+      try {
+        const socialArray = formatSocialArray(socialData);
+        const payload = {
+          id: profile.id,
+          fullname: profile.fullname,
+          email: profile.email,
+          mobile: profile.mobile,
+          image: profile.image || previewImage || "",
+          address: profile.address || ["", ""],
+          social: socialArray,
+          isOtpVerified: Boolean(profile.isOtpVerified),
+          isActive: Boolean(profile.isActive),
+        };
+
+        let updated = null;
+        try {
+          const res = await updateProfileApi(payload);
+          updated = res?.data !== undefined ? res.data : res;
+        } catch {
+          const targetId = profile._id || profile.id;
+          if (targetId) {
+            const res = await updateUserApi(targetId, payload);
+            updated = res?.data !== undefined ? res.data : res;
+          }
+        }
+
+        const merged = normalizeUserData(updated || { ...profile, social: socialArray });
+        if (merged) {
+          setProfile(merged);
+          setCurrentUser(merged);
+        }
+        showToast("Social media details updated successfully!", "success");
+      } catch (err) {
+        showToast(err?.message || "Failed to update social media details", "danger");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [profile, previewImage, normalizeUserData]
+  );
+
+  const handleVerifyIdentity = useCallback(() => {
     if (profile.isOtpVerified) {
       showToast("Identity is already verified!", "success");
     } else {
       showToast("Verification request sent to your registered email/mobile.", "info");
     }
-  };
+  }, [profile.isOtpVerified]);
 
   const resolvedAvatar = resolveImagePath(
     previewImage || profile.image || "/images/avatar-default.svg"
@@ -343,347 +1334,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="profile-page-wrapper">
-      <style>{`
-        .profile-page-wrapper {
-          padding: 24px;
-          background: #f8fafc;
-          min-height: calc(100vh - 60px);
-          font-family: inherit;
-        }
-        .profile-layout-grid {
-          display: grid;
-          grid-template-columns: 310px 1fr;
-          gap: 24px;
-          max-width: 1240px;
-          margin: 0 auto;
-          align-items: start;
-        }
-        @media (max-width: 960px) {
-          .profile-layout-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-        /* Left Column Cards */
-        .profile-left-col {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-        .complete-profile-card {
-          background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%);
-          border-radius: 18px;
-          padding: 20px;
-          color: #ffffff;
-          box-shadow: 0 8px 24px rgba(79, 70, 229, 0.22);
-          position: relative;
-          overflow: hidden;
-        }
-        .verify-identity-btn {
-          width: 100%;
-          background: #ffffff;
-          color: #4338ca;
-          font-size: 13px;
-          font-weight: 600;
-          padding: 10px 16px;
-          border-radius: 50px;
-          border: none;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          cursor: pointer;
-          margin-top: 18px;
-          transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-        .verify-identity-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        /* Navigation Card */
-        .profile-nav-card {
-          background: #ffffff;
-          border-radius: 18px;
-          padding: 8px;
-          border: 1px solid #edf2f7;
-          box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
-        }
-        .profile-nav-item {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 14px 16px;
-          border-radius: 12px;
-          cursor: pointer;
-          transition: all 0.15s ease;
-          background: transparent;
-          border: none;
-          width: 100%;
-          text-align: left;
-        }
-        .profile-nav-item:hover {
-          background: #f8fafc;
-        }
-        .profile-nav-item.active {
-          background: #f5f3ff;
-        }
-        .profile-nav-item.active .nav-item-title {
-          color: #4f46e5;
-        }
-        .profile-nav-item.active .nav-icon-box {
-          color: #4f46e5;
-          background: #ede9fe;
-        }
-        .nav-icon-box {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: #f1f5f9;
-          color: #64748b;
-          flex-shrink: 0;
-          transition: all 0.15s ease;
-        }
-        .nav-item-title {
-          font-size: 13.5px;
-          font-weight: 600;
-          color: #1e293b;
-          margin: 0;
-        }
-        .nav-item-desc {
-          font-size: 11.5px;
-          color: #64748b;
-          margin: 2px 0 0 0;
-        }
-        /* Rewards Card */
-        .rewards-card {
-          background: #f5f3ff;
-          border: 1px dashed #c7d2fe;
-          border-radius: 18px;
-          padding: 20px 16px;
-          text-align: center;
-        }
-        .rewards-pill-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: #ffffff;
-          color: #4f46e5;
-          border: 1px solid #ddd6fe;
-          border-radius: 30px;
-          padding: 6px 16px;
-          font-size: 11.5px;
-          font-weight: 600;
-          cursor: pointer;
-          margin-top: 12px;
-          transition: all 0.15s ease;
-        }
-        .rewards-pill-btn:hover {
-          background: #4f46e5;
-          color: #ffffff;
-        }
-        /* Right Content Card */
-        .profile-main-card {
-          background: #ffffff;
-          border-radius: 20px;
-          padding: 28px 32px;
-          border: 1px solid #edf2f7;
-          box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
-          position: relative;
-        }
-        @media (max-width: 640px) {
-          .profile-main-card {
-            padding: 20px 16px;
-          }
-        }
-        .main-header-accent {
-          width: 3px;
-          height: 18px;
-          background: #4f46e5;
-          border-radius: 4px;
-          display: inline-block;
-          margin-right: 8px;
-        }
-        /* Avatar Row */
-        .avatar-section-row {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-          margin: 24px 0 28px 0;
-          flex-wrap: wrap;
-        }
-        .avatar-wrap {
-          position: relative;
-          width: 82px;
-          height: 82px;
-          flex-shrink: 0;
-        }
-        .avatar-img {
-          width: 82px;
-          height: 82px;
-          border-radius: 50%;
-          object-fit: cover;
-          border: 3px solid #ffffff;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-        .avatar-camera-btn {
-          position: absolute;
-          bottom: 0;
-          right: 0;
-          width: 26px;
-          height: 26px;
-          border-radius: 50%;
-          background: #6366f1;
-          border: 2px solid #ffffff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #ffffff;
-          cursor: pointer;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.18);
-          transition: transform 0.15s ease;
-        }
-        .avatar-camera-btn:hover {
-          transform: scale(1.1);
-        }
-        .upload-pic-btn {
-          background: #6366f1;
-          color: #ffffff;
-          font-size: 13px;
-          font-weight: 500;
-          padding: 8px 18px;
-          border-radius: 10px;
-          border: none;
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          cursor: pointer;
-          transition: all 0.15s ease;
-        }
-        .upload-pic-btn:hover {
-          background: #4f46e5;
-        }
-        .delete-pic-btn {
-          background: #ffffff;
-          color: #334155;
-          font-size: 13px;
-          font-weight: 500;
-          padding: 8px 18px;
-          border-radius: 10px;
-          border: 1px solid #cbd5e1;
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          cursor: pointer;
-          transition: all 0.15s ease;
-        }
-        .delete-pic-btn:hover {
-          background: #f8fafc;
-          border-color: #94a3b8;
-        }
-        /* Form Inputs */
-        .profile-form-grid {
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-        }
-        .input-row-2col {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 14px;
-        }
-        @media (max-width: 600px) {
-          .input-row-2col {
-            grid-template-columns: 1fr;
-          }
-        }
-        .custom-input-bar {
-          display: flex;
-          align-items: center;
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-radius: 10px;
-          height: 48px;
-          padding: 0 14px;
-          transition: all 0.2s ease;
-          position: relative;
-        }
-        .custom-input-bar:focus-within {
-          background: #ffffff;
-          border-color: #6366f1;
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-        .custom-input-bar input,
-        .custom-input-bar select {
-          flex: 1;
-          height: 100%;
-          border: none;
-          outline: none;
-          background: transparent;
-          font-size: 13.5px;
-          font-weight: 500;
-          color: #0f172a;
-          padding: 0 10px;
-        }
-        .custom-input-bar input::placeholder {
-          color: #94a3b8;
-          font-weight: 400;
-        }
-        .input-left-icon {
-          color: #475569;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-        .input-edit-icon {
-          color: #64748b;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          padding: 4px;
-          border-radius: 4px;
-          transition: color 0.15s ease;
-        }
-        .input-edit-icon:hover {
-          color: #4f46e5;
-        }
-        /* Update Submit Button */
-        .profile-update-btn {
-          width: 100%;
-          height: 48px;
-          background: linear-gradient(90deg, #4f46e5 0%, #6366f1 100%);
-          color: #ffffff;
-          font-size: 14.5px;
-          font-weight: 600;
-          border-radius: 12px;
-          border: none;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          cursor: pointer;
-          margin-top: 14px;
-          box-shadow: 0 4px 14px rgba(79, 70, 229, 0.28);
-          transition: all 0.15s ease;
-        }
-        .profile-update-btn:hover {
-          opacity: 0.95;
-          transform: translateY(-1px);
-          box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
-        }
-        .profile-update-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-          transform: none;
-        }
-      `}</style>
-
-      {/* Hidden File Input for Avatar Upload */}
+    <Container version='v0' className="bg-forth" style={{ height: "calc(100vh - 60px)" }}>
       <input
         ref={fileInputRef}
         type="file"
@@ -692,640 +1343,81 @@ const Profile = () => {
         style={{ display: "none" }}
       />
 
-      <div className="profile-layout-grid">
-        {/* ================= LEFT SIDEBAR ================= */}
-        <div className="profile-left-col">
-          {/* Card 1: Complete Profile Gauge */}
-          <div className="complete-profile-card">
-            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-              {/* Circular SVG Gauge */}
-              <div style={{ position: "relative", width: "64px", height: "64px", flexShrink: 0 }}>
-                <svg width="64" height="64" viewBox="0 0 64 64" style={{ transform: "rotate(-90deg)" }}>
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="26"
-                    stroke="rgba(255, 255, 255, 0.2)"
-                    strokeWidth="5"
-                    fill="none"
-                  />
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="26"
-                    stroke="#f59e0b"
-                    strokeWidth="5"
-                    strokeDasharray={163.36}
-                    strokeDashoffset={163.36 - (163.36 * completionPercentage) / 100}
-                    strokeLinecap="round"
-                    fill="none"
-                    style={{ transition: "stroke-dashoffset 0.6s ease" }}
-                  />
-                </svg>
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: "700",
-                    fontSize: "14px",
-                  }}
-                >
-                  {completionPercentage}%
-                </div>
-              </div>
+      <div className="flex items-start gap-12 p-12">
+        <div className="grid-cols-1 gap-12 w-25">
+          <CompleteProfileCard
+            completionPercentage={completionPercentage}
+            isOtpVerified={profile.isOtpVerified}
+            onVerify={handleVerifyIdentity}
+          />
 
-              {/* Text info */}
-              <div>
-                <h4 style={{ margin: 0, fontSize: "15px", fontWeight: "700" }}>Complete profile</h4>
-                <p style={{ margin: "4px 0 0 0", fontSize: "11.5px", opacity: 0.85, lineHeight: 1.3 }}>
-                  Complete your profile to unlock all features!
-                </p>
-              </div>
+          <div className="p-12 bg-white rounded-5 grid-cols-1">
+            <h5 className="mid-text capitalize font-600 text-dark">Profile INFO</h5>
+            <p className="mini-text capitalize font-400 text-gray">Manage your personal details.</p>
+            <div className="bg-forth p-12 rounded-5 mt-8">
+              {PROFILE_TABS.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <div
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center justify-between rounded-5 p-15 cursor-pointer ${isActive ? "bg-white" : "bordb"
+                      }`}
+                  >
+                    <div className="flex items-center gap-10">
+                      <div className={`icon-lg ${isActive ? "bg-forth" : "bg-forth border-ec"} rounded-5`}>
+                        {tab.icon}
+                      </div>
+                      <div>
+                        <h5 className="headmini-text text-dark font-600">{tab.title}</h5>
+                        <p className="mini-text text-gray font-400">{tab.subtitle}</p>
+                      </div>
+                    </div>
+                    <Icon name="ChevronRight" width="20" height="20" stroke="#94a3b8" />
+                  </div>
+                );
+              })}
             </div>
-
-            <button type="button" onClick={handleVerifyIdentity} className="verify-identity-btn">
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "16px",
-                  height: "16px",
-                  borderRadius: "50%",
-                  backgroundColor: profile.isOtpVerified ? "#10b981" : "#2563eb",
-                  color: "#ffffff",
-                }}
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </span>
-              <span>{profile.isOtpVerified ? "Identity Verified" : "Verify Identity"}</span>
-            </button>
-          </div>
-
-          {/* Card 2: Navigation Menu */}
-          <div className="profile-nav-card">
-            {/* Account Information */}
-            <button
-              type="button"
-              onClick={() => setActiveTab("account")}
-              className={`profile-nav-item ${activeTab === "account" ? "active" : ""}`}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div className="nav-icon-box">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </div>
-                <div>
-                  <h5 className="nav-item-title">Account Information</h5>
-                  <p className="nav-item-desc">Change your Account information</p>
-                </div>
-              </div>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-
-            {/* Password */}
-            <button
-              type="button"
-              onClick={() => setActiveTab("password")}
-              className={`profile-nav-item ${activeTab === "password" ? "active" : ""}`}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div className="nav-icon-box">
-                  <Icon name="Eye" width="17" height="17" stroke="currentColor" />
-                </div>
-                <div>
-                  <h5 className="nav-item-title">Password</h5>
-                  <p className="nav-item-desc">Change your Password</p>
-                </div>
-              </div>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-
-            {/* Payment Methods */}
-            <button
-              type="button"
-              onClick={() => setActiveTab("payment")}
-              className={`profile-nav-item ${activeTab === "payment" ? "active" : ""}`}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div className="nav-icon-box">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="5" width="20" height="14" rx="2" />
-                    <line x1="2" y1="10" x2="22" y2="10" />
-                  </svg>
-                </div>
-                <div>
-                  <h5 className="nav-item-title">Payment Methods</h5>
-                  <p className="nav-item-desc">Add Your Card / Wallet</p>
-                </div>
-              </div>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-
-            {/* Invite Your Friends */}
-            <button
-              type="button"
-              onClick={() => setActiveTab("invite")}
-              className={`profile-nav-item ${activeTab === "invite" ? "active" : ""}`}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div className="nav-icon-box">
-                  <Icon name="Mail" width="16" height="16" stroke="currentColor" />
-                </div>
-                <div>
-                  <h5 className="nav-item-title">Invite Your Friends</h5>
-                  <p className="nav-item-desc">Get $3 For Each Invitation!</p>
-                </div>
-              </div>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Card 3: Invite Friends & Rewards Illustration */}
-          <div className="rewards-card">
-            {/* 3D Gift Box SVG Illustration */}
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px" }}>
-              <div style={{ position: "relative", width: "52px", height: "52px" }}>
-                <svg width="52" height="52" viewBox="0 0 64 64" fill="none">
-                  <circle cx="12" cy="16" r="2.5" fill="#a78bfa" />
-                  <circle cx="52" cy="14" r="2" fill="#fbbf24" />
-                  <circle cx="48" cy="48" r="2" fill="#60a5fa" />
-                  <circle cx="14" cy="46" r="2" fill="#f472b6" />
-                  <rect x="14" y="26" width="36" height="28" rx="5" fill="#818cf8" />
-                  <rect x="10" y="20" width="44" height="9" rx="3" fill="#6366f1" />
-                  <rect x="29" y="20" width="6" height="34" fill="#fbbf24" />
-                  <rect x="10" y="23" width="44" height="3" fill="#f59e0b" />
-                  <path d="M32 20 C26 12, 18 14, 24 20 Z" fill="#f59e0b" />
-                  <path d="M32 20 C38 12, 46 14, 40 20 Z" fill="#f59e0b" />
-                  <circle cx="32" cy="20" r="3" fill="#fbbf24" />
-                </svg>
-              </div>
-            </div>
-            <h5 style={{ margin: 0, fontSize: "13px", fontWeight: "600", color: "#1e1b4b" }}>
-              Invite Friends & Earn Rewards
-            </h5>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("invite");
-                showToast("Referral link ready to share!", "info");
-              }}
-              className="rewards-pill-btn"
-            >
-              <span>Invite Now</span>
-              <span style={{ fontSize: "13px" }}>&rarr;</span>
-            </button>
           </div>
         </div>
 
-        {/* ================= RIGHT MAIN CARD ================= */}
-        <div className="profile-main-card">
+        <div className="w-75">
           {activeTab === "account" && (
-            <form onSubmit={handleUpdate}>
-              {/* Header Title */}
-              <div>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <span className="main-header-accent" />
-                  <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#0f172a" }}>
-                    Personal Informations
-                  </h3>
-                </div>
-                <p style={{ margin: "4px 0 0 11px", fontSize: "12.5px", color: "#64748b" }}>
-                  Manage your personal details and keep your account up to date.
-                </p>
-              </div>
-
-              {/* Avatar + Actions Header */}
-              <div className="avatar-section-row">
-                <div className="avatar-wrap">
-                  <Image
-                    src={resolvedAvatar}
-                    alt={profile.fullname || "User Profile"}
-                    className="avatar-img"
-                    referrerPolicy="no-referrer"
-                    crossOrigin="anonymous"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Change picture"
-                    className="avatar-camera-btn"
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                      <circle cx="12" cy="13" r="4" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                    <h4 style={{ margin: 0, fontSize: "19px", fontWeight: "700", color: "#0f172a" }}>
-                      {profile.fullname || "User"}
-                    </h4>
-                    {/* Blue Verified Badge */}
-                    <span
-                      title="Verified Account"
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: "18px",
-                        height: "18px",
-                        backgroundColor: "#2563eb",
-                        borderRadius: "50%",
-                        color: "#ffffff",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </span>
-                    <span
-                      style={{
-                        marginLeft: "6px",
-                        fontSize: "11px",
-                        fontWeight: "600",
-                        color: "#4f46e5",
-                        backgroundColor: "#ede9fe",
-                        padding: "2px 8px",
-                        borderRadius: "12px",
-                      }}
-                    >
-                      {profile.roleName}
-                    </span>
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px" }}>
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="upload-pic-btn"
-                    >
-                      <Icon name="Upload" width="14" height="14" stroke="#ffffff" />
-                      <span>Upload New Picture</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleDeletePhoto}
-                      className="delete-pic-btn"
-                    >
-                      <Icon name="Trash" width="13" height="13" stroke="#64748b" />
-                      <span>Delete</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Form Input Fields (matches screenshot layout) */}
-              <div className="profile-form-grid">
-                {/* 1. Full Name */}
-                <div className="custom-input-bar">
-                  <div className="input-left-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                  </div>
-                  <input
-                    id="input-fullname"
-                    type="text"
-                    value={formData.fullname}
-                    onChange={(e) => handleChange("fullname", e.target.value)}
-                    placeholder="Full Name"
-                    spellCheck={false}
-                  />
-                  <div
-                    className="input-edit-icon"
-                    onClick={() => document.getElementById("input-fullname")?.focus()}
-                    title="Edit Name"
-                  >
-                    <Icon name="Edit" width="14" height="14" stroke="currentColor" />
-                  </div>
-                </div>
-
-                {/* 2. Email */}
-                <div className="custom-input-bar">
-                  <div className="input-left-icon">
-                    <Icon name="Mail" width="16" height="16" stroke="currentColor" />
-                  </div>
-                  <input
-                    id="input-email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleChange("email", e.target.value)}
-                    placeholder="Email Address"
-                    spellCheck={false}
-                  />
-                  <div
-                    className="input-edit-icon"
-                    onClick={() => document.getElementById("input-email")?.focus()}
-                    title="Edit Email"
-                  >
-                    <Icon name="Edit" width="14" height="14" stroke="currentColor" />
-                  </div>
-                </div>
-
-                {/* 3. Mobile */}
-                <div className="custom-input-bar">
-                  <div className="input-left-icon">
-                    <Icon name="Phone" width="16" height="16" stroke="currentColor" />
-                  </div>
-                  <input
-                    id="input-mobile"
-                    type="tel"
-                    value={formData.mobile}
-                    onChange={(e) => handleChange("mobile", e.target.value)}
-                    placeholder="Phone Number (e.g. +91 9876543210)"
-                    spellCheck={false}
-                  />
-                  <div
-                    className="input-edit-icon"
-                    onClick={() => document.getElementById("input-mobile")?.focus()}
-                    title="Edit Phone"
-                  >
-                    <Icon name="Edit" width="14" height="14" stroke="currentColor" />
-                  </div>
-                </div>
-
-                {/* 4. Address Row 1: Street Number & Apt / House Number */}
-                <div className="input-row-2col">
-                  {/* Street Number */}
-                  <div className="custom-input-bar">
-                    <div className="input-left-icon" style={{ fontSize: "16px", fontWeight: "700" }}>
-                      #
-                    </div>
-                    <input
-                      id="input-street"
-                      type="text"
-                      value={formData.street}
-                      onChange={(e) => handleChange("street", e.target.value)}
-                      placeholder="Street Number"
-                      spellCheck={false}
-                    />
-                  </div>
-
-                  {/* Apt / House Number */}
-                  <div className="custom-input-bar">
-                    <div className="input-left-icon">
-                      <Icon name="Home" width="16" height="16" stroke="currentColor" />
-                    </div>
-                    <input
-                      id="input-apt"
-                      type="text"
-                      value={formData.apt}
-                      onChange={(e) => handleChange("apt", e.target.value)}
-                      placeholder="Apt / House Number"
-                      spellCheck={false}
-                    />
-                  </div>
-                </div>
-
-                {/* 5. Address Row 2: City & State */}
-                <div className="input-row-2col">
-                  {/* City */}
-                  <div className="custom-input-bar">
-                    <div className="input-left-icon">
-                      <Icon name="Building" width="16" height="16" stroke="currentColor" />
-                    </div>
-                    <input
-                      id="input-city"
-                      type="text"
-                      value={formData.city}
-                      onChange={(e) => handleChange("city", e.target.value)}
-                      placeholder="City"
-                      spellCheck={false}
-                    />
-                    <div className="input-edit-icon">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  {/* State */}
-                  <div className="custom-input-bar">
-                    <div className="input-left-icon">
-                      <Icon name="Globe" width="16" height="16" stroke="currentColor" />
-                    </div>
-                    <input
-                      id="input-state"
-                      type="text"
-                      value={formData.state}
-                      onChange={(e) => handleChange("state", e.target.value)}
-                      placeholder="State"
-                      spellCheck={false}
-                    />
-                    <div className="input-edit-icon">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Update Button */}
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="profile-update-btn"
-                >
-                  <Icon name="Refresh" width="16" height="16" stroke="#ffffff" className={saving ? "animate-spin" : ""} />
-                  <span>{saving ? "Updating..." : "Update"}</span>
-                </button>
-              </div>
-            </form>
+            <AccountSection
+              profile={profile}
+              resolvedAvatar={resolvedAvatar}
+              onDeletePhoto={handleDeletePhoto}
+              onUpdateAccount={handleUpdateAccount}
+              saving={saving}
+              fileInputRef={fileInputRef}
+            />
           )}
 
-          {/* PASSWORD TAB */}
+          {activeTab === "social" && (
+            <SocialSection
+              profile={profile}
+              onUpdateSocial={handleUpdateSocial}
+              saving={saving}
+            />
+          )}
+
           {activeTab === "password" && (
-            <form onSubmit={handlePasswordUpdate}>
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <span className="main-header-accent" />
-                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#0f172a" }}>
-                  Change Password
-                </h3>
-              </div>
-              <p style={{ margin: "4px 0 20px 11px", fontSize: "12.5px", color: "#64748b" }}>
-                Ensure your account is using a secure and random password.
-              </p>
-
-              <div className="profile-form-grid">
-                {/* New Password */}
-                <div className="custom-input-bar">
-                  <div className="input-left-icon">
-                    <Icon name="Lock" width="16" height="16" stroke="currentColor" />
-                  </div>
-                  <input
-                    type={showPassword.new ? "text" : "password"}
-                    value={formData.newPassword}
-                    onChange={(e) => handleChange("newPassword", e.target.value)}
-                    placeholder="New Password (min 6 characters)"
-                  />
-                  <div
-                    className="input-edit-icon"
-                    onClick={() => setShowPassword((p) => ({ ...p, new: !p.new }))}
-                  >
-                    <Icon name={showPassword.new ? "EyeOff" : "Eye"} width="15" height="15" stroke="currentColor" />
-                  </div>
-                </div>
-
-                {/* Confirm Password */}
-                <div className="custom-input-bar">
-                  <div className="input-left-icon">
-                    <Icon name="Lock" width="16" height="16" stroke="currentColor" />
-                  </div>
-                  <input
-                    type={showPassword.confirm ? "text" : "password"}
-                    value={formData.confirmPassword}
-                    onChange={(e) => handleChange("confirmPassword", e.target.value)}
-                    placeholder="Confirm New Password"
-                  />
-                  <div
-                    className="input-edit-icon"
-                    onClick={() => setShowPassword((p) => ({ ...p, confirm: !p.confirm }))}
-                  >
-                    <Icon name={showPassword.confirm ? "EyeOff" : "Eye"} width="15" height="15" stroke="currentColor" />
-                  </div>
-                </div>
-
-                <button type="submit" disabled={saving} className="profile-update-btn">
-                  <Icon name="Refresh" width="16" height="16" stroke="#ffffff" className={saving ? "animate-spin" : ""} />
-                  <span>{saving ? "Updating Password..." : "Update Password"}</span>
-                </button>
-              </div>
-            </form>
+            <PasswordSection
+              onUpdatePassword={handleUpdatePassword}
+              saving={saving}
+            />
           )}
 
-          {/* PAYMENT METHODS TAB */}
-          {activeTab === "payment" && (
-            <div>
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <span className="main-header-accent" />
-                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#0f172a" }}>
-                  Payment Methods
-                </h3>
-              </div>
-              <p style={{ margin: "4px 0 20px 11px", fontSize: "12.5px", color: "#64748b" }}>
-                Add your card or wallet for transactions and billing.
-              </p>
-
-              <div
-                style={{
-                  background: "#f8fafc",
-                  borderRadius: "14px",
-                  padding: "40px 20px",
-                  textAlign: "center",
-                  border: "1px dashed #cbd5e1",
-                }}
-              >
-                <div style={{ fontSize: "36px", marginBottom: "10px" }}>💳</div>
-                <h4 style={{ margin: "0 0 6px 0", color: "#1e293b", fontSize: "15px" }}>No Payment Method Saved</h4>
-                <p style={{ margin: "0 0 16px 0", color: "#64748b", fontSize: "12.5px" }}>
-                  Securely link your credit card or wallet to enable instant checkout.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => showToast("Card checkout gateway integration active", "info")}
-                  className="upload-pic-btn"
-                  style={{ display: "inline-flex" }}
-                >
-                  <span>+ Add Card / Wallet</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* INVITE FRIENDS TAB */}
-          {activeTab === "invite" && (
-            <div>
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <span className="main-header-accent" />
-                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#0f172a" }}>
-                  Invite Your Friends
-                </h3>
-              </div>
-              <p style={{ margin: "4px 0 20px 11px", fontSize: "12.5px", color: "#64748b" }}>
-                Share your referral link with colleagues and receive $3 for every verified sign-up.
-              </p>
-
-              <div
-                style={{
-                  background: "#f5f3ff",
-                  borderRadius: "14px",
-                  padding: "24px",
-                  border: "1px solid #ddd6fe",
-                  marginBottom: "20px",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-                  <div style={{ fontSize: "28px" }}>🎁</div>
-                  <div>
-                    <h4 style={{ margin: 0, fontSize: "15px", color: "#1e1b4b", fontWeight: "700" }}>
-                      Earn rewards on every friend invitation
-                    </h4>
-                    <p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "#6366f1" }}>
-                      No limit on the number of friends you can refer.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="custom-input-bar" style={{ background: "#ffffff" }}>
-                  <input
-                    type="text"
-                    readOnly
-                    value={`${window.location.origin}/register?ref=${profile.id || "USR"}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (navigator?.clipboard) {
-                        navigator.clipboard.writeText(
-                          `${window.location.origin}/register?ref=${profile.id || "USR"}`
-                        );
-                      }
-                      showToast("Referral link copied to clipboard!", "success");
-                    }}
-                    style={{
-                      background: "#6366f1",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "6px",
-                      padding: "6px 14px",
-                      fontSize: "12px",
-                      fontWeight: "600",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Copy Link
-                  </button>
-                </div>
-              </div>
-            </div>
+          {activeTab === "address" && (
+            <AddressSection
+              profile={profile}
+              onUpdateAddress={handleUpdateAddress}
+              saving={saving}
+            />
           )}
         </div>
       </div>
-    </div>
+    </Container>
   );
 };
 

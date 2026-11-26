@@ -982,20 +982,10 @@ const Header = () => {
 
           {/* Right: Score, Help, Dark Mode & User Account */}
           <div className="flex items-center gap-6">
-            {location.pathname === "/profile" && (
-              <div className="border-tertiary rounded-5 bg-forth px-12 py-3 flex items-center gap-8">
-                <p className="mini-text text-gray uppercase font-600 tracking-wider">Profile Score</p>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "var(--success)", display: "flex", flexShrink: 0 }} />
-                <p className="small-text text-success font-700">98.6%</p>
-              </div>
-            )}
-
-            {/* Help Button */}
             <div className="border-tertiary rounded-5 bg-white p-8 flex items-center justify-center cursor-pointer text-gray hover-text-dark">
               <Icon name="Help" width="14" height="14" strokeWidth="2.5" />
             </div>
 
-            {/* Dark Mode Button */}
             {/* <div
               className={`border-tertiary rounded-5 p-8 flex items-center justify-center cursor-pointer ${isDarkMode ? "bg-dark text-white" : "bg-white text-gray hover-text-dark"
                 }`}
@@ -1007,7 +997,6 @@ const Header = () => {
 
             <div style={{ width: 1, height: 14, backgroundColor: "#e2e8f0", margin: "0 6px" }} />
 
-            {/* User Dropdown */}
             <div className="relative">
               <div
                 ref={userDropdownTriggerRef}

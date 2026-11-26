@@ -2,7 +2,7 @@ import React from "react";
 import Modal from "../../common/Modal";
 import FormBuilder from "../FormBuilder";
 import { getCurrentUser, getCurrentRole } from "../../../utils";
-import { ROLE_ACCESS_CONFIG } from "../../../utils/apiData";
+import { ROLE_ACCESS_CONFIG, getPermissionsForPages } from "../../../utils/apiData";
 
 /**
  * Helper to determine if a user/role has Admin or Dev Admin privileges
@@ -138,7 +138,16 @@ export const getUserFormFields = ({ editingUser, roleOptions = [], userRole } = 
 /**
  * Generic field generator for Roles & Permissions
  */
-export const getRoleFormFields = ({ editingRole, permissionOptions, pageOptions, userRole } = {}) => {
+export const getRoleFormFields = ({
+    editingRole,
+    permissionOptions,
+    pageOptions,
+    userRole,
+    selectedPages,
+    selectedPermissions,
+    onPagesChange,
+    onPermissionsChange,
+} = {}) => {
     const statusField = getPublishedStatusField(editingRole, userRole);
     const resolvedPageOptions = (pageOptions && pageOptions.length > 0)
         ? pageOptions
@@ -147,44 +156,40 @@ export const getRoleFormFields = ({ editingRole, permissionOptions, pageOptions,
             value: it.page,
         }));
 
-    const resolvedPermissionOptions = (permissionOptions && permissionOptions.length > 0)
-        ? permissionOptions
-        : (() => {
-            const list = [];
-            (ROLE_ACCESS_CONFIG || []).forEach((item) => {
-                (item.permissions || []).forEach((perm) => {
-                    if (perm && !list.some((o) => o.value === perm)) {
-                        list.push({ label: perm, value: perm });
-                    }
-                });
-            });
-            return list;
-        })();
+    // Determine currently selected pages
+    let currentPages = selectedPages !== undefined
+        ? (Array.isArray(selectedPages) ? selectedPages : [selectedPages].filter(Boolean))
+        : (Array.isArray(editingRole?.pages) && editingRole.pages.length ? editingRole.pages : ["Full_Access"]);
 
-    // Filter editingRole.permissions to only retain valid permissions from ROLE_ACCESS_CONFIG
-    const validPermSet = new Set(resolvedPermissionOptions.map((o) => o.value));
-    let initialPermissions = Array.isArray(editingRole?.permissions)
-        ? editingRole.permissions.filter((p) => validPermSet.has(p))
-        : [];
-
-    let initialPages = Array.isArray(editingRole?.pages) ? editingRole.pages : [];
-
-    // If initialPermissions is empty but editingRole has pages, derive from pages
-    if (!initialPermissions.length && initialPages.length) {
-        const derived = [];
-        initialPages.forEach((pg) => {
-            const match = (ROLE_ACCESS_CONFIG || []).find((c) => c.page === pg || c.label === pg);
-            if (match) derived.push(...match.permissions);
-        });
-        initialPermissions = Array.from(new Set(derived));
+    if (!currentPages.length && selectedPages === undefined) {
+        currentPages = ["Full_Access"];
     }
 
-    if (!initialPermissions.length) {
-        initialPermissions = ["Full_Access"];
-    }
+    // Dynamic permissions belonging strictly to currentPages
+    const allowedPermsForPages = getPermissionsForPages(currentPages);
 
-    if (!initialPages.length) {
-        initialPages = ["Full_Access"];
+    // Options for the Permissions field strictly match the selected pages' permissions
+    const resolvedPermissionOptions = allowedPermsForPages.map((p) => ({
+        label: p,
+        value: p,
+    }));
+
+    // Calculate current permissions
+    let currentPermissions;
+    if (selectedPermissions !== undefined && selectedPermissions !== null) {
+        currentPermissions = Array.isArray(selectedPermissions)
+            ? selectedPermissions.filter((p) => allowedPermsForPages.includes(p))
+            : [];
+        if (!currentPermissions.length && allowedPermsForPages.length && selectedPages === undefined) {
+            currentPermissions = allowedPermsForPages;
+        }
+    } else if (Array.isArray(editingRole?.permissions) && editingRole.permissions.length) {
+        currentPermissions = editingRole.permissions.filter((p) => allowedPermsForPages.includes(p));
+        if (!currentPermissions.length && allowedPermsForPages.length) {
+            currentPermissions = allowedPermsForPages;
+        }
+    } else {
+        currentPermissions = allowedPermsForPages;
     }
 
     return [
@@ -201,14 +206,18 @@ export const getRoleFormFields = ({ editingRole, permissionOptions, pageOptions,
             label: "Allowed Pages",
             type: "multiselect",
             options: resolvedPageOptions,
-            defaultValue: initialPages,
+            value: currentPages,
+            defaultValue: currentPages,
+            onChange: onPagesChange,
         },
         {
             name: "permissions",
             label: "Permissions",
             type: "multiselect",
             options: resolvedPermissionOptions,
-            defaultValue: initialPermissions,
+            value: currentPermissions,
+            defaultValue: currentPermissions,
+            onChange: onPermissionsChange,
         },
         ...(statusField ? [statusField] : []),
     ];

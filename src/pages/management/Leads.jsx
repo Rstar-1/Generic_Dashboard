@@ -1,13 +1,43 @@
 import React from "react";
 import MainLayout from "../../components/layout/sections/MainLayout";
+import { leadsSidebarData, leadsTableColumns, TABS } from "../../utils/apiData";
+import { useLeads } from "../../feature/leadSlice";
 
-export default function LeadsPage() {
-  return (
-    <MainLayout title="Leads Management">
-      <div className="p-20">
-        <h3>Leads Management</h3>
-        <p className="text-secondary">Track, update status, and manage incoming customer leads.</p>
-      </div>
-    </MainLayout>
-  );
-}
+const Leads = () => {
+    const {
+        leads,
+        total,
+        counts,
+        loading,
+        getLeads,
+        addLead,
+        editLead,
+        removeLead,
+        bulkRemoveLeads,
+    } = useLeads();
+
+    return (
+        <MainLayout
+            entityName="Lead"
+            itemName="leads"
+            headerTitle="Leads Overview"
+            headerSub="Track prospective client inquiries, qualification severities, and pipeline conversions"
+            headerIcon="Box"
+            sidebarData={leadsSidebarData}
+            sidebarCounts={counts || { all: total }}
+            tabs={TABS.leads || TABS}
+            tableTitle="Lead Inquiries & Prospects"
+            columns={leadsTableColumns}
+            data={leads}
+            total={total}
+            loading={loading}
+            onFetch={getLeads}
+            onAdd={addLead}
+            onEdit={editLead}
+            onDelete={removeLead}
+            onBulkDelete={bulkRemoveLeads}
+        />
+    );
+};
+
+export default React.memo(Leads);

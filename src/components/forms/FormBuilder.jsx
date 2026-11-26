@@ -100,15 +100,27 @@ const FormBuilder = React.memo(
       setForm((prev) => {
         let changed = false;
         const next = { ...prev };
+        const isEquivalent = (a, b) => {
+          if (a === b) return true;
+          if (Array.isArray(a) && Array.isArray(b)) {
+            if (a.length !== b.length) return false;
+            for (let i = 0; i < a.length; i++) {
+              if (a[i] !== b[i]) return false;
+            }
+            return true;
+          }
+          return false;
+        };
+
         fields.forEach((f) => {
-          if (f.value !== undefined && f.value !== prev[f.name]) {
+          if (f.value !== undefined && !isEquivalent(f.value, prev[f.name])) {
             next[f.name] = f.value;
             changed = true;
           }
         });
         if (values && typeof values === "object") {
           Object.entries(values).forEach(([k, v]) => {
-            if (v !== undefined && v !== prev[k]) {
+            if (v !== undefined && !isEquivalent(v, prev[k])) {
               next[k] = v;
               changed = true;
             }
