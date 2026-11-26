@@ -1130,6 +1130,17 @@ const MainLayout = React.memo(({
                 break;
         }
 
+        if (
+            !effectiveIsAdmin &&
+            ["Product", "Product Category", "Blog", "Blog Category", "SEO", "Lead", "Leads"].includes(entityName)
+        ) {
+            const uid = getActiveCreatorId(currentUser);
+            if (uid) {
+                params.userId = uid;
+                params.createdBy = uid;
+            }
+        }
+
         if (extraFilters && typeof extraFilters === "object") {
             Object.assign(params, extraFilters);
         }
@@ -1156,6 +1167,8 @@ const MainLayout = React.memo(({
         categoryFilter,
         seoTypeFilter,
         leadSeverityFilter,
+        effectiveIsAdmin,
+        currentUser,
         JSON.stringify(extraFilters || {}),
     ]);
 
@@ -1881,6 +1894,42 @@ const MainLayout = React.memo(({
     const resolvedData = React.useMemo(() => {
         let list = Array.isArray(data) ? data : [];
 
+        // For non-admin roles in content/product/lead management, restrict view to own added items + admin added items
+        if (
+            !effectiveIsAdmin &&
+            ["Product", "Product Category", "Blog", "Blog Category", "SEO", "Lead", "Leads"].includes(entityName) &&
+            (currentUser?._id || currentUser?.id)
+        ) {
+            const currentId = String(currentUser?._id || currentUser?.id || "").trim();
+            const currentCode = String(currentUser?.id || "").trim();
+            const currentName = String(currentUser?.fullname || currentUser?.name || "").toLowerCase().trim();
+
+            list = list.filter((item) => {
+                const creator = item?.createdby || item?.createdBy;
+                const norm = normalizeCreator ? normalizeCreator(creator, item?.createdby) : creator;
+
+                const creatorId = String(norm?._id || norm?.id || creator?._id || creator?.id || (typeof creator === "string" ? creator : "")).trim();
+                const creatorCode = String(norm?.id || creator?.id || "").trim();
+                const creatorName = String(norm?.fullname || norm?.name || creator?.fullname || creator?.name || "").toLowerCase().trim();
+                const creatorRole = String(norm?.role || creator?.role || "").toLowerCase().trim();
+
+                const isOwn =
+                    (currentId && creatorId && (creatorId === currentId || creatorCode === currentId)) ||
+                    (currentCode && (creatorId === currentCode || creatorCode === currentCode)) ||
+                    (currentName && creatorName && creatorName === currentName);
+
+                const isAdminCreated =
+                    creatorRole === "admin" ||
+                    creatorRole === "dev_admin" ||
+                    creatorName === "admin" ||
+                    !creator ||
+                    creatorId === "" ||
+                    norm?.name === "Admin";
+
+                return isOwn || isAdminCreated;
+            });
+        }
+
         switch (entityName) {
             case "Role": {
                 if (permissionFilter !== "all") {
@@ -1974,7 +2023,7 @@ const MainLayout = React.memo(({
             default:
                 return list;
         }
-    }, [data, entityName, permissionFilter, roleFilter, isPrivilegedUser, loggedInUserRoleKey, loggedInUserRoleId, userRoleFilter, roles, categoryFilter, seoTypeFilter, leadSeverityFilter, tableState.selectedCategory]);
+    }, [data, entityName, permissionFilter, roleFilter, isPrivilegedUser, loggedInUserRoleKey, loggedInUserRoleId, userRoleFilter, roles, categoryFilter, seoTypeFilter, leadSeverityFilter, tableState.selectedCategory, effectiveIsAdmin, currentUser]);
 
     const resolvedShowSidebar = entityConfig.showSidebar;
 
