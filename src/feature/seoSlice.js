@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { createEntitySlice, normalizeCreator } from "./sliceHelper.js";
+import { createEntitySlice, normalizeCreator, normalizeVendor } from "./sliceHelper.js";
 import {
   getSeoListApi,
   getSeoByIdApi,
@@ -7,7 +7,6 @@ import {
   updateSeoApi,
   deleteSeoApi,
   bulkDeleteSeoApi,
-  seedSeoApi,
   seoApi,
   useGetSeosQuery,
   useLazyGetSeosQuery,
@@ -16,7 +15,6 @@ import {
   useUpdateSeoMutation,
   useDeleteSeoMutation,
   useBulkDeleteSeosMutation,
-  useSeedSeoMutation,
 } from "../api/endpoints/seoApi.js";
 
 export {
@@ -28,7 +26,6 @@ export {
   useUpdateSeoMutation,
   useDeleteSeoMutation,
   useBulkDeleteSeosMutation,
-  useSeedSeoMutation,
 };
 
 export const normalizeSeo = (s) => {
@@ -37,6 +34,7 @@ export const normalizeSeo = (s) => {
   const pageName = s.page || s.name || s.pageName || "Page";
   const pageTitle = s.pageTitle || s.title || pageName;
   const createdby = normalizeCreator(s.createdBy, s.createdby);
+  const vendorBy = normalizeVendor(s.vendorBy, s.VendorBy);
 
   const breadcrumbsArr = Array.isArray(s.breadcrumbs)
     ? s.breadcrumbs
@@ -89,6 +87,8 @@ export const normalizeSeo = (s) => {
     title: pageTitle,
     createdby,
     createdBy: createdby,
+    vendorBy,
+    VendorBy: vendorBy,
     creatorName: createdby.fullname || createdby.name || "Admin",
     createdByName: createdby.fullname || createdby.name || "Admin",
     breadcrumbs: breadcrumbsArr,
@@ -102,19 +102,6 @@ export const normalizeSeo = (s) => {
     isDeleted: Boolean(s.isDeleted ?? false),
   };
 };
-
-export const seedInitialSeoThunk = createAsyncThunk(
-  "seos/seedInitialSeo",
-  async (force = false, { rejectWithValue, dispatch }) => {
-    try {
-      const res = await seedSeoApi(force);
-      dispatch(entity.thunks.fetchSeos());
-      return res;
-    } catch (err) {
-      return rejectWithValue(err?.response?.data || err?.message || "Failed to seed SEO data");
-    }
-  }
-);
 
 const entity = createEntitySlice({
   name: "seos",
@@ -130,9 +117,6 @@ const entity = createEntitySlice({
     bulkDelete: bulkDeleteSeoApi,
   },
   normalizer: normalizeSeo,
-  customHookMethods: {
-    seedInitialSeo: (dispatch) => (force = false) => dispatch(seedInitialSeoThunk(force)),
-  },
 });
 
 export const {

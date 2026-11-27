@@ -147,12 +147,21 @@ const ProfileCell = React.memo(({ col, row }) => {
         col.accessor === "author" ||
         col.header === "Created By" ||
         col.header === "Author";
+    const isVendorCol =
+        col.accessor === "vendorBy" ||
+        col.accessor === "VendorBy" ||
+        col.header === "Vendor";
+
+    if (isVendorCol && (!rawVal || (!obj._id && !obj.id && !obj.fullname && !obj.name && !obj.email && !obj.mobile))) {
+        return <span className="text-gray mini-text font-400">—</span>;
+    }
+
     const isOnlyImage =
         col.onlyImage === true ||
         col.imageOnly === true ||
         col.ui === "image" ||
         col.ui === "img" ||
-        (!isCreatorCol && (col.accessor === "image" || String(col.header || "").toLowerCase().includes("image")));
+        (!isCreatorCol && !isVendorCol && (col.accessor === "image" || String(col.header || "").toLowerCase().includes("image")));
 
     const isImageAccessor =
         col.accessor === "image" ||
@@ -162,11 +171,11 @@ const ProfileCell = React.memo(({ col, row }) => {
         isOnlyImage;
 
     const name = getFirstValue(
-        [rawVal, obj, !isCreatorCol ? row : null],
+        [rawVal, obj, !isCreatorCol && !isVendorCol ? row : null],
         ["fullname", "name", "username", col.nameKey, "createdByName", "pageName", "sectionName", "title"]
     );
     const subText = getFirstValue(
-        [obj, !isCreatorCol ? row : null],
+        [obj, !isCreatorCol && !isVendorCol ? row : null],
         [col.subKey, col.emailKey, "mobile", "phone", "email", "sub", "path", "sku", "author"]
     );
 
@@ -206,6 +215,10 @@ const ProfileCell = React.memo(({ col, row }) => {
     const initialLetter = (name ? String(name).trim().charAt(0) : (col.header ? String(col.header).trim().charAt(0) : "?")).toUpperCase() || "?";
 
     const showImage = Boolean(imgUrl) && !imgError;
+
+    if (!name && !subText && !showImage) {
+        return <span className="text-gray mini-text font-400">—</span>;
+    }
 
     if (isOnlyImage) {
         return (

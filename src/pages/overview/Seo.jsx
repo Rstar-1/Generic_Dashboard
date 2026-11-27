@@ -14,7 +14,6 @@ const Seo = () => {
         updateSeo,
         deleteSeo,
         bulkDeleteSeo,
-        seedInitialSeo,
     } = useSeo();
 
     return (
@@ -39,7 +38,6 @@ const Seo = () => {
             onEdit={updateSeo}
             onDelete={deleteSeo}
             onBulkDelete={bulkDeleteSeo}
-            onSeedSeo={seedInitialSeo}
         />
     );
 };

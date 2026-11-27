@@ -10,10 +10,6 @@ export const seoApi = apiSlice.injectEndpoints({
       singular: "seo",
       plural: "seos",
     }),
-    seedSeo: builder.mutation({
-      query: () => ({ url: "/api/seo/seed", method: "POST" }),
-      invalidatesTags: ["SEO"],
-    }),
   }),
   overrideExisting: false,
 });
@@ -26,7 +22,6 @@ export const {
   useUpdateSeoMutation,
   useDeleteSeoMutation,
   useBulkDeleteSeosMutation,
-  useSeedSeoMutation,
 } = seoApi;
 
 const crud = createCrudApi("/api/seo");
@@ -36,10 +31,6 @@ export const createSeoApi = crud.create;
 export const updateSeoApi = crud.update;
 export const deleteSeoApi = crud.delete;
 export const bulkDeleteSeoApi = crud.bulkDelete;
-export const seedSeoApi = (force = false) =>
-  handleRequest(() =>
-    axiosInstance.post(force ? "/api/seo/seed?force=true" : "/api/seo/seed")
-  );
 
 export default {
   getAll: getSeoListApi,
@@ -48,6 +39,5 @@ export default {
   update: updateSeoApi,
   delete: deleteSeoApi,
   bulkDelete: bulkDeleteSeoApi,
-  seed: seedSeoApi,
   seoApi,
 };

@@ -1,6 +1,6 @@
 import React from "react";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { createEntitySlice, normalizeCreator } from "./sliceHelper.js";
+import { createEntitySlice, normalizeCreator, normalizeVendor } from "./sliceHelper.js";
 import {
   getProductsApi,
   getProductByIdApi,
@@ -71,6 +71,7 @@ export const normalizeProduct = (p) => {
   }
 
   const createdby = normalizeCreator(p.createdBy, p.createdby);
+  const vendorBy = normalizeVendor(p.vendorBy, p.VendorBy);
 
   const mainImage = Array.isArray(p.image)
     ? (p.image[0] || "")
@@ -106,6 +107,8 @@ export const normalizeProduct = (p) => {
     tags: Array.isArray(p.tags) ? p.tags : [],
     createdby,
     createdBy: createdby,
+    vendorBy,
+    VendorBy: vendorBy,
     isActive: p.isActive !== undefined ? Boolean(p.isActive) : true,
     status: p.isActive === false ? "Inactive" : "Active",
     isDeleted: Boolean(p.isDeleted),

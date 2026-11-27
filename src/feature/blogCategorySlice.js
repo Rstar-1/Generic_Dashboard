@@ -1,7 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { createEntitySlice, normalizeCreator } from "./sliceHelper.js";
+import { createEntitySlice, normalizeCreator, normalizeVendor } from "./sliceHelper.js";
 import {
   getBlogCategoriesApi,
   getBlogCategoryByIdApi,
@@ -36,6 +36,7 @@ export const normalizeBlogCategory = (c) => {
   const categoryName = c.categoryName || c.name || "";
   const count = Number(c.count ?? c.articlesCount ?? 0);
   const createdby = normalizeCreator(c.createdBy, c.createdby);
+  const vendorBy = normalizeVendor(c.vendorBy, c.VendorBy);
 
   return {
     ...c,
@@ -51,6 +52,8 @@ export const normalizeBlogCategory = (c) => {
     iconName: c.iconName || c.icon || "Folder",
     createdby,
     createdBy: createdby,
+    vendorBy,
+    VendorBy: vendorBy,
     isActive: Boolean(c.isActive ?? true),
     isDeleted: Boolean(c.isDeleted ?? false),
   };

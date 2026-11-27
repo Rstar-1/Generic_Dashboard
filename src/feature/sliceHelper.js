@@ -36,11 +36,12 @@ export const normalizeCreator = (createdBy, createdby) => {
   try {
     const stored = JSON.parse(localStorage.getItem("user") || "{}");
     const storedId = stored._id || stored.id || stored.userId;
-    const matchesUser =
+    const matchesUser = Boolean(
       (storedId && (String(storedId) === String(creatorId) || String(stored._id) === String(creatorId))) ||
-      (!creatorId && stored.fullname) ||
-      (name && stored.fullname && name.toLowerCase() === stored.fullname.toLowerCase()) ||
-      (mobile && stored.mobile && mobile === stored.mobile);
+      (name && name !== "Admin" && stored.fullname && name.toLowerCase() === stored.fullname.toLowerCase()) ||
+      (mobile && stored.mobile && mobile === stored.mobile) ||
+      (email && stored.email && email.toLowerCase() === stored.email.toLowerCase())
+    );
 
     if (matchesUser) {
       if (!name || name === "Admin") name = stored.fullname || stored.name || name;
@@ -98,6 +99,29 @@ export const normalizeCreator = (createdBy, createdby) => {
       return name;
     },
   };
+};
+
+/**
+ * Universal Vendor Info Normalizer:
+ * Returns null if no vendor is assigned, otherwise normalizes vendor details.
+ */
+export const normalizeVendor = (vendorBy, VendorBy) => {
+  const v = vendorBy !== undefined && vendorBy !== null ? vendorBy : VendorBy;
+  if (!v) return null;
+  if (typeof v === "object") {
+    const hasAnyProp = v._id || v.id || v.fullname || v.name || v.email || v.mobile;
+    if (!hasAnyProp) return null;
+  } else if (typeof v === "string" && !v.trim()) {
+    return null;
+  }
+  const norm = normalizeCreator(v, v);
+  if (!norm || (!norm._id && !norm.fullname && !norm.name && !norm.email && !norm.mobile)) {
+    return null;
+  }
+  if (norm.name === "Admin" && !norm._id && !norm.mobile && !norm.email) {
+    return null;
+  }
+  return norm;
 };
 
 /**

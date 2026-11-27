@@ -27,7 +27,9 @@ import {
     getRoleFormFields,
     getUserFormFields,
     getProductFormFields,
+    getProductCategoryFormFields,
     getBlogFormFields,
+    getBlogCategoryFormFields,
     getSeoFormFields,
     getLeadFormFields,
     getProductReviewFormFields,
@@ -37,6 +39,7 @@ import { useRoles } from "../../../feature/roleSlice";
 import { useProductCategories } from "../../../feature/productCategorySlice";
 import { useBlogCategories } from "../../../feature/blogCategorySlice";
 import { useProducts } from "../../../feature/productSlice";
+import { useUsers } from "../../../feature/userSlice";
 import { normalizeCreator } from "../../../feature/sliceHelper";
 import { registerApi } from "../../../api";
 
@@ -478,16 +481,16 @@ const MainLayout = React.memo(({
     onEditOpen,
     getFormFields,
     productOptions = [],
+    vendorOptions = [],
     formFields: staticFormFields,
     formSubmitType = "json",
     formCols = "1",
     transformPayload,
     onSubmit,
 
-    // Reviews & SEO Callbacks
+    // Reviews Callbacks
     onAddReview,
     onDeleteReview,
-    onSeedSeo,
 
     // Modal controls
     showModal = true,
@@ -601,6 +604,35 @@ const MainLayout = React.memo(({
             value: String(p._id || p.id),
         }));
     }, [productOptions, leadProducts, isPrivilegedUser, currentUser]);
+
+    // Users hook for Vendor selection (Leads, Products, Categories, Blogs, SEO)
+    const { users: systemUsers, getUsers: getSystemUsers } = useUsers();
+
+    React.useEffect(() => {
+        const scopedEntities = ["Product", "Product Category", "Blog", "Blog Category", "SEO", "Lead", "Leads"];
+        if (scopedEntities.includes(entityName)) {
+            getSystemUsers?.({ limit: 100, isDeleted: false });
+        }
+    }, [entityName, getSystemUsers]);
+
+    const derivedVendorOptions = React.useMemo(() => {
+        if (vendorOptions && vendorOptions.length > 0) {
+            return vendorOptions;
+        }
+        const list = Array.isArray(systemUsers) ? systemUsers : [];
+        return list
+            .filter((u) => {
+                if (!u || u.isDeleted) return false;
+                const roleStr = String(
+                    u.role || u.rolename || u.roleId?.rolename || u.roleId?.name || ""
+                ).toLowerCase().trim();
+                return roleStr === "vendor" || roleStr.includes("vendor");
+            })
+            .map((u) => ({
+                label: `${u.fullname || u.name || u.email || u.id} (${u.id || ""})`,
+                value: String(u._id || u.id),
+            }));
+    }, [vendorOptions, systemUsers]);
 
     const effectiveIsAdmin = Boolean(isPrivilegedUser || (userRole && (String(userRole).toLowerCase().includes("admin") || isFullAccess(userRole))));
 
@@ -936,7 +968,25 @@ const MainLayout = React.memo(({
                     formFields: (ctx) => getProductFormFields({
                         editingProduct: ctx.editingProduct || ctx.editingItem,
                         categoryOptions: dynamicCategoryOptions,
+                        vendorOptions: derivedVendorOptions || [],
                         userRole: activeRole,
+                    }),
+                };
+            case "Product Category":
+                return {
+                    showSidebar: showSidebar !== undefined ? showSidebar : true,
+                    sidebarTitle: sidebarTitle || sidebarData?.title || "Product Categories",
+                    tableTitle: tableTitle || "Product Category Hierarchy",
+                    tableSubtitle: tableSubtitle || "Complete list of product categories with subcategory counts and catalog hierarchies",
+                    searchPlaceholder: searchPlaceholder || "Search product categories...",
+                    addBtnText: addBtnText || "Add Category",
+                    headerIcon: headerIcon || "Box",
+                    headerTitle: headerTitle || "Product Categories",
+                    headerSub: headerSub || "Manage ecommerce product category classifications, subcategories, and catalog hierarchies",
+                    formFields: (ctx) => getProductCategoryFormFields({
+                        editingCategory: ctx.editingCategory || ctx.editingItem,
+                        userRole: activeRole,
+                        vendorOptions: derivedVendorOptions || [],
                     }),
                 };
             case "Blog":
@@ -953,7 +1003,25 @@ const MainLayout = React.memo(({
                     formFields: (ctx) => getBlogFormFields({
                         editingBlog: ctx.editingBlog || ctx.editingItem,
                         categoryOptions: dynamicCategoryOptions,
+                        vendorOptions: derivedVendorOptions || [],
                         userRole: activeRole,
+                    }),
+                };
+            case "Blog Category":
+                return {
+                    showSidebar: showSidebar !== undefined ? showSidebar : true,
+                    sidebarTitle: sidebarTitle || sidebarData?.title || "Blog Categories",
+                    tableTitle: tableTitle || "Blog Category Hierarchy",
+                    tableSubtitle: tableSubtitle || "Complete list of blog categories with article counts and publication statuses",
+                    searchPlaceholder: searchPlaceholder || "Search blog categories...",
+                    addBtnText: addBtnText || "Add Category",
+                    headerIcon: headerIcon || "Clipboard",
+                    headerTitle: headerTitle || "Blog Categories",
+                    headerSub: headerSub || "Manage content categories, editorial tags, and article group classifications",
+                    formFields: (ctx) => getBlogCategoryFormFields({
+                        editingCategory: ctx.editingCategory || ctx.editingItem,
+                        userRole: activeRole,
+                        vendorOptions: derivedVendorOptions || [],
                     }),
                 };
             case "SEO":
@@ -969,6 +1037,7 @@ const MainLayout = React.memo(({
                     headerSub: headerSub || "Manage canonical URLs, meta tags, OpenGraph schemas, and indexing directives",
                     formFields: (ctx) => getSeoFormFields({
                         editingSeo: ctx.editingSeo || ctx.editingItem,
+                        vendorOptions: derivedVendorOptions || [],
                         userRole: activeRole,
                     }),
                 };
@@ -991,6 +1060,7 @@ const MainLayout = React.memo(({
                         editingLead: ctx.editingLead || ctx.editingItem,
                         userRole: activeRole,
                         productOptions: derivedProductOptions || [],
+                        vendorOptions: derivedVendorOptions || [],
                         selectedCategory: leadSelectedCategory,
                         onCategoryChange: handleLeadCategoryChange,
                     }),
@@ -1723,6 +1793,17 @@ const MainLayout = React.memo(({
             }
         }
 
+        // Extract vendorBy for all scoped entities (Product, Product Category, Blog, Blog Category, SEO, Lead)
+        if (formData.vendorBy !== undefined || formData.VendorBy !== undefined) {
+            const rawV = formData.vendorBy !== undefined ? formData.vendorBy : formData.VendorBy;
+            let resolvedV = rawV;
+            if (rawV && typeof rawV === "object") {
+                resolvedV = rawV._id || rawV.value || rawV.id || null;
+            }
+            payload.vendorBy = resolvedV && resolvedV !== "" && resolvedV !== "[object Object]" ? resolvedV : null;
+            payload.VendorBy = payload.vendorBy;
+        }
+
         if (transformPayload) {
             payload = await transformPayload(formData, { editingItem, currentUser, activeCreatorId, basePayload: payload });
         }
@@ -1774,27 +1855,6 @@ const MainLayout = React.memo(({
                     color="white"
                     icon="Trash"
                     onClick={handleBulkDelete}
-                />
-            )}
-            {onSeedSeo && canEditEntity && (
-                <Button
-                    text="Seed Defaults"
-                    version="v2"
-                    bg="secondary"
-                    variant="outline"
-                    border="secondary"
-                    color="secondary"
-                    icon="Database"
-                    onClick={async () => {
-                        try {
-                            const res = await onSeedSeo();
-                            if (res && typeof res.unwrap === "function") await res.unwrap();
-                            showToast("Default SEO pages seeded successfully!", "success");
-                            fetchData();
-                        } catch (err) {
-                            showToast(err?.message || "Failed to seed SEO records", "danger");
-                        }
-                    }}
                 />
             )}
             {extraQuickActions}
@@ -2012,6 +2072,7 @@ const MainLayout = React.memo(({
                 roleOptions: dynamicRoleOptions,
                 categoryOptions: dynamicCategoryOptions,
                 productOptions: derivedProductOptions || [],
+                vendorOptions: derivedVendorOptions || [],
                 selectedCategory: leadSelectedCategory,
                 onCategoryChange: handleLeadCategoryChange,
             });
@@ -2029,12 +2090,13 @@ const MainLayout = React.memo(({
                 userRole: activeRole,
                 currentUser,
                 productOptions: derivedProductOptions || [],
+                vendorOptions: derivedVendorOptions || [],
                 selectedCategory: leadSelectedCategory,
                 onCategoryChange: handleLeadCategoryChange,
             });
         }
         return staticFormFields || [];
-    }, [getFormFields, entityConfig, staticFormFields, editingItem, activeRole, currentUser, dynamicRoleOptions, dynamicCategoryOptions, derivedProductOptions, leadSelectedCategory, handleLeadCategoryChange]);
+    }, [getFormFields, entityConfig, staticFormFields, editingItem, activeRole, currentUser, dynamicRoleOptions, dynamicCategoryOptions, derivedProductOptions, derivedVendorOptions, leadSelectedCategory, handleLeadCategoryChange]);
 
     // Data filtering per entity
     const resolvedData = React.useMemo(() => {
@@ -2050,6 +2112,46 @@ const MainLayout = React.memo(({
 
             list = list.filter((item) => {
                 if (!item) return false;
+
+                // Special vendor scoping: if an item is explicitly assigned to a vendor, ONLY that assigned vendor (or the creator) can see it!
+                const vendor = item.vendorBy || item.VendorBy;
+                const vendorId = String(
+                    vendor?._id ||
+                    vendor?.id ||
+                    vendor?.userId ||
+                    (typeof vendor === "string" ? vendor : "")
+                ).trim().toLowerCase();
+                const vendorName = String(vendor?.fullname || vendor?.name || "").trim().toLowerCase();
+                const vendorEmail = String(vendor?.email || "").trim().toLowerCase();
+                const vendorMobile = String(vendor?.mobile || vendor?.phone || "").trim();
+
+                const hasAssignedVendor = Boolean(
+                    (vendorId && vendorId !== "[object object]") ||
+                    (vendorName && vendorName !== "admin") ||
+                    vendorEmail ||
+                    vendorMobile
+                );
+
+                if (hasAssignedVendor) {
+                    const isAssignedVendor = Boolean(
+                        (currentUserId && vendorId && vendorId === currentUserId) ||
+                        (currentUserName && vendorName && vendorName === currentUserName) ||
+                        (currentUserEmail && vendorEmail && vendorEmail === currentUserEmail) ||
+                        (currentUserMobile && vendorMobile && vendorMobile === currentUserMobile)
+                    );
+
+                    if (isAssignedVendor) return true;
+                    const creator = item.createdBy || item.createdby;
+                    const creatorId = String(
+                        creator?._id ||
+                        creator?.id ||
+                        creator?.userId ||
+                        (typeof creator === "string" ? creator : "")
+                    ).trim().toLowerCase();
+                    if (currentUserId && creatorId && creatorId === currentUserId) return true;
+                    return false;
+                }
+
                 const creator = item.createdBy || item.createdby;
                 // If item has no creator (system seeded or default data), show to all
                 if (!creator) return true;
@@ -2202,24 +2304,33 @@ const MainLayout = React.memo(({
 
     const currentTableData = isReviewsTab ? paginatedReviews : resolvedData;
     const currentTableColumns = React.useMemo(() => {
-        if (isReviewsTab) return reviewsTableColumns;
-        if (entityName === "Lead" || entityName === "Leads") {
+        let cols = columns;
+        if (isReviewsTab) {
+            cols = reviewsTableColumns;
+        } else if (entityName === "Lead" || entityName === "Leads") {
             const tabKey = String(activeTab || "enquiry").toLowerCase().trim();
             if (tabKey === "product" || tabKey === "orders") {
-                return ordersLeadsColumns || leadsTableColumns?.product || columns;
+                cols = ordersLeadsColumns || leadsTableColumns?.product || columns;
+            } else if (tabKey === "manual" || tabKey === "leads") {
+                cols = manualLeadsColumns || leadsTableColumns?.manual || columns;
+            } else if (tabKey === "enquiry") {
+                cols = enquiryLeadsColumns || leadsTableColumns?.enquiry || columns;
             }
-            if (tabKey === "manual" || tabKey === "leads") {
-                return manualLeadsColumns || leadsTableColumns?.manual || columns;
-            }
-            if (tabKey === "enquiry") {
-                return enquiryLeadsColumns || leadsTableColumns?.enquiry || columns;
-            }
+        } else if (typeof columns === "function") {
+            cols = columns(activeTab);
         }
-        if (typeof columns === "function") {
-            return columns(activeTab);
+
+        // Vendor column is only visible for Admin role, hidden for all other roles
+        if (Array.isArray(cols) && !effectiveIsAdmin) {
+            cols = cols.filter((c) => {
+                const acc = String(c?.accessor || "").toLowerCase();
+                const hdr = String(c?.header || "").toLowerCase();
+                return acc !== "vendorby" && hdr !== "vendor";
+            });
         }
-        return columns;
-    }, [isReviewsTab, entityName, activeTab, columns]);
+
+        return cols;
+    }, [isReviewsTab, entityName, activeTab, columns, effectiveIsAdmin]);
     const currentTotalItems = isReviewsTab
         ? filteredReviews.length
         : (!effectiveIsAdmin && ["Product", "Product Category", "Blog", "Blog Category", "SEO", "Lead", "Leads"].includes(entityName))

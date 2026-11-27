@@ -334,6 +334,14 @@ const enquiryLeadsColumns = [
     style: { minWidth: "160px" },
   },
   {
+    header: "Vendor",
+    accessor: "vendorBy",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "160px" },
+  },
+  {
     header: "Lead Name",
     accessor: "name",
     ui: "text",
@@ -382,6 +390,14 @@ const manualLeadsColumns = [
   {
     header: "Created By",
     accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "160px" },
+  },
+  {
+    header: "Vendor",
+    accessor: "vendorBy",
     ui: "profile",
     imageKey: "avatar",
     subKey: "mobile",
@@ -448,6 +464,14 @@ const ordersLeadsColumns = [
     style: { minWidth: "160px" },
   },
   {
+    header: "Vendor",
+    accessor: "vendorBy",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "160px" },
+  },
+  {
     header: "Products",
     accessor: "productNames",
     ui: "text",
@@ -484,6 +508,14 @@ const leadsTableColumns = [
   {
     header: "Created By",
     accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "160px" },
+  },
+  {
+    header: "Vendor",
+    accessor: "vendorBy",
     ui: "profile",
     imageKey: "avatar",
     subKey: "mobile",
@@ -579,6 +611,14 @@ const blogCategoriesTableColumns = [
     style: { minWidth: "80px" },
   },
   {
+    header: "Vendor",
+    accessor: "vendorBy",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "120px" },
+  },
+  {
     header: "Category Name",
     accessor: "categoryName",
     ui: "text",
@@ -609,6 +649,14 @@ const productCategoriesTableColumns = [
   {
     header: "Created By",
     accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "140px" },
+  },
+  {
+    header: "Vendor",
+    accessor: "vendorBy",
     ui: "profile",
     imageKey: "avatar",
     subKey: "mobile",
@@ -661,6 +709,14 @@ const productsTableColumns = [
     style: { minWidth: "200px" },
   },
   {
+    header: "Vendor",
+    accessor: "vendorBy",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "160px" },
+  },
+  {
     header: "Product",
     accessor: "productName",
     ui: "profile",
@@ -705,6 +761,14 @@ const blogsTableColumns = [
   {
     header: "Created By",
     accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "140px" },
+  },
+  {
+    header: "Vendor",
+    accessor: "vendorBy",
     ui: "profile",
     imageKey: "avatar",
     subKey: "mobile",
@@ -822,6 +886,14 @@ const seoTableColumns = [
     imageKey: "avatar",
     subKey: "mobile",
     style: { minWidth: "200px" },
+  },
+  {
+    header: "Vendor",
+    accessor: "vendorBy",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "160px" },
   },
   {
     header: "Meta Title",

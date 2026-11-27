@@ -61,6 +61,35 @@ export const getPublishedStatusField = (editingItem, userRole) => {
 };
 
 /**
+ * Common Select Vendor dropdown field generator for Admin & Dev Admin roles only
+ */
+export const getVendorSelectField = (editingItem, userRole, vendorOptions = []) => {
+    if (!isAdminOrDevAdmin(userRole)) {
+        return null;
+    }
+    let vendorDefaultVal =
+        editingItem?.vendorBy?._id ||
+        editingItem?.vendorBy?.id ||
+        editingItem?.VendorBy?._id ||
+        editingItem?.VendorBy?.id ||
+        (typeof editingItem?.vendorBy === "string" ? editingItem.vendorBy : "") ||
+        (typeof editingItem?.VendorBy === "string" ? editingItem.VendorBy : "") ||
+        "";
+    if (vendorDefaultVal === "[object Object]") vendorDefaultVal = "";
+    return {
+        name: "vendorBy",
+        label: "Select Vendor",
+        type: "select",
+        options: [
+            { label: "Select Vendor (Optional)", value: "" },
+            ...vendorOptions,
+        ],
+        defaultValue: vendorDefaultVal ? String(vendorDefaultVal) : "",
+        placeholder: "Select Vendor (Optional)",
+    };
+};
+
+/**
  * Sanitizes form submission data: passes false for non-admin on add, or respects admin switch
  */
 export const sanitizeCrudFormData = (formData = {}, { userRole, isEditing = false } = {}) => {
@@ -230,6 +259,7 @@ export const getLeadFormFields = ({
     editingLead,
     userRole,
     productOptions = [],
+    vendorOptions = [],
     selectedCategory,
     onCategoryChange,
 } = {}) => {
@@ -253,6 +283,8 @@ export const getLeadFormFields = ({
         },
         validation: { required: true },
     };
+
+    const vendorField = getVendorSelectField(editingLead, userRole, vendorOptions);
 
     const nameField = {
         name: "name",
@@ -341,6 +373,7 @@ export const getLeadFormFields = ({
     if (currentCategory === "enquiry") {
         fields = [
             categoryField,
+            vendorField,
             nameField,
             emailField,
             mobileField,
@@ -351,6 +384,7 @@ export const getLeadFormFields = ({
     } else if (currentCategory === "manual") {
         fields = [
             categoryField,
+            vendorField,
             nameField,
             emailField,
             mobileField,
@@ -362,12 +396,14 @@ export const getLeadFormFields = ({
     } else if (currentCategory === "product") {
         fields = [
             categoryField,
+            vendorField,
             productsField,
             quantityField,
         ];
     } else {
         fields = [
             categoryField,
+            vendorField,
             nameField,
             emailField,
             mobileField,
@@ -407,9 +443,11 @@ export const getProductFormFields = ({
         { label: "Approved for Store", value: "approved" },
         { label: "Rejected / Revision", value: "rejected" },
     ],
+    vendorOptions = [],
     userRole,
 } = {}) => {
     const statusField = getPublishedStatusField(editingProduct, userRole);
+    const vendorField = getVendorSelectField(editingProduct, userRole, vendorOptions);
     const activeUnit = editingProduct?.unit || "Pcs";
     const matchedOption = unitOptions.find(
         (o) => String(typeof o === "object" ? o.value : o).toLowerCase() === String(activeUnit).toLowerCase()
@@ -541,6 +579,7 @@ export const getProductFormFields = ({
             type: "switch",
             defaultValue: editingProduct ? Boolean(editingProduct.stockStatus) : true,
         },
+        ...(vendorField ? [vendorField] : []),
         ...(statusField ? [statusField] : []),
     ];
 };
@@ -598,8 +637,9 @@ export const getProductReviewFormFields = ({
 /**
  * Generic field generator for Product Categories
  */
-export const getProductCategoryFormFields = ({ editingCategory, userRole } = {}) => {
+export const getProductCategoryFormFields = ({ editingCategory, userRole, vendorOptions = [] } = {}) => {
     const statusField = getPublishedStatusField(editingCategory, userRole);
+    const vendorField = getVendorSelectField(editingCategory, userRole, vendorOptions);
     return [
         {
             name: "categoryName",
@@ -632,6 +672,7 @@ export const getProductCategoryFormFields = ({ editingCategory, userRole } = {})
             defaultValue: editingCategory ? (editingCategory.iconName || "") : "",
             placeholder: "e.g. Box, Layers, Shield",
         },
+        ...(vendorField ? [vendorField] : []),
         ...(statusField ? [statusField] : []),
     ];
 };
@@ -639,8 +680,9 @@ export const getProductCategoryFormFields = ({ editingCategory, userRole } = {})
 /**
  * Generic field generator for Blogs / Articles
  */
-export const getBlogFormFields = ({ editingBlog, categoryOptions = [], userRole } = {}) => {
+export const getBlogFormFields = ({ editingBlog, categoryOptions = [], userRole, vendorOptions = [] } = {}) => {
     const statusField = getPublishedStatusField(editingBlog, userRole);
+    const vendorField = getVendorSelectField(editingBlog, userRole, vendorOptions);
     return [
         {
             name: "blogName",
@@ -713,6 +755,7 @@ export const getBlogFormFields = ({ editingBlog, categoryOptions = [], userRole 
                     ? editingBlog.specifications
                     : [{ name: "", value: "" }],
         },
+        ...(vendorField ? [vendorField] : []),
         ...(statusField ? [statusField] : []),
     ];
 };
@@ -770,8 +813,9 @@ export const getBlogReviewFormFields = ({
 /**
  * Generic field generator for Blog Categories
  */
-export const getBlogCategoryFormFields = ({ editingCategory, userRole } = {}) => {
+export const getBlogCategoryFormFields = ({ editingCategory, userRole, vendorOptions = [] } = {}) => {
     const statusField = getPublishedStatusField(editingCategory, userRole);
+    const vendorField = getVendorSelectField(editingCategory, userRole, vendorOptions);
     return [
         {
             name: "categoryName",
@@ -781,6 +825,7 @@ export const getBlogCategoryFormFields = ({ editingCategory, userRole } = {}) =>
             placeholder: "e.g. Warehouse & Cold Storage",
             validation: { required: true },
         },
+        ...(vendorField ? [vendorField] : []),
         ...(statusField ? [statusField] : []),
     ];
 };
@@ -795,6 +840,7 @@ export const getSeoFormFields = ({
         { label: "Product Page", value: "product" },
         { label: "Business Entity", value: "business" },
     ],
+    vendorOptions = [],
     userRole,
 } = {}) => {
     let breadcrumbsDefaultJson = "";
@@ -802,6 +848,7 @@ export const getSeoFormFields = ({
         breadcrumbsDefaultJson = JSON.stringify(editingSeo.breadcrumbs, null, 2);
     }
     const statusField = getPublishedStatusField(editingSeo, userRole);
+    const vendorField = getVendorSelectField(editingSeo, userRole, vendorOptions);
 
     return [
         {
@@ -887,6 +934,7 @@ export const getSeoFormFields = ({
             defaultValue: editingSeo ? (editingSeo.image || "") : "",
             placeholder: "https://example.com/assets/og-image.jpg",
         },
+        ...(vendorField ? [vendorField] : []),
         ...(statusField ? [statusField] : []),
     ];
 };

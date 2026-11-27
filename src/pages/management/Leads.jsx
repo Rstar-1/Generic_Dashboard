@@ -3,6 +3,7 @@ import MainLayout from "../../components/layout/sections/MainLayout";
 import { getLeadFormFields } from "../../components/forms/sections/CrudForm";
 import { leadsSidebarData, leadsTableColumns, TABS } from "../../utils/apiData";
 import { useLeads } from "../../feature/leadSlice";
+import { useUsers } from "../../feature/userSlice";
 
 const Leads = () => {
     const {
@@ -16,6 +17,28 @@ const Leads = () => {
         removeLead,
         bulkRemoveLeads,
     } = useLeads();
+
+    const { users, getUsers } = useUsers();
+
+    React.useEffect(() => {
+        getUsers?.({ limit: 100, isDeleted: false });
+    }, [getUsers]);
+
+    const vendorOptions = React.useMemo(() => {
+        const list = Array.isArray(users) ? users : [];
+        return list
+            .filter((u) => {
+                if (!u || u.isDeleted) return false;
+                const roleStr = String(
+                    u.role || u.rolename || u.roleId?.rolename || u.roleId?.name || ""
+                ).toLowerCase().trim();
+                return roleStr === "vendor" || roleStr.includes("vendor");
+            })
+            .map((u) => ({
+                label: `${u.fullname || u.name || u.email || u.id} (${u.id || ""})`,
+                value: String(u._id || u.id),
+            }));
+    }, [users]);
 
     return (
         <MainLayout
@@ -32,6 +55,7 @@ const Leads = () => {
             total={total}
             loading={loading}
             getFormFields={getLeadFormFields}
+            vendorOptions={vendorOptions}
             onFetch={getLeads}
             onAdd={addLead}
             onEdit={editLead}

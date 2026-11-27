@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { createEntitySlice, normalizeCreator } from "./sliceHelper.js";
+import { createEntitySlice, normalizeCreator, normalizeVendor } from "./sliceHelper.js";
 import {
   getLeadsApi,
   getLeadByIdApi,
@@ -38,6 +38,7 @@ export const normalizeLead = (l) => {
   if (!l || typeof l !== "object") return l;
   const id = l.id || (l._id?.$oid ? l._id.$oid : l._id) || "";
   const createdby = normalizeCreator(l.createdBy, l.createdby);
+  const vendorBy = normalizeVendor(l.vendorBy, l.VendorBy);
 
   const rawCat = l.category ? String(l.category).toLowerCase().trim() : "enquiry";
   const category = rawCat;
@@ -84,6 +85,8 @@ export const normalizeLead = (l) => {
     isDeleted: Boolean(l.isDeleted),
     createdby,
     createdBy: createdby,
+    vendorBy,
+    VendorBy: vendorBy,
     createdAt: l.createdAt?.$date || l.createdAt || new Date().toISOString(),
     updatedAt: l.updatedAt?.$date || l.updatedAt || new Date().toISOString(),
   };
