@@ -37,29 +37,48 @@ export {
 export const normalizeLead = (l) => {
   if (!l || typeof l !== "object") return l;
   const id = l.id || (l._id?.$oid ? l._id.$oid : l._id) || "";
-  const name = l.name || "";
   const createdby = normalizeCreator(l.createdBy, l.createdby);
 
-  const rawSev = String(l.severity || "low").toLowerCase().trim();
-  const severity = ["high", "medium", "low"].includes(rawSev) ? rawSev : "low";
-  const severityLabel =
-    severity === "high" ? "High" : severity === "medium" ? "Medium" : "Low";
+  const rawCat = l.category ? String(l.category).toLowerCase().trim() : "enquiry";
+  const category = rawCat;
+  const categoryLabel = category === "product" ? "Product" : category === "manual" ? "Manual" : "Enquiry";
+
+  const isProduct = category === "product";
+  const rawSev = String(l.severity || "").toLowerCase().trim();
+  const severity = isProduct ? "-" : (["high", "medium", "low"].includes(rawSev) ? rawSev : "low");
+  const severityLabel = isProduct ? "-" : (severity === "high" ? "High" : severity === "medium" ? "Medium" : "Low");
+
+  const productsList = Array.isArray(l.products) ? l.products : l.products ? [l.products] : [];
+  const productNames = productsList
+    .map((p) => (typeof p === "object" && p !== null ? (p.productName || p.name || p.id) : String(p)))
+    .filter(Boolean)
+    .join(", ");
+
+  const name = isProduct
+    ? (l.name && l.name !== "Product Lead" ? l.name : (productNames || "Product Lead"))
+    : (l.name || "-");
+
+  const quantity = isProduct
+    ? (l.quantity !== undefined && l.quantity !== null && l.quantity !== "" ? Number(l.quantity) : 1)
+    : "-";
 
   return {
     ...l,
     _id: id,
     id,
     name,
-    mobile: l.mobile || "",
-    phone: l.mobile || l.phone || "",
-    email: l.email || "",
-    location: l.location || "Direct",
-    description: l.description || "",
+    productNames: productNames || (isProduct ? "Product" : "-"),
+    quantity,
+    mobile: l.mobile || "-",
+    phone: l.mobile || l.phone || "-",
+    email: l.email || "-",
+    location: l.location || "-",
+    description: l.description || l.notes || "-",
     severity,
     severityLabel,
-    category: l.category ? String(l.category).toLowerCase().trim() : "enquiry",
-    categoryLabel: l.category === "product" ? "Product" : l.category === "manual" ? "Manual" : "Enquiry",
-    products: Array.isArray(l.products) ? l.products : l.products ? [l.products] : [],
+    category,
+    categoryLabel,
+    products: productsList,
     isActive: l.isActive !== undefined ? Boolean(l.isActive) : true,
     status: l.isActive === false ? "Inactive" : "Active",
     isDeleted: Boolean(l.isDeleted),

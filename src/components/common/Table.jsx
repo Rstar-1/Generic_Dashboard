@@ -401,6 +401,27 @@ const TableCell = React.memo(({
                         {cellValue !== undefined && cellValue !== null && cellValue !== "" ? String(cellValue) : "-"}
                     </span>
                 );
+            case "lead-category": {
+                const cat = String(cellValue || "enquiry").toLowerCase().trim();
+                const config = {
+                    product: { label: "Product", bg: "#f5f3ff", color: "#7c3aed", border: "#ddd6fe" },
+                    enquiry: { label: "Enquiry", bg: "#eff6ff", color: "#2563eb", border: "#bfdbfe" },
+                    manual: { label: "Manual", bg: "#fffbeb", color: "#d97706", border: "#fde68a" },
+                }[cat] || { label: cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : "Enquiry", bg: "#eff6ff", color: "#2563eb", border: "#bfdbfe" };
+
+                return (
+                    <span
+                        className="px-8 py-2 rounded-20 mini-text font-600 inline-flex items-center gap-4"
+                        style={{
+                            backgroundColor: config.bg,
+                            color: config.color,
+                            border: `1px solid ${config.border}`,
+                        }}
+                    >
+                        {config.label}
+                    </span>
+                );
+            }
             case "score-pill": {
                 const score = Number(cellValue) || 0;
                 const color = score >= 80 ? "#10b981" : score >= 50 ? "#f59e0b" : "#ef4444";
@@ -412,6 +433,9 @@ const TableCell = React.memo(({
                 );
             }
             case "severity": {
+                if (!cellValue || cellValue === "-" || cellValue === "none") {
+                    return <span className="text-gray mini-text">-</span>;
+                }
                 const sev = String(cellValue || "low").toLowerCase().trim();
                 const config = {
                     high: { label: "High", bg: "#fef2f2", color: "#ef4444", border: "#fecaca" },

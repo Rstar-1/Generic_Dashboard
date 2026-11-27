@@ -1454,8 +1454,8 @@ const Fields = React.memo(
                       <input
                         type="checkbox"
                         checked={isAllSelected}
-                        onChange={handleToggleSelectAll}
-                        onClick={(e) => e.stopPropagation()}
+                        readOnly
+                        style={{ pointerEvents: "none" }}
                         className="cursor-pointer"
                       />
                       <span className="flex-1 cursor-pointer font-600 text-dark">
@@ -1473,7 +1473,8 @@ const Fields = React.memo(
                       ? Array.isArray(value) ? value.includes(optVal) : false
                       : value === optVal;
 
-                    const handleSelect = () => {
+                    const handleSelect = (e) => {
+                      e?.stopPropagation?.();
                       setLocalError("");
                       if (isMulti) {
                         const currentValues = Array.isArray(value) ? value : value ? [value] : [];
@@ -1499,8 +1500,8 @@ const Fields = React.memo(
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={handleSelect}
-                          onClick={(e) => e.stopPropagation()}
+                          readOnly
+                          style={{ pointerEvents: "none" }}
                           className="cursor-pointer"
                         />
                         <span className="flex-1 cursor-pointer">{optLabel}</span>

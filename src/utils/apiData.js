@@ -53,7 +53,12 @@ TABS.blogs = createTabs("All Articles", [
 ]);
 TABS.productCategories = createTabs("All Categories");
 TABS.blogCategories = createTabs("All Categories");
-TABS.leads = createTabs("All Leads");
+TABS.leads = [
+  { name: "Enquiry", label: "Enquiry", value: "enquiry" },
+  { name: "Leads", label: "Leads", value: "manual" },
+  { name: "Orders", label: "Orders", value: "product" },
+  { name: "Trash", label: "Trash", value: "trash" },
+];
 TABS.seo = createTabs("All Pages");
 TABS.roles = createTabs("All Roles");
 TABS.users = createTabs("All Users");
@@ -307,7 +312,7 @@ const usersTableColumns = [
   ...commonTableColumns,
 ];
 
-const leadsTableColumns = [
+const enquiryLeadsColumns = [
   {
     header: "",
     accessor: "checkbox",
@@ -321,10 +326,58 @@ const leadsTableColumns = [
     style: { minWidth: "90px" },
   },
   {
-    header: "Category",
-    accessor: "category",
-    ui: "code",
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "160px" },
+  },
+  {
+    header: "Lead Name",
+    accessor: "name",
+    ui: "text",
+    style: { minWidth: "120px" },
+  },
+  {
+    header: "Mobile",
+    accessor: "mobile",
+    ui: "text",
+    style: { minWidth: "100px" },
+  },
+  {
+    header: "Email",
+    accessor: "email",
+    ui: "text",
+    style: { minWidth: "140px" },
+  },
+  {
+    header: "Severity",
+    accessor: "severity",
+    ui: "severity",
     style: { minWidth: "95px" },
+  },
+  {
+    header: "Description",
+    accessor: "description",
+    ui: "desc",
+    style: { minWidth: "160px" },
+  },
+  ...commonTableColumns,
+];
+
+const manualLeadsColumns = [
+  {
+    header: "",
+    accessor: "checkbox",
+    ui: "checkbox",
+    style: { minWidth: "40px" },
+  },
+  {
+    header: "Lead ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "90px" },
   },
   {
     header: "Created By",
@@ -372,6 +425,126 @@ const leadsTableColumns = [
   },
   ...commonTableColumns,
 ];
+
+const ordersLeadsColumns = [
+  {
+    header: "",
+    accessor: "checkbox",
+    ui: "checkbox",
+    style: { minWidth: "40px" },
+  },
+  {
+    header: "Order ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "90px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "160px" },
+  },
+  {
+    header: "Products",
+    accessor: "productNames",
+    ui: "text",
+    style: { minWidth: "140px" },
+  },
+  {
+    header: "Quantity",
+    accessor: "quantity",
+    ui: "code",
+    style: { minWidth: "80px" },
+  },
+  ...commonTableColumns,
+];
+
+const leadsTableColumns = [
+  {
+    header: "",
+    accessor: "checkbox",
+    ui: "checkbox",
+    style: { minWidth: "40px" },
+  },
+  {
+    header: "Lead ID",
+    accessor: "id",
+    ui: "code",
+    style: { minWidth: "90px" },
+  },
+  {
+    header: "Category",
+    accessor: "category",
+    ui: "lead-category",
+    style: { minWidth: "95px" },
+  },
+  {
+    header: "Created By",
+    accessor: "createdby",
+    ui: "profile",
+    imageKey: "avatar",
+    subKey: "mobile",
+    style: { minWidth: "160px" },
+  },
+  {
+    header: "Products",
+    accessor: "productNames",
+    ui: "text",
+    style: { minWidth: "140px" },
+  },
+  {
+    header: "Quantity",
+    accessor: "quantity",
+    ui: "code",
+    style: { minWidth: "80px" },
+  },
+  {
+    header: "Lead Name",
+    accessor: "name",
+    ui: "text",
+    style: { minWidth: "120px" },
+  },
+  {
+    header: "Mobile",
+    accessor: "mobile",
+    ui: "text",
+    style: { minWidth: "100px" },
+  },
+  {
+    header: "Email",
+    accessor: "email",
+    ui: "text",
+    style: { minWidth: "140px" },
+  },
+  {
+    header: "Location",
+    accessor: "location",
+    ui: "text",
+    style: { minWidth: "100px" },
+  },
+  {
+    header: "Severity",
+    accessor: "severity",
+    ui: "severity",
+    style: { minWidth: "95px" },
+  },
+  {
+    header: "Description",
+    accessor: "description",
+    ui: "desc",
+    style: { minWidth: "160px" },
+  },
+  ...commonTableColumns,
+];
+
+leadsTableColumns.enquiry = enquiryLeadsColumns;
+leadsTableColumns.manual = manualLeadsColumns;
+leadsTableColumns.leads = manualLeadsColumns;
+leadsTableColumns.product = ordersLeadsColumns;
+leadsTableColumns.orders = ordersLeadsColumns;
 
 const leadsSidebarData = {
   title: "Lead Statuses",
@@ -764,6 +937,11 @@ export const ROLE_ACCESS_CONFIG = [
     permissions: ["view_dashboard"],
   },
   {
+    page: "Location",
+    label: "Location",
+    permissions: ["view_location"],
+  },
+  {
     page: "Profile",
     label: "Profile",
     permissions: ["view_profile"],
@@ -831,8 +1009,12 @@ export const getPermissionsForPages = (pages) => {
     const cleanPg = String(pg).trim().toLowerCase();
     const config = (ROLE_ACCESS_CONFIG || []).find(
       (c) =>
-        String(c.page || "").trim().toLowerCase() === cleanPg ||
-        String(c.label || "").trim().toLowerCase() === cleanPg
+        String(c.page || "")
+          .trim()
+          .toLowerCase() === cleanPg ||
+        String(c.label || "")
+          .trim()
+          .toLowerCase() === cleanPg,
     );
     if (config?.permissions) {
       config.permissions.forEach((perm) => {
@@ -855,6 +1037,9 @@ export {
   menuData,
   usersTableColumns,
   rolesTableColumns,
+  enquiryLeadsColumns,
+  manualLeadsColumns,
+  ordersLeadsColumns,
   leadsTableColumns,
   leadsSidebarData,
   productCategoriesTableColumns,

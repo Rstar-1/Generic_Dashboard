@@ -14,6 +14,10 @@ import {
     STATUS_OPTIONS,
     ROLE_ACCESS_CONFIG,
     reviewsTableColumns,
+    enquiryLeadsColumns,
+    manualLeadsColumns,
+    ordersLeadsColumns,
+    leadsTableColumns,
     seoSiteInfo,
     getPermissionsForPages,
 } from "../../../utils/apiData";
@@ -32,6 +36,7 @@ import {
 import { useRoles } from "../../../feature/roleSlice";
 import { useProductCategories } from "../../../feature/productCategorySlice";
 import { useBlogCategories } from "../../../feature/blogCategorySlice";
+import { useProducts } from "../../../feature/productSlice";
 import { normalizeCreator } from "../../../feature/sliceHelper";
 import { registerApi } from "../../../api";
 
@@ -528,6 +533,7 @@ const MainLayout = React.memo(({
     // Categories hooks for Products & Blogs
     const { categories: prodCategories, allCategories: allProdCategories, getAllCategories: getAllProdCategories } = useProductCategories();
     const { categories: blogCategories, allCategories: allBlogCategories, getAllBlogCategories } = useBlogCategories();
+    const { products: leadProducts, getProducts: getLeadProducts } = useProducts();
 
     // Privileged access detection
     const isPrivilegedUser = React.useMemo(() => {
@@ -543,6 +549,58 @@ const MainLayout = React.memo(({
             isFullAccess(currentUser?.permissions || currentUser?.pages)
         );
     }, [currentRole, currentUser, isAdmin]);
+
+    // Dynamic product options for Leads with creator scoping
+    React.useEffect(() => {
+        if (entityName === "Lead" || entityName === "Leads") {
+            const params = { limit: 100, isDeleted: false };
+            if (!isPrivilegedUser) {
+                const uId = currentUser?._id || currentUser?.id || currentUser?.userId;
+                if (uId) {
+                    params.userId = uId;
+                    params.createdBy = uId;
+                }
+            }
+            getLeadProducts?.(params);
+        }
+    }, [entityName, getLeadProducts, isPrivilegedUser, currentUser]);
+
+    const derivedProductOptions = React.useMemo(() => {
+        if (productOptions && productOptions.length > 0) {
+            return productOptions;
+        }
+        let list = Array.isArray(leadProducts) ? leadProducts : [];
+        list = list.filter((p) => !p.isDeleted);
+
+        if (!isPrivilegedUser) {
+            const currentUserId = String(currentUser?._id || currentUser?.id || currentUser?.userId || "").trim().toLowerCase();
+            const currentUserName = String(currentUser?.fullname || currentUser?.name || "").trim().toLowerCase();
+            const currentUserEmail = String(currentUser?.email || "").trim().toLowerCase();
+            const currentUserMobile = String(currentUser?.mobile || currentUser?.phone || "").trim();
+
+            list = list.filter((p) => {
+                const creator = p.createdBy || p.createdby;
+                if (!creator) return true;
+                const creatorId = String(creator?._id || creator?.id || (typeof creator === "string" ? creator : "")).trim().toLowerCase();
+                const creatorName = String(creator?.fullname || creator?.name || "").trim().toLowerCase();
+                const creatorEmail = String(creator?.email || "").trim().toLowerCase();
+                const creatorMobile = String(creator?.mobile || creator?.phone || "").trim();
+                const creatorRole = String(creator?.role || creator?.rolename || creator?.roleId?.rolename || creator?.roleId?.name || "").trim().toLowerCase();
+
+                if (currentUserId && creatorId === currentUserId) return true;
+                if (currentUserName && creatorName && creatorName === currentUserName) return true;
+                if (currentUserEmail && creatorEmail && creatorEmail === currentUserEmail) return true;
+                if (currentUserMobile && creatorMobile && creatorMobile === currentUserMobile) return true;
+                if (creatorRole === "admin" || creatorRole === "dev_admin" || creatorRole.includes("admin") || creatorName === "admin") return true;
+                return false;
+            });
+        }
+
+        return list.map((p) => ({
+            label: `${p.productName || p.name || p.id} (${p.id || ""})`,
+            value: String(p._id || p.id),
+        }));
+    }, [productOptions, leadProducts, isPrivilegedUser, currentUser]);
 
     const effectiveIsAdmin = Boolean(isPrivilegedUser || (userRole && (String(userRole).toLowerCase().includes("admin") || isFullAccess(userRole))));
 
@@ -772,6 +830,48 @@ const MainLayout = React.memo(({
         return list;
     }, [entityName, isPrivilegedUser, loggedInUserRoleKey, loggedInUserRoleName, total, data, roles]);
 
+    // Filter out trash tab for non-admin roles and auto-reset activeTab
+    const sanitizedTabs = React.useMemo(() => {
+        if (!Array.isArray(tabs)) return [];
+        if (effectiveIsAdmin) return tabs;
+        return tabs.filter((t) => (t?.value || "").toLowerCase() !== "trash");
+    }, [tabs, effectiveIsAdmin]);
+
+    // Internal state management via useTableState
+    const defaultInitialTab = controlledActiveTab || (Array.isArray(sanitizedTabs) && sanitizedTabs.length > 0 ? (sanitizedTabs[0]?.value || sanitizedTabs[0]?.name || "all") : "all");
+    const defaultInitialCategory = selectedSidebarItem || (entityName === "User" ? userCategory : sidebarData?.items?.[0]?.name) || "All";
+    const tableState = useTableState({
+        initialTab: defaultInitialTab,
+        initialCategory: defaultInitialCategory,
+        sidebarData,
+    });
+
+    const activeTab = controlledActiveTab !== undefined ? controlledActiveTab : tableState.activeTab;
+    const activePage = controlledPage !== undefined ? controlledPage : tableState.currentPage;
+    const activeSearch = controlledSearch !== undefined ? controlledSearch : tableState.searchQuery;
+    const activeStatus = tableState.statusFilter;
+    const activeSelectedIds = controlledSelectedRows !== undefined ? controlledSelectedRows : tableState.selectedIds;
+
+    React.useEffect(() => {
+        if (!effectiveIsAdmin && String(activeTab).toLowerCase() === "trash") {
+            const fallback = sanitizedTabs?.[0]?.value || sanitizedTabs?.[0]?.name || "all";
+            if (controlledOnTabChange) {
+                controlledOnTabChange(fallback);
+            } else {
+                tableState.setActiveTab(fallback);
+            }
+        } else if (sanitizedTabs && sanitizedTabs.length > 0 && !sanitizedTabs.some((t) => (t?.value || t?.name) === activeTab)) {
+            const fallback = sanitizedTabs[0]?.value || sanitizedTabs[0]?.name;
+            if (fallback) {
+                if (controlledOnTabChange) {
+                    controlledOnTabChange(fallback);
+                } else {
+                    tableState.setActiveTab(fallback);
+                }
+            }
+        }
+    }, [effectiveIsAdmin, activeTab, controlledOnTabChange, tableState, sanitizedTabs]);
+
     // Entity configuration dispatcher using switch
     const entityConfig = React.useMemo(() => {
         switch (entityName) {
@@ -873,25 +973,29 @@ const MainLayout = React.memo(({
                     }),
                 };
             case "Lead":
-            case "Leads":
+            case "Leads": {
+                const isOrders = activeTab === "product" || activeTab === "orders";
+                const isManual = activeTab === "manual" || activeTab === "leads";
+                const isEnquiry = activeTab === "enquiry";
                 return {
                     showSidebar: showSidebar !== undefined ? showSidebar : true,
                     sidebarTitle: sidebarTitle || sidebarData?.title || "Lead Statuses",
-                    tableTitle: tableTitle || "Lead Inquiries & Prospects",
-                    tableSubtitle: tableSubtitle || "Track prospective client inquiries, qualification severities, and pipeline conversions",
-                    searchPlaceholder: searchPlaceholder || "Search leads by client name, mobile, email, or location...",
-                    addBtnText: addBtnText || "Add Lead",
+                    tableTitle: (isOrders ? "Product Orders" : isManual ? "Manual Leads" : isEnquiry ? "Client Inquiries" : (tableTitle || "Lead Inquiries & Prospects")),
+                    tableSubtitle: (isOrders ? "Track client product orders, requested quantities, and specifications" : isManual ? "Manage direct client leads with contact details, locations, and severities" : isEnquiry ? "Review inbound inquiries, severities, and client notes" : (tableSubtitle || "Track prospective client inquiries, qualification severities, and pipeline conversions")),
+                    searchPlaceholder: (isOrders ? "Search orders by ID, product, or notes..." : (searchPlaceholder || "Search leads by client name, mobile, email, or location...")),
+                    addBtnText: (isOrders ? "Add Order" : isManual ? "Add Lead" : (addBtnText || "Add Lead")),
                     headerIcon: headerIcon || "Box",
                     headerTitle: headerTitle || "Leads Overview",
                     headerSub: headerSub || "Manage client inquiries, follow-up severity classifications, and conversions",
                     formFields: (ctx) => getLeadFormFields({
                         editingLead: ctx.editingLead || ctx.editingItem,
                         userRole: activeRole,
-                        productOptions: productOptions || [],
+                        productOptions: derivedProductOptions || [],
                         selectedCategory: leadSelectedCategory,
                         onCategoryChange: handleLeadCategoryChange,
                     }),
                 };
+            }
             default:
                 return {
                     showSidebar: showSidebar !== undefined ? showSidebar : true,
@@ -936,38 +1040,8 @@ const MainLayout = React.memo(({
         productOptions,
         leadSelectedCategory,
         handleLeadCategoryChange,
+        activeTab,
     ]);
-
-    // Internal state management via useTableState
-    const defaultInitialCategory = selectedSidebarItem || (entityName === "User" ? userCategory : sidebarData?.items?.[0]?.name) || "All";
-    const tableState = useTableState({
-        initialTab: controlledActiveTab || "all",
-        initialCategory: defaultInitialCategory,
-        sidebarData,
-    });
-
-    const activeTab = controlledActiveTab !== undefined ? controlledActiveTab : tableState.activeTab;
-    const activePage = controlledPage !== undefined ? controlledPage : tableState.currentPage;
-    const activeSearch = controlledSearch !== undefined ? controlledSearch : tableState.searchQuery;
-    const activeStatus = tableState.statusFilter;
-    const activeSelectedIds = controlledSelectedRows !== undefined ? controlledSelectedRows : tableState.selectedIds;
-
-    // Filter out trash tab for non-admin roles and auto-reset activeTab
-    const sanitizedTabs = React.useMemo(() => {
-        if (!Array.isArray(tabs)) return [];
-        if (effectiveIsAdmin) return tabs;
-        return tabs.filter((t) => (t?.value || "").toLowerCase() !== "trash");
-    }, [tabs, effectiveIsAdmin]);
-
-    React.useEffect(() => {
-        if (!effectiveIsAdmin && String(activeTab).toLowerCase() === "trash") {
-            if (controlledOnTabChange) {
-                controlledOnTabChange("all");
-            } else {
-                tableState.setActiveTab("all");
-            }
-        }
-    }, [effectiveIsAdmin, activeTab, controlledOnTabChange, tableState]);
 
     const handleToggleSidebar = React.useCallback(() => setIsSidebarCollapsed((prev) => !prev), []);
     const handleToggleFilters = React.useCallback(() => setShowFilters((prev) => !prev), []);
@@ -1143,6 +1217,13 @@ const MainLayout = React.memo(({
                 if (leadSeverityFilter && leadSeverityFilter !== "all") {
                     params.severity = leadSeverityFilter;
                 }
+                if (activeTab === "enquiry") {
+                    params.category = "enquiry";
+                } else if (activeTab === "manual" || activeTab === "leads") {
+                    params.category = "manual";
+                } else if (activeTab === "product" || activeTab === "orders") {
+                    params.category = "product";
+                }
                 break;
             }
             default:
@@ -1244,10 +1325,15 @@ const MainLayout = React.memo(({
             setRoleSelectedPages(["Full_Access"]);
             setRoleSelectedPermissions(["Full_Access"]);
         } else if (entityName === "Lead" || entityName === "Leads") {
-            setLeadSelectedCategory("enquiry");
+            const defaultCat = (activeTab === "product" || activeTab === "orders")
+                ? "product"
+                : (activeTab === "manual" || activeTab === "leads")
+                    ? "manual"
+                    : "enquiry";
+            setLeadSelectedCategory(defaultCat);
         }
         setInternalIsModalOpen(true);
-    }, [onAddOpen, entityName]);
+    }, [onAddOpen, entityName, activeTab]);
 
     const handleCloseModal = React.useCallback(() => {
         if (controlledOnCloseModal) {
@@ -1260,9 +1346,14 @@ const MainLayout = React.memo(({
             setRoleSelectedPages(null);
             setRoleSelectedPermissions(null);
         } else if (entityName === "Lead" || entityName === "Leads") {
-            setLeadSelectedCategory("enquiry");
+            const defaultCat = (activeTab === "product" || activeTab === "orders")
+                ? "product"
+                : (activeTab === "manual" || activeTab === "leads")
+                    ? "manual"
+                    : "enquiry";
+            setLeadSelectedCategory(defaultCat);
         }
-    }, [controlledOnCloseModal, entityName]);
+    }, [controlledOnCloseModal, entityName, activeTab]);
 
     const handleEdit = React.useCallback((row) => {
         if (onEditOpen) onEditOpen(row);
@@ -1298,10 +1389,15 @@ const MainLayout = React.memo(({
             if (isModalOpen && editingItem) {
                 setLeadSelectedCategory(String(editingItem.category || "enquiry").toLowerCase().trim());
             } else if (!isModalOpen) {
-                setLeadSelectedCategory("enquiry");
+                const defaultCat = (activeTab === "product" || activeTab === "orders")
+                    ? "product"
+                    : (activeTab === "manual" || activeTab === "leads")
+                        ? "manual"
+                        : "enquiry";
+                setLeadSelectedCategory(defaultCat);
             }
         }
-    }, [entityName, isModalOpen, editingItem]);
+    }, [entityName, isModalOpen, editingItem, activeTab]);
 
     const handleView = React.useCallback((row) => {
         if (entityName === "SEO") {
@@ -1614,8 +1710,16 @@ const MainLayout = React.memo(({
             payload.pages = Array.isArray(payload.pages) && payload.pages.length ? payload.pages : ["Full_Access"];
         } else if (entityName === "Lead" || entityName === "Leads") {
             payload.category = formData.category || leadSelectedCategory || "enquiry";
-            if (payload.category === "product" && formData.products) {
-                payload.products = Array.isArray(formData.products) ? formData.products : [formData.products];
+            if (payload.category === "product") {
+                if (formData.products) {
+                    payload.products = Array.isArray(formData.products) ? formData.products : [formData.products];
+                }
+                if (formData.quantity !== undefined && formData.quantity !== null && formData.quantity !== "") {
+                    payload.quantity = Number(formData.quantity) || 1;
+                }
+                if (!payload.name) {
+                    payload.name = currentUser?.fullname || currentUser?.name || "Product Lead";
+                }
             }
         }
 
@@ -1907,7 +2011,7 @@ const MainLayout = React.memo(({
                 currentUser,
                 roleOptions: dynamicRoleOptions,
                 categoryOptions: dynamicCategoryOptions,
-                productOptions: productOptions || [],
+                productOptions: derivedProductOptions || [],
                 selectedCategory: leadSelectedCategory,
                 onCategoryChange: handleLeadCategoryChange,
             });
@@ -1924,13 +2028,13 @@ const MainLayout = React.memo(({
                 editingItem,
                 userRole: activeRole,
                 currentUser,
-                productOptions: productOptions || [],
+                productOptions: derivedProductOptions || [],
                 selectedCategory: leadSelectedCategory,
                 onCategoryChange: handleLeadCategoryChange,
             });
         }
         return staticFormFields || [];
-    }, [getFormFields, entityConfig, staticFormFields, editingItem, activeRole, currentUser, dynamicRoleOptions, dynamicCategoryOptions, productOptions, leadSelectedCategory, handleLeadCategoryChange]);
+    }, [getFormFields, entityConfig, staticFormFields, editingItem, activeRole, currentUser, dynamicRoleOptions, dynamicCategoryOptions, derivedProductOptions, leadSelectedCategory, handleLeadCategoryChange]);
 
     // Data filtering per entity
     const resolvedData = React.useMemo(() => {
@@ -2061,6 +2165,14 @@ const MainLayout = React.memo(({
             }
             case "Lead":
             case "Leads": {
+                if (activeTab === "enquiry") {
+                    list = list.filter((it) => String(it.category || "enquiry").toLowerCase() === "enquiry");
+                } else if (activeTab === "manual" || activeTab === "leads") {
+                    list = list.filter((it) => String(it.category || "").toLowerCase() === "manual");
+                } else if (activeTab === "product" || activeTab === "orders") {
+                    list = list.filter((it) => String(it.category || "").toLowerCase() === "product");
+                }
+
                 if (leadSeverityFilter !== "all") {
                     const targetSev = leadSeverityFilter.toLowerCase();
                     list = list.filter((it) => String(it.severity || "").toLowerCase() === targetSev);
@@ -2084,12 +2196,30 @@ const MainLayout = React.memo(({
             default:
                 return list;
         }
-    }, [data, entityName, effectiveIsAdmin, currentUser, permissionFilter, roleFilter, isPrivilegedUser, loggedInUserRoleKey, loggedInUserRoleId, userRoleFilter, roles, categoryFilter, seoTypeFilter, leadSeverityFilter, tableState.selectedCategory]);
+    }, [data, entityName, effectiveIsAdmin, currentUser, permissionFilter, roleFilter, isPrivilegedUser, loggedInUserRoleKey, loggedInUserRoleId, userRoleFilter, roles, categoryFilter, seoTypeFilter, leadSeverityFilter, tableState.selectedCategory, activeTab]);
 
     const resolvedShowSidebar = entityConfig.showSidebar;
 
     const currentTableData = isReviewsTab ? paginatedReviews : resolvedData;
-    const currentTableColumns = isReviewsTab ? reviewsTableColumns : columns;
+    const currentTableColumns = React.useMemo(() => {
+        if (isReviewsTab) return reviewsTableColumns;
+        if (entityName === "Lead" || entityName === "Leads") {
+            const tabKey = String(activeTab || "enquiry").toLowerCase().trim();
+            if (tabKey === "product" || tabKey === "orders") {
+                return ordersLeadsColumns || leadsTableColumns?.product || columns;
+            }
+            if (tabKey === "manual" || tabKey === "leads") {
+                return manualLeadsColumns || leadsTableColumns?.manual || columns;
+            }
+            if (tabKey === "enquiry") {
+                return enquiryLeadsColumns || leadsTableColumns?.enquiry || columns;
+            }
+        }
+        if (typeof columns === "function") {
+            return columns(activeTab);
+        }
+        return columns;
+    }, [isReviewsTab, entityName, activeTab, columns]);
     const currentTotalItems = isReviewsTab
         ? filteredReviews.length
         : (!effectiveIsAdmin && ["Product", "Product Category", "Blog", "Blog Category", "SEO", "Lead", "Leads"].includes(entityName))

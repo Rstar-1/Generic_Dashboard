@@ -299,8 +299,20 @@ export const getLeadFormFields = ({
         type: "multiselect",
         options: productOptions,
         defaultValue: productsDefaultVal,
-        value: productsDefaultVal,
         placeholder: "Select Products...",
+        validation: { required: true },
+    };
+
+    const quantityDefaultVal = editingLead?.quantity !== undefined && editingLead?.quantity !== null
+        ? Number(editingLead.quantity)
+        : 1;
+
+    const quantityField = {
+        name: "quantity",
+        label: "Quantity",
+        type: "number",
+        defaultValue: quantityDefaultVal,
+        placeholder: "e.g. 1",
         validation: { required: true },
     };
 
@@ -351,12 +363,7 @@ export const getLeadFormFields = ({
         fields = [
             categoryField,
             productsField,
-            nameField,
-            emailField,
-            mobileField,
-            severityField,
-            descriptionField,
-            statusField,
+            quantityField,
         ];
     } else {
         fields = [

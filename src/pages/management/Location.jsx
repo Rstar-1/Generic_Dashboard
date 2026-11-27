@@ -1,4 +1,5 @@
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -13,6 +14,7 @@ import {
   INITIAL_TRACKING_DATA,
   getEffectiveCoordinates,
 } from './trackingData';
+import { useCurrentUser, canAccessPage, hasPermission, getFirstAllowedRoute } from '../../utils';
 
 /* --- Single unified Location Card --- */
 const LocationCard = React.memo(({ item, isSelected, onSelect, onDelete, isDrillable }) => (
@@ -184,6 +186,9 @@ const createMarkerIcon = (item, isSelected) =>
 
 /* --- Main Location Component --- */
 const Location = () => {
+  const { user, role } = useCurrentUser();
+  const isAuthorized = canAccessPage(user || role, "Location") || hasPermission(user || role, "view_location");
+
   const mapContainerRef = React.useRef(null);
   const mapInstanceRef = React.useRef(null);
   const markersRef = React.useRef([]);
@@ -841,6 +846,10 @@ const Location = () => {
     setStopToDelete(null);
     showToast(`Location "${stopToDelete.name || stopToDelete.title}" removed`, 'info');
   }, [stopToDelete, level, selectedCity, selectedState, selectedCountry, updateCityData]);
+
+  if (!isAuthorized) {
+    return <Navigate to={getFirstAllowedRoute(user || role)} replace />;
+  }
 
   return (
     <Container version='v0' className="w-full overflow-hidden" style={{ height: 'calc(100vh - 60px)' }}>
