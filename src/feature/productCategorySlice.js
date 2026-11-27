@@ -32,7 +32,10 @@ export {
 
 export const normalizeCategory = (c) => {
   if (!c || typeof c !== "object") return c;
-  const id = c.id || (c._id?.$oid ? c._id.$oid : c._id) || "";
+  const rawMongoId = c._id?.$oid || (typeof c._id === "string" ? c._id : c._id ? String(c._id) : "");
+  const mongoId = rawMongoId && rawMongoId !== "[object Object]" ? rawMongoId : "";
+  const customId = c.id || (c._id?.$oid ? c._id.$oid : c._id) || "";
+  const id = customId || mongoId || "";
   const categoryName = c.categoryName || c.name || "";
   const count = Number(c.count ?? c.productsCount ?? 0);
   const createdby = normalizeCreator(c.createdBy, c.createdby);
@@ -40,8 +43,10 @@ export const normalizeCategory = (c) => {
 
   return {
     ...c,
-    _id: id,
+    _id: mongoId || id,
+    mongoId: mongoId || id,
     id,
+    customId: customId || id,
     categoryName,
     name: categoryName,
     count,
@@ -62,9 +67,9 @@ export const normalizeCategory = (c) => {
 
 export const fetchAllCategories = createAsyncThunk(
   "productCategories/fetchAllCategories",
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const res = await getCategoriesApi({ isDeleted: false, limit: "all" });
+      const res = await getCategoriesApi({ isDeleted: false, limit: "all", ...(params || {}) });
       const raw = res?.data !== undefined ? res.data : res;
       const list = raw?.categories || (Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []));
       const normalized = list.map(normalizeCategory);
@@ -149,7 +154,7 @@ export const useProductCategories = () => {
   const dispatch = useDispatch();
   const allCategories = useSelector(selectAllCategories);
   const getAllCategories = React.useCallback(
-    () => dispatch(fetchAllCategories()),
+    (params) => dispatch(fetchAllCategories(params)),
     [dispatch]
   );
   return {

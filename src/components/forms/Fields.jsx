@@ -59,11 +59,22 @@ const SelectDropdown = React.memo(
       }
     }, [isOpen]);
 
-    const selectedOpt = options.find((opt) => getOptValue(opt) === value);
+    const selectedOpt = options.find((opt) => {
+      const optVal = getOptValue(opt);
+      if (optVal === value || (value && String(optVal) === String(value))) return true;
+      if (typeof opt === "object" && opt !== null) {
+        if (opt.id && value && String(opt.id) === String(value)) return true;
+        if (opt._id && value && String(opt._id) === String(value)) return true;
+        if (opt.mongoId && value && String(opt.mongoId) === String(value)) return true;
+        if (opt.label && value && typeof value === "string" && opt.label.toLowerCase() === value.toLowerCase()) return true;
+      }
+      return false;
+    });
+    const isMongoId = typeof value === "string" && /^[0-9a-fA-F]{24}$/.test(value);
     const displayValue =
       selectedOpt !== undefined
         ? getOptLabel(selectedOpt)
-        : value !== undefined && value !== null
+        : value !== undefined && value !== null && !isMongoId
           ? value
           : placeholder;
 
@@ -815,14 +826,38 @@ const Fields = React.memo(
           return `All Selected (${value.length})`;
         }
         const labels = (Array.isArray(value) ? value : [value]).slice(0, 2).map((val) => {
-          const opt = options.find((o) => getOptValue(o) === val);
-          return opt ? getOptLabel(opt) : val;
+          const opt = options.find((o) => {
+            const optVal = getOptValue(o);
+            if (optVal === val || (val && String(optVal) === String(val))) return true;
+            if (typeof o === "object" && o !== null) {
+              if (o.id && val && String(o.id) === String(val)) return true;
+              if (o._id && val && String(o._id) === String(val)) return true;
+              if (o.mongoId && val && String(o.mongoId) === String(val)) return true;
+              if (o.label && val && typeof val === "string" && o.label.toLowerCase() === val.toLowerCase()) return true;
+            }
+            return false;
+          });
+          if (opt) return getOptLabel(opt);
+          if (val && !/^[0-9a-fA-F]{24}$/.test(String(val))) return val;
+          return "Select";
         });
         const count = Array.isArray(value) ? value.length : 1;
         return labels.join(", ") + (count > 2 ? ` +${count - 2}` : "");
       }
-      const opt = options.find((o) => getOptValue(o) === value);
-      return opt ? getOptLabel(opt) : value || "Select";
+      const opt = options.find((o) => {
+        const optVal = getOptValue(o);
+        if (optVal === value || (value && String(optVal) === String(value))) return true;
+        if (typeof o === "object" && o !== null) {
+          if (o.id && value && String(o.id) === String(value)) return true;
+          if (o._id && value && String(o._id) === String(value)) return true;
+          if (o.mongoId && value && String(o.mongoId) === String(value)) return true;
+          if (o.label && value && typeof value === "string" && o.label.toLowerCase() === value.toLowerCase()) return true;
+        }
+        return false;
+      });
+      if (opt) return getOptLabel(opt);
+      if (value && !/^[0-9a-fA-F]{24}$/.test(String(value))) return value;
+      return "Select";
     }, [type, value, options]);
 
     const computedInputStyle = React.useMemo(

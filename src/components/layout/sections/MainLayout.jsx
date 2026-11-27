@@ -529,6 +529,13 @@ const MainLayout = React.memo(({
     const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(true);
     const [showFilters, setShowFilters] = React.useState(defaultShowFilters);
 
+    // Internal Modal state (declared at top so editingItem is accessible everywhere)
+    const [internalIsModalOpen, setInternalIsModalOpen] = React.useState(false);
+    const [internalEditingItem, setInternalEditingItem] = React.useState(null);
+
+    const isModalOpen = controlledIsModalOpen !== undefined ? controlledIsModalOpen : internalIsModalOpen;
+    const editingItem = controlledEditingItem !== undefined ? controlledEditingItem : internalEditingItem;
+
     // Current user and roles context
     const { role: currentRole, user: currentUser, isAdmin } = useCurrentUser();
     const { roles, getRoles, fetchRoles: fetchRolesList } = useRoles();
@@ -650,38 +657,211 @@ const MainLayout = React.memo(({
         if (entityName === "User" || entityName === "Role") {
             const loader = fetchRolesList || getRoles;
             loader?.({ isDeleted: false, limit: 100 });
-        } else if (entityName === "Product") {
-            getAllProdCategories?.();
-        } else if (entityName === "Blog") {
-            getAllBlogCategories?.();
+        } else if (entityName === "Product" || entityName === "Products") {
+            const params = { isDeleted: false, limit: "all" };
+            if (!effectiveIsAdmin) {
+                const uId = getActiveCreatorId(currentUser);
+                if (uId) {
+                    params.userId = uId;
+                    params.createdBy = uId;
+                }
+            }
+            getAllProdCategories?.(params);
+        } else if (entityName === "Blog" || entityName === "Blogs") {
+            const params = { isDeleted: false, limit: "all" };
+            if (!effectiveIsAdmin) {
+                const uId = getActiveCreatorId(currentUser);
+                if (uId) {
+                    params.userId = uId;
+                    params.createdBy = uId;
+                }
+            }
+            getAllBlogCategories?.(params);
         }
-    }, [entityName, fetchRolesList, getRoles, getAllProdCategories, getAllBlogCategories]);
+    }, [entityName, fetchRolesList, getRoles, getAllProdCategories, getAllBlogCategories, effectiveIsAdmin, currentUser]);
 
     // Dynamic categories for Product / Blog
     const activeCatalogCategories = React.useMemo(() => {
-        if (entityName === "Product") {
-            return (allProdCategories && allProdCategories.length > 0) ? allProdCategories : (prodCategories || []);
+        if (entityName === "Product" || entityName === "Products") {
+            if (allProdCategories && allProdCategories.length > 0) return allProdCategories;
+            if (prodCategories && prodCategories.length > 0) return prodCategories;
+            try {
+                const cached = JSON.parse(localStorage.getItem("cachedProductCategories") || "[]");
+                if (Array.isArray(cached) && cached.length > 0) return cached;
+            } catch {}
+            return [];
         }
-        if (entityName === "Blog") {
-            return (allBlogCategories && allBlogCategories.length > 0) ? allBlogCategories : (blogCategories || []);
+        if (entityName === "Blog" || entityName === "Blogs") {
+            if (allBlogCategories && allBlogCategories.length > 0) return allBlogCategories;
+            if (blogCategories && blogCategories.length > 0) return blogCategories;
+            try {
+                const cached = JSON.parse(localStorage.getItem("cachedBlogCategories") || "[]");
+                if (Array.isArray(cached) && cached.length > 0) return cached;
+            } catch {}
+            return [];
         }
         return [];
     }, [entityName, allProdCategories, prodCategories, allBlogCategories, blogCategories]);
 
     const dynamicCategoryOptions = React.useMemo(() => {
+        let list = Array.isArray(activeCatalogCategories) ? activeCatalogCategories : [];
+        list = list.filter((c) => !c.isDeleted);
+
+        // Filter categories according to vendor user if not admin
+        if (!effectiveIsAdmin) {
+            const currentUserId = String(currentUser?._id || currentUser?.id || currentUser?.userId || "").trim().toLowerCase();
+            const currentUserName = String(currentUser?.fullname || currentUser?.name || "").trim().toLowerCase();
+            const currentUserEmail = String(currentUser?.email || "").trim().toLowerCase();
+            const currentUserMobile = String(currentUser?.mobile || currentUser?.phone || "").trim();
+
+            list = list.filter((c) => {
+                if (!c) return false;
+
+                // 1. Vendor scoping: check if explicitly assigned to a vendor via vendorBy
+                const vendor = c.vendorBy || c.VendorBy;
+                const vendorId = String(
+                    vendor?._id || vendor?.id || vendor?.userId || (typeof vendor === "string" ? vendor : "") || ""
+                ).trim().toLowerCase();
+                const vendorName = String(vendor?.fullname || vendor?.name || "").trim().toLowerCase();
+                const vendorEmail = String(vendor?.email || "").trim().toLowerCase();
+                const vendorMobile = String(vendor?.mobile || vendor?.phone || "").trim();
+
+                const isAssignedToMe = Boolean(
+                    (currentUserId && vendorId === currentUserId) ||
+                    (currentUserName && vendorName && vendorName === currentUserName) ||
+                    (currentUserEmail && vendorEmail && vendorEmail === currentUserEmail) ||
+                    (currentUserMobile && vendorMobile && vendorMobile === currentUserMobile)
+                );
+
+                const hasAssignedVendor = Boolean(
+                    (vendorId && vendorId !== "[object object]") ||
+                    (vendorName && vendorName !== "admin") ||
+                    vendorEmail ||
+                    vendorMobile
+                );
+
+                if (hasAssignedVendor) {
+                    if (isAssignedToMe) return true;
+                    // Check if created by me
+                    const creator = c.createdBy || c.createdby;
+                    const creatorId = String(creator?._id || creator?.id || (typeof creator === "string" ? creator : "") || "").trim().toLowerCase();
+                    if (currentUserId && creatorId === currentUserId) return true;
+                    return false;
+                }
+
+                // 2. Creator check
+                const creator = c.createdBy || c.createdby;
+                if (!creator) return true; // System default category (unassigned)
+
+                const creatorId = String(creator?._id || creator?.id || (typeof creator === "string" ? creator : "") || "").trim().toLowerCase();
+                const creatorName = String(creator?.fullname || creator?.name || "").trim().toLowerCase();
+                const creatorEmail = String(creator?.email || "").trim().toLowerCase();
+                const creatorMobile = String(creator?.mobile || creator?.phone || "").trim();
+                const creatorRole = String(
+                    creator?.role || creator?.rolename || creator?.roleId?.rolename || creator?.roleId?.name || ""
+                ).trim().toLowerCase();
+
+                if (currentUserId && creatorId === currentUserId) return true;
+                if (currentUserName && creatorName && creatorName === currentUserName) return true;
+                if (currentUserEmail && creatorEmail && creatorEmail === currentUserEmail) return true;
+                if (currentUserMobile && creatorMobile && creatorMobile === currentUserMobile) return true;
+
+                // If created by another vendor user, hide it
+                if (creatorRole === "vendor" || creatorRole.includes("vendor")) {
+                    return false;
+                }
+
+                // If created by Admin or system default, show it
+                if (
+                    creatorRole === "admin" ||
+                    creatorRole === "dev_admin" ||
+                    creatorRole === "devadmin" ||
+                    creatorRole.includes("admin") ||
+                    creatorName === "admin"
+                ) {
+                    return true;
+                }
+
+                return false;
+            });
+        }
+
         const opts = [];
-        const seen = new Set();
-        (activeCatalogCategories || []).forEach((c) => {
-            if (c.isDeleted) return;
-            const id = String(c._id || c.id || "");
-            const name = c.categoryName || c.name;
-            if (id && name && !seen.has(id)) {
-                seen.add(id);
-                opts.push({ label: name, value: id });
-            }
+        const seenNames = new Set();
+        const seenValues = new Set();
+
+        list.forEach((c) => {
+            const mongoId = String(c.mongoId || c._id || "").trim();
+            const customId = String(c.id || c.customId || "").trim();
+            const name = String(c.categoryName || c.name || "").trim();
+            if (!name) return;
+
+            const nameKey = name.toLowerCase();
+            // Deduplicate: avoid double data by checking name and ID
+            if (seenNames.has(nameKey)) return;
+
+            const primaryId = mongoId || customId;
+            if (!primaryId || seenValues.has(primaryId)) return;
+
+            seenNames.add(nameKey);
+            seenValues.add(primaryId);
+            if (customId) seenValues.add(customId);
+            if (mongoId) seenValues.add(mongoId);
+
+            opts.push({
+                label: name,
+                value: primaryId,
+                id: customId || primaryId,
+                _id: mongoId || primaryId,
+                mongoId: mongoId || primaryId,
+            });
         });
+
+        // Ensure category of editing item is always present with human-readable label rather than raw ID
+        if (editingItem) {
+            const rawCat = editingItem.categoryId || editingItem.categoryObj;
+            const targetId = String(
+                (typeof rawCat === "object" ? rawCat?._id || rawCat?.id : rawCat) || ""
+            ).trim();
+            let targetName = String(
+                editingItem.categoryName ||
+                editingItem.category ||
+                (typeof rawCat === "object" ? rawCat?.categoryName || rawCat?.name : "") ||
+                ""
+            ).trim();
+
+            if (targetId) {
+                // If targetName is missing or is just a hex ID, try to resolve from cached categories
+                if (!targetName || /^[0-9a-fA-F]{24}$/.test(targetName)) {
+                    try {
+                        const cached = JSON.parse(
+                            localStorage.getItem(entityName === "Blog" || entityName === "Blogs" ? "cachedBlogCategories" : "cachedProductCategories") || "[]"
+                        );
+                        const match = cached.find((c) => String(c._id) === targetId || String(c.id) === targetId);
+                        if (match) targetName = match.categoryName || match.name || "";
+                    } catch {}
+                }
+
+                if (targetName && !/^[0-9a-fA-F]{24}$/.test(targetName)) {
+                    const targetNameKey = targetName.toLowerCase();
+                    const alreadyExists = seenNames.has(targetNameKey) || seenValues.has(targetId);
+                    if (!alreadyExists) {
+                        seenNames.add(targetNameKey);
+                        seenValues.add(targetId);
+                        opts.unshift({
+                            label: targetName,
+                            value: targetId,
+                            id: targetId,
+                            _id: targetId,
+                            mongoId: targetId,
+                        });
+                    }
+                }
+            }
+        }
+
         return opts;
-    }, [activeCatalogCategories]);
+    }, [activeCatalogCategories, editingItem, entityName, effectiveIsAdmin, currentUser]);
 
     // Dynamic role options derived purely from backend roles (NO hardcoded defaults)
     const dynamicRoleOptions = React.useMemo(() => {
@@ -1212,13 +1392,6 @@ const MainLayout = React.memo(({
             tableState.handleSidebarItemClick(item.name || item.role || item.status || item);
         }
     }, [isUsingDefault, navigate, onSidebarItemClick, entityName, isPrivilegedUser, tableState]);
-
-    // Internal Modal state
-    const [internalIsModalOpen, setInternalIsModalOpen] = React.useState(false);
-    const [internalEditingItem, setInternalEditingItem] = React.useState(null);
-
-    const isModalOpen = controlledIsModalOpen !== undefined ? controlledIsModalOpen : internalIsModalOpen;
-    const editingItem = controlledEditingItem !== undefined ? controlledEditingItem : internalEditingItem;
 
     const lastParamsRef = React.useRef("");
     const onFetchRef = React.useRef(onFetch);
@@ -2250,10 +2423,12 @@ const MainLayout = React.memo(({
             case "Product":
             case "Blog": {
                 if (categoryFilter !== "all") {
-                    const targetCat = String(categoryFilter);
+                    const targetCat = String(categoryFilter).toLowerCase();
                     list = list.filter((it) => {
-                        const cId = String(it.categoryId?._id || it.categoryId || "");
-                        return cId === targetCat;
+                        const cId = String(it.categoryId?._id || it.categoryId || "").toLowerCase();
+                        const cCustomId = String(it.categoryId?.id || "").toLowerCase();
+                        const cName = String(it.categoryName || it.category || "").toLowerCase();
+                        return cId === targetCat || cCustomId === targetCat || cName === targetCat;
                     });
                 }
                 return list;

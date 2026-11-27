@@ -457,6 +457,34 @@ export const getProductFormFields = ({
         ? unitOptions
         : [{ label: activeUnit, value: activeUnit }, ...unitOptions];
 
+    // Ensure category options contain editing product's category with human readable label
+    const targetCatId = String(editingProduct?.categoryId?._id || editingProduct?.categoryId || "").trim();
+    const targetCatName = String(editingProduct?.categoryName || editingProduct?.category || "").trim();
+
+    const finalCategoryOptions = [...(categoryOptions || [])];
+    let matchedOptionValue = targetCatId;
+
+    if (targetCatId || targetCatName) {
+        const found = finalCategoryOptions.find((o) => {
+            const val = String(typeof o === "object" ? o.value : o).trim();
+            const optId = String(typeof o === "object" ? (o.id || o._id || o.mongoId || "") : "").trim();
+            if (targetCatId && (val === targetCatId || optId === targetCatId)) return true;
+            if (targetCatName && typeof o === "object" && o.label && o.label.toLowerCase() === targetCatName.toLowerCase()) return true;
+            return false;
+        });
+        if (found) {
+            matchedOptionValue = typeof found === "object" ? found.value : found;
+        } else if (targetCatName && !/^[0-9a-fA-F]{24}$/.test(targetCatName)) {
+            matchedOptionValue = targetCatId || targetCatName;
+            finalCategoryOptions.unshift({
+                label: targetCatName,
+                value: matchedOptionValue,
+                id: targetCatId,
+                _id: targetCatId,
+            });
+        }
+    }
+
     return [
         {
             name: "productName",
@@ -472,10 +500,10 @@ export const getProductFormFields = ({
             name: "categoryId",
             label: "Product Category",
             type: "select",
-            options: categoryOptions,
+            options: finalCategoryOptions,
             defaultValue: editingProduct
-                ? String(editingProduct.categoryId?._id || editingProduct.categoryId || "")
-                : (categoryOptions[0]?.value || ""),
+                ? matchedOptionValue
+                : (finalCategoryOptions[0]?.value || ""),
             validation: { required: true },
         },
         {
@@ -683,6 +711,35 @@ export const getProductCategoryFormFields = ({ editingCategory, userRole, vendor
 export const getBlogFormFields = ({ editingBlog, categoryOptions = [], userRole, vendorOptions = [] } = {}) => {
     const statusField = getPublishedStatusField(editingBlog, userRole);
     const vendorField = getVendorSelectField(editingBlog, userRole, vendorOptions);
+
+    // Ensure category options contain editing blog's category with human readable label
+    const targetCatId = String(editingBlog?.categoryId?._id || editingBlog?.categoryId || "").trim();
+    const targetCatName = String(editingBlog?.categoryName || editingBlog?.category || "").trim();
+
+    const finalCategoryOptions = [...(categoryOptions || [])];
+    let matchedOptionValue = targetCatId;
+
+    if (targetCatId || targetCatName) {
+        const found = finalCategoryOptions.find((o) => {
+            const val = String(typeof o === "object" ? o.value : o).trim();
+            const optId = String(typeof o === "object" ? (o.id || o._id || o.mongoId || "") : "").trim();
+            if (targetCatId && (val === targetCatId || optId === targetCatId)) return true;
+            if (targetCatName && typeof o === "object" && o.label && o.label.toLowerCase() === targetCatName.toLowerCase()) return true;
+            return false;
+        });
+        if (found) {
+            matchedOptionValue = typeof found === "object" ? found.value : found;
+        } else if (targetCatName && !/^[0-9a-fA-F]{24}$/.test(targetCatName)) {
+            matchedOptionValue = targetCatId || targetCatName;
+            finalCategoryOptions.unshift({
+                label: targetCatName,
+                value: matchedOptionValue,
+                id: targetCatId,
+                _id: targetCatId,
+            });
+        }
+    }
+
     return [
         {
             name: "blogName",
@@ -696,10 +753,10 @@ export const getBlogFormFields = ({ editingBlog, categoryOptions = [], userRole,
             name: "categoryId",
             label: "Blog Category",
             type: "select",
-            options: categoryOptions,
+            options: finalCategoryOptions,
             defaultValue: editingBlog
-                ? String(editingBlog.categoryId?._id || editingBlog.categoryId || "")
-                : (categoryOptions[0]?.value || ""),
+                ? matchedOptionValue
+                : (finalCategoryOptions[0]?.value || ""),
             validation: { required: true },
         },
         {

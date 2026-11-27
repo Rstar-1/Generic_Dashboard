@@ -32,7 +32,10 @@ export {
 
 export const normalizeBlogCategory = (c) => {
   if (!c || typeof c !== "object") return c;
-  const id = c.id || (c._id?.$oid ? c._id.$oid : c._id) || "";
+  const rawMongoId = c._id?.$oid || (typeof c._id === "string" ? c._id : c._id ? String(c._id) : "");
+  const mongoId = rawMongoId && rawMongoId !== "[object Object]" ? rawMongoId : "";
+  const customId = c.id || (c._id?.$oid ? c._id.$oid : c._id) || "";
+  const id = customId || mongoId || "";
   const categoryName = c.categoryName || c.name || "";
   const count = Number(c.count ?? c.articlesCount ?? 0);
   const createdby = normalizeCreator(c.createdBy, c.createdby);
@@ -40,8 +43,10 @@ export const normalizeBlogCategory = (c) => {
 
   return {
     ...c,
-    _id: id,
+    _id: mongoId || id,
+    mongoId: mongoId || id,
     id,
+    customId: customId || id,
     categoryName,
     name: categoryName,
     count,
@@ -61,9 +66,9 @@ export const normalizeBlogCategory = (c) => {
 
 export const fetchAllBlogCategories = createAsyncThunk(
   "blogCategories/fetchAllBlogCategories",
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const res = await getBlogCategoriesApi({ isDeleted: false, limit: "all" });
+      const res = await getBlogCategoriesApi({ isDeleted: false, limit: "all", ...(params || {}) });
       const raw = res?.data !== undefined ? res.data : res;
       const list = raw?.categories || (Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []));
       const normalized = list.map(normalizeBlogCategory);
@@ -140,7 +145,7 @@ export const useBlogCategories = () => {
   const dispatch = useDispatch();
   const allCategories = useSelector(selectAllBlogCategories);
   const getAllBlogCategories = React.useCallback(
-    () => dispatch(fetchAllBlogCategories()),
+    (params) => dispatch(fetchAllBlogCategories(params)),
     [dispatch]
   );
   return {
