@@ -2333,9 +2333,7 @@ const MainLayout = React.memo(({
     }, [isReviewsTab, entityName, activeTab, columns, effectiveIsAdmin]);
     const currentTotalItems = isReviewsTab
         ? filteredReviews.length
-        : (!effectiveIsAdmin && ["Product", "Product Category", "Blog", "Blog Category", "SEO", "Lead", "Leads"].includes(entityName))
-        ? resolvedData.length
-        : (total !== undefined ? total : resolvedData.length);
+        : (total !== undefined && total !== null ? Math.max(Number(total) || 0, resolvedData.length) : resolvedData.length);
     const currentTableTitle = isReviewsTab
         ? (entityName === "Product" ? "Product Reviews & Ratings" : "Reader Feedback & Reviews")
         : entityConfig.tableTitle;
